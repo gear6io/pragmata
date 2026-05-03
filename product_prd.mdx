@@ -1,0 +1,765 @@
+# [ProductName]: The ClickHouse Developer Platform
+### PRD v0.1 — Founder Strategy Document
+
+> **One-liner**: We are to ClickHouse what Supabase is to Postgres — an open-source developer
+> platform that turns the world's fastest analytical database into something any engineer can
+> actually ship with.
+
+---
+
+## 1. The Opportunity
+
+ClickHouse is the best analytical database in the world. Sub-second queries on billions of rows,
+better compression than anything else, a growing community. But it is **operationally brutal**.
+
+TinyBird saw this gap and built a beautiful abstraction on top of it. They did well. But they made
+a fundamental choice: **closed-source, managed-only, proprietary format**. That choice is their
+ceiling. It is our floor.
+
+The window is open because:
+
+- No dominant **open-source** ClickHouse developer platform exists
+- TinyBird has 0.3% mindshare in a fragmented market — no one has won
+- Data engineers and app developers both have unmet needs ClickHouse can serve, if abstracted well
+- The AI coding wave (Cursor, Claude, Copilot) rewards OSS-first projects that get into training
+  data early — Supabase proved this explicitly
+- ClickHouse is eating more and more workloads (logs, metrics, analytics, events, leaderboards,
+  IoT) where teams need an API layer, not a raw database
+
+We are not building another query tool. We are building **the developer platform for the
+real-time analytical data stack**.
+
+---
+
+## 2. Understanding TinyBird — What They Got Right
+
+TinyBird's core insight: **ClickHouse is powerful but unapproachable**. Their solution is elegant:
+
+```
+Raw Data → Data Sources → Pipes (SQL chains) → REST API Endpoints
+```
+
+### What they built well
+
+| Capability | What it does |
+|------------|-------------|
+| **Pipes** | Chained SQL nodes, last node exposed as REST endpoint |
+| **Events API** | HTTP endpoint to stream JSON events directly into ClickHouse |
+| **Tokens** | API key management with per-pipe scopes |
+| **Materialized Views** | Pre-computed aggregations (via their ClickHouse fork) |
+| **Copy Pipes** | Scheduled SQL-to-table writes with cron |
+| **Environments** | Dev/staging/prod branching for safe iteration |
+| **CLI (`tb`)** | Push, deploy, test pipes from local filesystem |
+| **Monitoring** | Endpoint latency, vCPU consumption, row counts |
+| **BI Compatibility** | Native ClickHouse interface for Grafana, Tableau, Power BI |
+| **ClickHouse Fork** | Custom optimizations — 30-40% fewer S3 writes, 30% faster PREWHERE |
+
+Their `.pipe` file format is clean. Their developer experience is thoughtful. They deserve credit.
+
+### Their architectural moat
+
+TinyBird maintains a **private ClickHouse fork** with proprietary optimizations:
+- **Packed Part Format**: Combines small MergeTree files → 30-40% reduction in S3 write ops
+- **Inplace filtering** on PREWHERE stage → ~30% faster query execution
+- Custom UNION support for materialized views
+
+This fork gives them a real performance edge. We need to understand and counter this honestly.
+
+---
+
+## 3. Where TinyBird Breaks Down — The Honest Audit
+
+### Pricing wall
+
+| Tier | Price | What you get | Where it hurts |
+|------|-------|--------------|----------------|
+| Free | $0 | 0.5 vCPU, 1K req/day, 10GB | Unusable for production |
+| Developer | $25–$299/mo | Fixed vCPU tiers | Jump from $25 → $97 is sudden |
+| Enterprise | Custom | 4+ vCPU | Requires contract |
+| Overage | $0.162/hr | When autoscaling kicks in | Unpredictable bills |
+
+The $25/month floor kills hobbyists, indie hackers, early startups. OSS + self-hosting wins
+here completely. A team can run their own ClickHouse + our platform for $0 infra cost beyond
+their ClickHouse server.
+
+### Vendor lock-in by design
+
+- **Proprietary `.pipe` format** — not portable to anything else
+- **Proprietary template syntax** (`{{ String(x, 'y') }}`) — not standard Jinja2 or SQL
+- **Managed-only** — you cannot self-host TinyBird. Period.
+- **No bring-your-own ClickHouse** — you must use their cluster
+- **Black-box MV behavior** — materialized views run asynchronously, failures are invisible
+
+### Developer experience gaps
+
+- **Weak local development** — "Tinybird Local" exists but is a mental model shift
+- **No schema migration safety** — if you need to change a sort key, you rebuild from scratch
+- **Opaque execution** — you can't inspect how a multi-node Pipe gets compiled and optimized
+- **No column-level lineage** — you can't trace a column from API output back to source table
+- **No data contracts** — no way to enforce schema guarantees between teams
+- **Template system is not SQL** — the `%` prefix + `{{ }}` syntax is a DSL that confuses devs
+
+### Community & ecosystem gap
+
+TinyBird has almost **zero presence on r/dataengineering** — the primary community where data
+engineers live. They are not a community-led company. Their blog is excellent engineering content
+but they're talking at developers, not with them. An OSS-first platform changes this entirely.
+
+---
+
+## 4. ClickHouse's Real Developer Pain — What We're Actually Solving
+
+This is more important than TinyBird feature parity. ClickHouse has six well-documented,
+serious operational pain points that a platform layer can solve:
+
+### 1. "You are the optimizer"
+
+ClickHouse has no query optimizer. If you choose the wrong sort key, your queries are 10-100x
+slower. There's no guardrail. A platform with schema linting, sort key recommendations, and
+query analysis baked into the CLI catches this before production.
+
+### 2. Schema migrations are career-limiting
+
+You cannot change a sort key on an existing table. The only option is rebuild the table from
+scratch — meaning a full data reload. For production tables with billions of rows, this is a
+24-72 hour operation with zero downtime guarantee. A platform layer with migration planning,
+shadow tables, and safe swap tooling makes this solvable.
+
+### 3. Materialized Views are unreliable by default
+
+> "MVs operate asynchronously relative to the statement that creates or inserts data into them."
+> — CloudQuery Engineering Blog
+
+This means: you insert data, you query the MV, the data might not be there yet. No visibility
+into failures. Unpredictable freshness for API responses. Our platform needs guaranteed-freshness
+semantics or at least explicit freshness metadata on every API response.
+
+### 4. JOINs are footguns
+
+Large fact table JOINs with dimension tables frequently produce memory overcommit errors that
+terminate queries silently. Developers don't know why their query died. A platform with query
+analysis and JOIN pattern recommendations changes the experience entirely.
+
+### 5. ClickHouse functions are not discoverable
+
+The ClickHouse function library is massive and non-standard. `toStartOfDay`, `arrayJoin`,
+`runningAccumulate`, `groupBitmap` — these exist nowhere else. A platform with intelligent SQL
+autocomplete, semantic search over functions, and AI-assisted query generation is transformative.
+
+### 6. Migration between deployments is painful
+
+Moving from ClickHouse Cloud to self-hosted (or vice versa) requires config rework, query
+rewriting, and behavioral differences. A platform that abstracts this with a consistent interface
+locks in users at the platform layer, not the cluster layer.
+
+---
+
+## 5. Product Vision: The Supabase for ClickHouse
+
+Supabase studied what made PostgreSQL impenetrable to most developers and systematically
+dismantled each barrier:
+
+| PostgreSQL pain | Supabase solution |
+|----------------|------------------|
+| Need to write REST APIs | PostgREST auto-generates them |
+| Auth is complex | GoTrue bundled auth |
+| File storage separate | S3-compatible storage built in |
+| No real-time | Realtime subscriptions via Postgres LISTEN |
+| Local dev is a YAML maze | `supabase start` runs everything in Docker |
+| Dashboard is psql | Studio — visual DB UI |
+
+Their activation metric was simple: **"Create your first database."** Everything else followed.
+
+We do the same for ClickHouse:
+
+| ClickHouse pain | Our solution |
+|----------------|-------------|
+| Need to write query APIs | Pipes — SQL chains → REST endpoints |
+| Ingestion requires writing code | Events API + connectors |
+| Schema changes are dangerous | Migration CLI with sort key safety |
+| MVs are unreliable | Guaranteed-freshness pipe engine |
+| No auth or API keys | Token system built in |
+| Local dev = Docker compose hell | `[product] dev` spins up everything |
+| Dashboard is raw ClickHouse UI | Studio — pipe builder, data explorer |
+| No lineage | Column-level lineage across all pipes |
+
+**Activation metric**: `Deploy your first Pipe endpoint.`
+
+The entire product is organized around this moment. Every other feature follows.
+
+---
+
+## 6. What Makes Us Genuinely Better Than TinyBird
+
+These are not feature flags. These are philosophical differences.
+
+### 1. Bring Your Own ClickHouse
+
+You point our platform at any ClickHouse instance — self-hosted, ClickHouse Cloud, Altinity,
+any managed provider. We never touch your data. We're a developer platform, not a database host.
+TinyBird cannot offer this by design. We can offer it by design.
+
+### 2. Open Source First, Cloud Second
+
+Our entire platform is open-source (Apache 2.0). The cloud-hosted version is identical to what
+you run locally. This is the Supabase playbook and it is the correct playbook. OSS drives:
+- Community-led bug fixes and feature requests
+- AI code generation training data (Cursor/Claude will "know" our platform)
+- Trust and auditability that a closed SaaS can never provide
+- Developer advocacy that doesn't need a budget
+
+### 3. Standard SQL + Standard Templating
+
+We don't invent a proprietary template syntax. We use **Jinja2** (the standard) and follow
+SQLMesh's approach for macro definitions. Any developer who knows Jinja2 is immediately
+productive. TinyBird's `{{ String(x, 'y') }}` is a learning tax we don't charge.
+
+### 4. Column-Level Lineage
+
+SQLMesh gives us column-level lineage out of the box. You can trace any column in any API
+response back through every Pipe node to the source table. TinyBird has no lineage system.
+This is a significant enterprise differentiator.
+
+### 5. Data Contracts
+
+Define explicit schemas between Pipes and Data Sources. Teams can evolve independently without
+breaking downstream consumers. This is an enterprise feature TinyBird does not have.
+
+### 6. Migration Safety
+
+Our CLI includes:
+- Sort key validation before table creation
+- Safe schema migration via shadow table pattern
+- Backfill planning for incremental model changes
+- Dry-run mode for all destructive operations
+
+### 7. Freshness Guarantees
+
+Every API response includes a `freshness` metadata field. Materialized views include an explicit
+SLA. If a MV is behind its SLA, the endpoint automatically falls back to live query (configurable).
+This solves ClickHouse's async MV problem at the platform layer.
+
+### 8. Multi-Environment Deployments (Better Than TinyBird's)
+
+SQLMesh's virtual environments become our branching system. A developer can create a `feature/
+new-sales-pipe` environment that references the production ClickHouse cluster but isolates schema
+changes using SQLMesh's shadow-schema approach. No data duplication. Full safety.
+
+### 9. AI-Native from Day One
+
+Not a chatbot gimmick. Three specific AI capabilities:
+- **Natural language to Pipe**: Describe what you want in English, get a `.pipe` file
+- **Query explanation**: "Why is this Pipe slow?" → AI analyzes query plan + schema
+- **Function discovery**: "I need to aggregate by rolling 7-day window" → suggests the right
+  ClickHouse function with example
+
+---
+
+## 7. The Platform — Product Layers
+
+We build in three phases. Each phase is independently valuable and each unlocks the next.
+
+```
+Phase 3: Platform
+┌─────────────────────────────────────────────────────────────────┐
+│  AI Assistant  │  dbt Compat  │  GraphQL API                    │
+│  Realtime Subs │  Edge Functions │  Row-Level Security          │
+└─────────────────────────────────────────────────────────────────┘
+
+Phase 2: Experience
+┌─────────────────────────────────────────────────────────────────┐
+│  Studio (Web UI)  │  Multi-environment Branches                  │
+│  Schema Migrations│  Data Contracts  │  Monitoring + Alerts      │
+│  Kafka / S3 / CDC │  Preview Environments  │  CI/CD Integration  │
+└─────────────────────────────────────────────────────────────────┘
+
+Phase 1: Core (MVP — TinyBird Parity)
+┌─────────────────────────────────────────────────────────────────┐
+│  Pipe Engine     │  Events API      │  Token Auth                │
+│  REST Endpoints  │  Materialized MV │  Copy Pipes + Cron         │
+│  CLI             │  JSON/CSV Output │  Local Dev (`dev` command) │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 8. Phase 1 MVP — TinyBird Parity
+
+Goal: Any TinyBird user can migrate to us with a weekend of work.
+
+### Core Primitives
+
+**Pipes** — the central product concept
+
+```
+# sales.pipe
+DESCRIPTION Daily revenue by country with pagination
+TAGS revenue, sales
+
+NODE aggregate
+SQL >
+  %
+  SELECT
+    toStartOfDay(created_at)   AS day,
+    country,
+    sum(amount)                AS revenue,
+    count()                    AS orders
+  FROM orders
+  WHERE
+    {% if defined(country) %}
+    country = {{ country | default('US') }} AND
+    {% endif %}
+    created_at >= {{ start | default('2024-01-01 00:00:00') }}
+  GROUP BY day, country
+
+NODE paginate
+SQL >
+  %
+  SELECT * FROM aggregate
+  ORDER BY day DESC
+  LIMIT  {{ limit | int | default(100) }}
+  OFFSET {{ page | int | default(0) * limit | int | default(100) }}
+
+TYPE ENDPOINT
+```
+
+**Data Sources** — schema + ingestion config
+
+```yaml
+# orders.datasource
+SCHEMA >
+  `id`         UInt64,
+  `created_at` DateTime,
+  `country`    LowCardinality(String),
+  `amount`     Float64
+
+ENGINE MergeTree
+ENGINE_SORTING_KEY created_at, country
+```
+
+**Three Pipe types** that cover ~95% of TinyBird use cases:
+
+| Type | What it does | API |
+|------|-------------|-----|
+| `ENDPOINT` | Live parameterized query | `GET /v0/pipes/{name}?param=val` |
+| `MATERIALIZED` | Pre-aggregated ClickHouse MV | Populated at ingest time |
+| `COPY` | Scheduled writes to target table | `COPY_SCHEDULE 0 * * * *` |
+
+**Events API** — `POST /v0/events?name=orders` — NDJSON, CSV, Parquet. Returns:
+```json
+{"successful_rows": 1000, "quarantined_rows": 0}
+```
+
+**Token system**:
+- Generate scoped API keys (`PIPES:READ`, `DATASOURCES:WRITE`)
+- Auth via header (`Authorization: Bearer xxx`) or URL param (`?token=xxx`)
+- SQLite storage locally; Postgres in cloud
+
+**REST Response Envelope** (TinyBird-compatible for migration path):
+```json
+{
+  "data": [{"day": "2024-01-15", "country": "US", "revenue": 45230.50}],
+  "meta": {"columns": [{"name": "day", "type": "Date"}, ...]},
+  "stats": {"elapsed": 0.032, "rows_read": 50000},
+  "freshness": {"last_updated": "2024-01-15T10:00:00Z", "lag_seconds": 3}
+}
+```
+
+### MVP Technical Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Go Service (`pipe`)                        │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────────┐ │
+│  │  Parser  │  │ Template │  │ Executor │  │   Server   │ │
+│  │ .pipe    │  │ Jinja2   │  │ CTE      │  │ gin HTTP   │ │
+│  │ .datasrc │  │ standard │  │ chain    │  │ /v0/pipes  │ │
+│  └──────────┘  └──────────┘  └──────────┘  └────────────┘ │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐ │
+│  │  Auth    │  │ Ingest   │  │  SQLMesh subprocess       │ │
+│  │  Tokens  │  │ Events   │  │  (Materialized + Copy)    │ │
+│  │  SQLite  │  │  API     │  │  sqlmesh apply / run      │ │
+│  └──────────┘  └──────────┘  └──────────────────────────┘ │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ clickhouse-go/v2
+                    ┌──────▼──────────┐
+                    │   ClickHouse    │
+                    │ (any instance)  │
+                    └─────────────────┘
+```
+
+**SQLMesh's role in Phase 1**: Materialized view orchestration only. We call `sqlmesh apply`
+and `sqlmesh run` via subprocess. SQLMesh handles incremental model state, environment tracking,
+and ClickHouse MV creation. We don't re-implement what SQLMesh already does well.
+
+**What SQLMesh contributes**:
+- ✅ Incremental model tracking (what intervals have been processed)
+- ✅ Virtual environment management (dev/staging/prod schema isolation)
+- ✅ Column-level lineage (tracked through SQL model graph)
+- ✅ Multi-database support (future: DuckDB, Postgres fallback)
+- ✅ Data contract framework (Phase 2)
+
+**What SQLMesh does NOT do** (we build these):
+- ❌ HTTP API serving layer
+- ❌ Token auth and API key management
+- ❌ Events/ingestion API
+- ❌ `.pipe` file format and parser
+- ❌ Request-time SQL templating
+- ❌ Rate limiting, response formatting
+
+### CLI
+
+```bash
+[product] init                      # Scaffold project with example pipes + config
+[product] dev                       # Start local ClickHouse + API server (Docker)
+[product] serve                     # Start API server (production mode)
+[product] push ./pipes              # Deploy/sync pipes from directory to server
+[product] run sales --country US    # Execute a pipe manually, print table output
+[product] test                      # Run pipe tests (fixture-based)
+[product] token create --name web   # Create API token
+[product] token list                # List all tokens
+[product] lint                      # Validate pipes, check sort key usage, catch issues
+[product] diff                      # Show what would change before push
+[product] migrate --from tinybird   # Import pipes from TinyBird export
+```
+
+The `dev` command is the killer local experience. One command starts everything.
+
+### TinyBird Migration Path
+
+`[product] migrate --from tinybird --token xxx`:
+1. Pulls all `.pipe` and `.datasource` files from TinyBird via their CLI export
+2. Converts TinyBird's template syntax to standard Jinja2
+3. Generates our `.pipe` format equivalents
+4. Reports what can be auto-migrated vs what needs manual review
+
+**Syntax conversion:**
+
+| TinyBird | Ours |
+|---------|------|
+| `{{ String(country, 'US') }}` | `{{ country \| default('US') }}` |
+| `{{ Int32(limit, 100) }}` | `{{ limit \| int \| default(100) }}` |
+| `TOKEN dashboard READ` | Managed via `[product] token` commands |
+| `TYPE MATERIALIZED\nDATASOURCE name` | `TYPE MATERIALIZED\nDATASOURCE name` (same) |
+
+---
+
+## 9. Phase 2 — Better Than TinyBird
+
+Timeline: months 4-9 post-MVP
+
+### Studio — Web UI
+
+Not a nice-to-have. The dashboard is the product for non-CLI users, and it's how we compete
+with TinyBird's polished UI.
+
+| Panel | What it shows |
+|-------|-------------|
+| **Pipe Builder** | Visual node chain editor, live SQL execution |
+| **Data Explorer** | Browse ClickHouse tables, run ad-hoc queries |
+| **API Logs** | Request log, latency percentiles, error rates |
+| **Lineage Graph** | Column-level data lineage across all pipes |
+| **Schema Manager** | Table schema, sort keys, TTL, partitions |
+| **Token Manager** | Create/revoke tokens, usage per token |
+
+Tech: Next.js + shadcn/ui + TanStack Query.
+
+### Multi-Environment Branches
+
+Powered by SQLMesh virtual environments:
+
+```bash
+[product] env create feature/new-metrics --base prod
+[product] push ./pipes --env feature/new-metrics
+[product] env promote feature/new-metrics --to prod
+[product] env delete feature/new-metrics
+```
+
+Zero data duplication. Schema changes are isolated. Promotion is atomic. Strictly better than
+TinyBird's environment model — powered by SQLMesh's shadow-schema approach.
+
+### Schema Migration Safety
+
+```bash
+[product] migrate plan
+# → Analyzing schema changes...
+# → WARNING: Sort key change on 'orders' table
+# → This requires a table rebuild (estimated: 2.4 hours for 8.5B rows)
+# → Alternative: Add column without sort key change (instant)
+# → Recommended: Create new table, backfill, atomic swap
+# → Run `[product] migrate apply --strategy shadow-swap` to proceed
+```
+
+This single feature solves ClickHouse's #1 operational pain point.
+
+### Connectors
+
+| Connector | What it does |
+|-----------|-------------|
+| Kafka | Subscribe to topics, stream into datasource |
+| S3 / GCS | Batch load Parquet/CSV/NDJSON on schedule |
+| PostgreSQL CDC | Capture changes via logical replication |
+| MySQL CDC | Debezium-compatible change data capture |
+| HTTP Pull | Poll any JSON/CSV endpoint on cron |
+
+### Monitoring + Alerting
+
+- Endpoint latency (p50/p95/p99) with time-series charts
+- Rows read / bytes scanned per request (cost attribution)
+- MV freshness lag with configurable alerts
+- Token usage by consumer
+- ClickHouse cluster health (CPU, memory, disk, queries in flight)
+
+---
+
+## 10. Phase 3 — ClickHouse Supercharger
+
+Timeline: months 10-18 post-MVP. This is where we stop being "TinyBird alternative" and become
+something TinyBird cannot be.
+
+### Auto-REST API from ClickHouse Tables
+
+Like PostgREST but for ClickHouse. Point our platform at a ClickHouse instance, and every table
+immediately gets a REST endpoint with filtering, sorting, pagination, and auth — zero config.
+
+```
+GET /api/orders?country=US&limit=100&order=created_at.desc
+GET /api/orders/aggregated?group_by=country&sum=amount
+```
+
+### Real-Time Subscriptions
+
+ClickHouse supports `LIVE VIEW` and `WATCH` queries natively. We expose this as WebSocket
+subscriptions:
+
+```javascript
+const sub = client.subscribe('pipe:live_leaderboard', { game_id: 'abc' })
+sub.on('update', (data) => updateUI(data))
+```
+
+TinyBird has no real-time subscriptions. Category-defining feature.
+
+### AI Query Assistant
+
+```bash
+[product] ask "top 5 countries by revenue last week"
+# → Generates and executes ClickHouse SQL, returns results
+
+[product] explain sales.pipe
+# → Plain-English explanation of what the pipe does and how it performs
+
+[product] optimize sales.pipe
+# → "Node 'aggregate' reads 2.3M rows per call but returns 100.
+#    Recommendation: Move country filter to MV definition to reduce scan."
+```
+
+### GraphQL API
+
+Same Pipes, same auth, GraphQL interface — auto-generated from Pipe schemas.
+
+### Row-Level Security
+
+```yaml
+ROW_POLICIES:
+  - name: country_filter
+    filter: "country = {jwt_claim:country}"
+    applies_to: [PIPES:READ]
+```
+
+JWT claims map to row-level filters. Multi-tenant APIs with zero application code.
+
+---
+
+## 11. What We Don't Build (Scope Discipline)
+
+- **No ClickHouse fork** — TinyBird does this. We work with any ClickHouse instance, including
+  their OSS-contributed optimizations if users want them.
+- **No streaming engine** — Kafka, Flink, Materialize exist. We connect to them.
+- **No BI tool** — Grafana, Metabase, Superset integrate with ClickHouse natively. We ensure
+  our API format works well with all of them.
+- **No managed ClickHouse** (Phase 1-2) — Cloud version points to any ClickHouse. Users bring
+  their own or we integrate with ClickHouse Cloud / Altinity as preferred partners.
+
+---
+
+## 12. SQLMesh — Role, Strengths, and Limits
+
+### What SQLMesh provides
+
+| Capability | Our Phase |
+|------------|-----------|
+| Virtual environments (dev/staging/prod isolation) | 1 |
+| Incremental model state tracking | 1 |
+| Automatic backfill planning | 1 |
+| Column-level lineage | 2 |
+| Data contracts / schema validation | 2 |
+| dbt project compatibility | 3 |
+| Multi-dialect SQL transpilation | 3 |
+
+### What SQLMesh is not
+
+SQLMesh is a transformation framework, not a serving platform. It has no HTTP layer, no token
+auth, no events ingestion, no real-time subscriptions, no request-time SQL templating.
+
+**Our division**: SQLMesh manages data (transformation, state, scheduling). We manage queries
+(serving, auth, real-time, developer experience).
+
+### Integration approach
+
+- **Phase 1**: SQLMesh via subprocess for materialized/copy pipe execution
+- **Phase 2**: Tighter Python-Go bridge (gRPC or local socket) for real-time status, lineage
+  queries, schema inspection
+- **Phase 3**: SQLMesh deeply embedded — lineage UI is built on SQLMesh's lineage graph,
+  dbt project compatibility via SQLMesh's transpilation layer
+
+---
+
+## 13. Go-To-Market Strategy
+
+### Phase 1: Community Capture
+
+**Who**: Senior data engineers, backend developers with analytics needs, small teams that can't
+afford TinyBird at scale.
+
+**How**:
+- Launch on GitHub with excellent README, quickstart, and docs
+- Write the blog posts ClickHouse users actually search for:
+  - *"The ClickHouse Schema Migration Guide You Actually Need"*
+  - *"Why Materialized Views in ClickHouse Are More Complex Than You Think"*
+  - *"Building a Real-Time Leaderboard API in 15 Minutes (Self-Hosted)"*
+- r/dataengineering presence — answer questions, provide value
+- Explicit "Migrate from TinyBird" guide targeting their users
+
+**Positioning**: "TinyBird is $25/month minimum and you can't self-host. We're free and
+open-source. Both work with ClickHouse. You choose."
+
+### Phase 2: Developer Platform Expansion
+
+**Who**: Startups, SaaS companies, analytics teams at mid-size companies.
+
+**How**:
+- Launch Studio on Product Hunt
+- Integrations with Vercel, Railway, Render for one-click deployment
+- Partnership with ClickHouse Cloud as preferred managed backend
+- Conference presence: Data Council, dbt Coalesce, PyCon
+
+**Positioning**: "The developer platform for ClickHouse. Like Supabase, but for analytics."
+
+### Phase 3: Enterprise
+
+**How**: Enterprise contracts for priority support, SLA guarantees, SSO, RBAC, SOC 2.
+Professional services for TinyBird migrations at scale.
+
+### The AI Code Generation Flywheel
+
+Supabase benefited from a compounding advantage: because their code was open-source and widely
+adopted early, Supabase-compatible code ended up in Cursor, Claude, and Copilot training data.
+"Generate me a backend" became "Generate me a Supabase backend" by default.
+
+We need to trigger the same flywheel. This requires:
+1. Genuinely open-source from day one (not "source available")
+2. High GitHub adoption early (stars, forks, issues)
+3. Excellent, Googleable documentation that developers actually quote
+4. Blog content that ranks for "ClickHouse API" and "ClickHouse developer platform"
+
+---
+
+## 14. Monetization
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  OSS / Self-Hosted                                           │
+│  Free forever. Full feature set. Community support.          │
+│  → Drives GitHub stars, training data, developer love        │
+└─────────────────────────────────────────────────────────────┘
+           │ natural upgrade path
+           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  [Product] Cloud                                             │
+│  Hosted platform. Managed infra. Connect your ClickHouse.   │
+│                                                              │
+│  Free:       3 pipes, 1M events/mo, 1 token                 │
+│  Pro $29/mo: 20 pipes, 100M events/mo, team features        │
+│  Business $149/mo: Unlimited, preview envs, monitoring       │
+│  Enterprise: SSO, SLA, dedicated support                     │
+└─────────────────────────────────────────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Managed ClickHouse (future, partnership-first)             │
+│  Provision and manage ClickHouse for users who want it.     │
+│  Margin via ClickHouse Cloud partnership or markup.          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Key insight: Our free cloud tier converts hobbyists and indie hackers who become advocates.
+TinyBird's $25/month minimum cuts them off. This is how Supabase captured community before ARR.
+
+---
+
+## 15. Risk Register
+
+| Risk | Severity | Mitigation |
+|------|---------|-----------|
+| TinyBird ships OSS version | High | Build community moat first. OSS is hard to fake — authenticity matters. |
+| ClickHouse Cloud builds equivalent tooling | High | We're database-agnostic. Their tooling only works with their product. |
+| SQLMesh deprecates or pivots | Medium | Our coupling is subprocess-level. Swappable for alternative. |
+| Go + Python subprocess operational complexity | Medium | Well-documented deployment. Docker Compose handles it in Phase 1. |
+| Developer abandonment if OSS feels unmaintained | High | Public roadmap, commit cadence, community response SLA. |
+| TinyBird fork performance gap widens | Low | We work with any ClickHouse, including forks. |
+
+---
+
+## 16. Success Metrics — 12 Months
+
+| Metric | Target |
+|--------|-------|
+| GitHub stars | 5,000 |
+| Weekly active self-hosted deployments | 500 |
+| Cloud users (paid) | 200 |
+| ARR | $120K |
+| TinyBird migrations completed | 50 |
+| Pipe endpoints deployed (all users) | 10,000 |
+| p99 endpoint latency | < 200ms |
+| Community Discord members | 1,000 |
+
+---
+
+## 17. Build Sequence
+
+```
+Month 1-2:  Core pipe engine + ClickHouse executor + REST server + CLI basics
+Month 2-3:  Events API + token auth + materialized pipes + copy pipes
+Month 3:    ── LAUNCH v0.1 ── TinyBird parity. HN Show HN. Blog post.
+Month 4-5:  Studio v1 (pipe builder + data explorer) + monitoring
+Month 5-6:  Multi-environment branches + schema migration CLI
+Month 6:    ── LAUNCH v0.2 ── "Better than TinyBird" release
+Month 7-9:  Kafka + S3 connectors + alerting + data contracts
+Month 9:    Cloud beta (hosted, bring-your-own ClickHouse)
+Month 10-12: AI assistant + real-time subscriptions + GraphQL API
+Month 12:   ── LAUNCH v1.0 ── ClickHouse Developer Platform release
+```
+
+---
+
+## 18. The Founding Insight
+
+TinyBird built a beautiful product on a closed foundation. They will always be limited by the
+fact that you cannot self-host them, cannot bring your own cluster, cannot inspect how they work,
+cannot contribute to them, and cannot escape their pricing tiers.
+
+We build the same beautiful product on an open foundation. The product can be as good or better.
+The community cannot be replicated.
+
+ClickHouse is where PostgreSQL was in 2018 — powerful, fast, increasingly popular, but
+unapproachable to the average developer. Supabase changed that for Postgres in 4 years.
+
+The name of the category we're creating: **Analytical API Platform.**
+
+The winner of that category will be worth building.
+
+---
+
+*Last updated: April 2026 | Status: Pre-seed | Stage: Pre-build*

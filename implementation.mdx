@@ -1,0 +1,229 @@
+# OSS TinyBird Pipes Alternative — Implementation Plan
+
+## Context
+
+TinyBird Pipes let users define chained SQL transformations (nodes) exposed as HTTP API endpoints
+with parameterized queries, materialized views, and scheduled copy jobs. No complete OSS alternative
+exists. We're building one on top of **ClickHouse + SQLMesh**, with **Go** as the HTTP/CLI layer.
+SQLMesh (Python) is invoked via subprocess for materialized/copy pipe orchestration.
+
+**Stack decisions:** Go • ClickHouse backend • SQLMesh via subprocess
+**Scope:** ENDPOINT + MATERIALIZED + COPY pipes + token auth
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│                   Go Binary (pipe)                    │
+│                                                       │
+│  HTTP Server /v0/pipes/{name}                         │
+│    ↓ auth middleware (token)                          │
+│    ↓ pipe parser (loads .pipe files)                  │
+│    ↓ template engine ({{ String(p,'x') }} → SQL)      │
+│    ↓ executor (CTE chain → ClickHouse query)          │
+│    ↓ formatter (JSON / CSV / CSVWithNames)             │
+│                                                       │
+│  Cron Scheduler → SQLMesh subprocess (materialize)   │
+│  CLI: serve | push | run | token                      │
+└──────────────────────────────────────────────────────┘
+         │ subprocess calls
+         ▼
+┌─────────────────────┐         ┌──────────────────┐
+│   SQLMesh (Python)  │ ──SQL──▶│   ClickHouse     │
+│   sqlmesh apply     │         │   (local/remote) │
+│   sqlmesh run       │         └──────────────────┘
+└─────────────────────┘
+```
+
+---
+
+## Pipe File Format (`.pipe`)
+
+```
+DESCRIPTION Get daily sales by country
+TAGS sales, analytics
+
+NODE daily_sales
+SQL >
+  %
+  SELECT toStartOfDay(ts) day, country, sum(amount) total
+  FROM orders
+  WHERE country = {{ String(country, 'US') }}
+  GROUP BY day, country
+
+NODE result
+SQL >
+  %
+  SELECT * FROM daily_sales
+  LIMIT {{ Int32(page_size, 100) }}
+  OFFSET {{ Int32(page, 0) * Int32(page_size, 100) }}
+
+TYPE ENDPOINT
+```
+
+Supported `TYPE` values:
+- `ENDPOINT` — live HTTP query endpoint
+- `MATERIALIZED` + `DATASOURCE <name>` — pre-computed ClickHouse materialized view via SQLMesh
+- `COPY` + `TARGET_DATASOURCE <name>` + `COPY_SCHEDULE <cron>` — scheduled data copy
+
+---
+
+## Project Structure
+
+```
+/Users/asthajyoti/code/sqlmesh/
+├── cmd/pipe/main.go              # CLI entry point
+├── internal/
+│   ├── parser/                   # .pipe file → PipeAST structs
+│   │   ├── parser.go
+│   │   └── types.go
+│   ├── template/                 # {{ Type(name, default) }} → SQL
+│   │   ├── engine.go
+│   │   └── types.go              # String, Int32, Int64, Float64, DateTime, Array
+│   ├── server/                   # HTTP API
+│   │   ├── server.go             # gin router setup, port config
+│   │   ├── handlers.go           # GET /v0/pipes/{name}[.format]
+│   │   └── middleware.go         # token auth, request logging
+│   ├── executor/                 # Query execution
+│   │   ├── executor.go           # node chain → CTE SQL → result
+│   │   └── clickhouse.go         # clickhouse-go driver wrapper
+│   ├── auth/                     # Token management
+│   │   ├── token.go              # generate/validate tokens
+│   │   └── store.go              # SQLite persistence
+│   ├── scheduler/                # Cron for COPY pipes
+│   │   └── scheduler.go          # robfig/cron wrapper
+│   └── sqlmesh/                  # SQLMesh subprocess integration
+│       ├── runner.go             # exec sqlmesh apply / run
+│       └── model_gen.go          # .pipe → SQLMesh model file
+├── pkg/pipe/types.go             # exported Pipe, Node, PipeType types
+├── pipes/example.pipe            # example pipe file
+├── config.yaml                   # ClickHouse DSN, port, sqlmesh project path
+└── go.mod
+```
+
+---
+
+## Components
+
+### 1. Pipe Parser (`internal/parser`)
+- Parse `.pipe` text files into `Pipe` and `Node` structs
+- Extract: `NODE <name>`, `SQL >` blocks (dedented), `TYPE`, `DATASOURCE`, `TARGET_DATASOURCE`,
+  `COPY_SCHEDULE`, `DESCRIPTION`, `TAGS`
+- Validate: node references exist within the pipe, no circular deps
+- Output: ordered list of nodes + pipe metadata
+
+### 2. SQL Templating Engine (`internal/template`)
+- Parse `{{ String(param, 'default') }}` syntax (no external dep, regex-based)
+- Supported types: `String`, `Int32`, `Int64`, `Float64`, `DateTime`, `Array(String)`
+- Resolve: URL query params override defaults; missing required params → 400 error
+- Support: `defined(param)` for conditional SQL blocks (activated by `%` prefix on SQL block)
+- Output: clean SQL string ready for ClickHouse execution
+
+### 3. HTTP API Server (`internal/server`)
+
+Routes:
+- `GET /v0/pipes/{name}` — JSON (default)
+- `GET /v0/pipes/{name}.json`
+- `GET /v0/pipes/{name}.csv`
+- `GET /v0/pipes/{name}.csvwithnames`
+
+Response envelope:
+```json
+{
+  "data": [{"col": "val"}],
+  "meta": {"columns": [{"name": "col", "type": "String"}]},
+  "stats": {"elapsed": 0.045, "rows_read": 1000}
+}
+```
+
+Error: `{"error": "message"}`
+
+Framework: `gin-gonic/gin`
+
+### 4. Query Executor (`internal/executor`)
+- Node chain resolution: build execution order (last node → deps)
+- CTE strategy: wrap intermediate nodes as `WITH node_name AS (sql) SELECT * FROM node_name`
+- Apply template engine to each node's SQL with request params
+- Execute final CTE chain against ClickHouse via `clickhouse-go/v2`
+- Return: rows, column metadata, stats (elapsed, rows_read)
+
+### 5. Token Manager (`internal/auth`)
+- Generate random 32-byte hex tokens
+- Store in embedded SQLite with scopes: `PIPES:READ`, `PIPES:WRITE`
+- Auth: `Authorization: Bearer <token>` header OR `?token=<token>` query param
+- CLI: `pipe token create --name foo --scope PIPES:READ`
+
+### 6. SQLMesh Integration (`internal/sqlmesh`)
+- For `TYPE MATERIALIZED`: generate a SQLMesh `.sql` model file from pipe node SQL
+- Call `sqlmesh apply --auto-apply` to create materialized view in ClickHouse
+- Call `sqlmesh run` to populate/refresh
+- SQLMesh project path set in `config.yaml`
+
+### 7. Cron Scheduler (`internal/scheduler`)
+- On startup: register all COPY pipes with their `COPY_SCHEDULE` cron expressions
+- Each tick: call SQLMesh subprocess to execute the copy pipe's SQL
+- Uses `robfig/cron/v3` for cron management
+
+---
+
+## Key Go Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| `github.com/ClickHouse/clickhouse-go/v2` | Official ClickHouse Go driver |
+| `github.com/gin-gonic/gin` | HTTP router/server |
+| `github.com/robfig/cron/v3` | Cron scheduler for COPY pipes |
+| `modernc.org/sqlite` | Pure-Go SQLite for token storage |
+| `gopkg.in/yaml.v3` | config.yaml parsing |
+
+---
+
+## CLI Commands
+
+```
+pipe serve                        # Start HTTP server (default :7181)
+pipe push <dir>                   # Load/reload pipes from directory
+pipe run <name> [--param k=v]     # Execute a pipe manually, print results
+pipe token create --name <n>      # Create a new API token
+pipe token list                   # List all tokens
+pipe init                         # Scaffold new project with example pipe + config
+```
+
+---
+
+## MVP Build Order
+
+| Step | Component | Milestone |
+|------|-----------|-----------|
+| 1 | Pipe parser | Parse .pipe files into structs |
+| 2 | SQL template engine | `{{ Type(param, default) }}` substitution |
+| 3 | ClickHouse executor | Run SQL, return rows + metadata |
+| 4 | HTTP server + JSON formatter | `GET /v0/pipes/{name}` returns data |
+| 5 | Token auth middleware | Bearer/query param auth |
+| **6** | **ENDPOINT pipe E2E** | **Milestone 1: full request → ClickHouse → JSON** |
+| 7 | SQLMesh model generator | .pipe SQL → SQLMesh .sql model |
+| 8 | SQLMesh subprocess runner | `sqlmesh apply` + `sqlmesh run` |
+| **9** | **MATERIALIZED pipe E2E** | **Milestone 2: pipe → ClickHouse materialized view** |
+| 10 | Cron scheduler | Register COPY pipes on startup |
+| **11** | **COPY pipe E2E** | **Milestone 3: scheduled copy execution** |
+| 12 | CSV/CSVWithNames formatters | Additional response formats |
+| 13 | CLI polish | `pipe init`, `pipe push`, `pipe run` |
+
+---
+
+## Verification
+
+- **Unit**: Parser golden tests (`.pipe` files → expected struct JSON)
+- **Unit**: Template engine (URL params → rendered SQL strings)
+- **Integration**: ClickHouse in Docker, execute ENDPOINT pipe, assert JSON response shape
+- **Integration**: MATERIALIZED pipe creates ClickHouse MV via SQLMesh subprocess
+- **E2E**: `pipe init && pipe serve` → `curl /v0/pipes/example?token=xxx` → 200 JSON
+- **E2E**: COPY pipe triggers on cron, rows appear in target datasource
+
+---
+
+## Open Questions
+
+- ⚠️ **Go vs Rust**: Plan assumes Go; confirm before starting implementation
