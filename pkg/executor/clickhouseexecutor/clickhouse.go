@@ -1,4 +1,4 @@
-package executor
+package clickhouseexecutor
 
 import (
 	"context"
@@ -8,17 +8,17 @@ import (
 
 	_ "github.com/ClickHouse/clickhouse-go/v2" // register clickhouse driver
 
-	"github.com/gear6io/pragmata/internal/config"
+	"github.com/gear6io/pragmata/pkg/config"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
-// ClickHouseExecutor runs SQL queries against a ClickHouse instance via database/sql.
-type ClickHouseExecutor struct {
+// Executor runs SQL queries against a ClickHouse instance via database/sql.
+type Executor struct {
 	db *sql.DB
 }
 
-// NewClickHouseExecutor opens a connection pool to ClickHouse using the given config.
-func NewClickHouseExecutor(cfg config.ClickHouseConfig) (*ClickHouseExecutor, error) {
+// New opens a connection pool to ClickHouse using the given config.
+func New(cfg config.ClickHouseConfig) (*Executor, error) {
 	dsn := fmt.Sprintf("clickhouse://%s:%s@%s:%d/%s?dial_timeout=5s&read_timeout=60s",
 		cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
 	db, err := sql.Open("clickhouse", dsn)
@@ -28,11 +28,11 @@ func NewClickHouseExecutor(cfg config.ClickHouseConfig) (*ClickHouseExecutor, er
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(time.Hour)
-	return &ClickHouseExecutor{db: db}, nil
+	return &Executor{db: db}, nil
 }
 
 // Query executes sql and returns all rows with metadata and timing stats.
-func (e *ClickHouseExecutor) Query(ctx context.Context, query string) (*pipetypes.ExecuteResult, error) {
+func (e *Executor) Query(ctx context.Context, query string) (*pipetypes.ExecuteResult, error) {
 	start := time.Now()
 
 	rows, err := e.db.QueryContext(ctx, query)
@@ -82,6 +82,6 @@ func (e *ClickHouseExecutor) Query(ctx context.Context, query string) (*pipetype
 	}, nil
 }
 
-func (e *ClickHouseExecutor) Close() error {
+func (e *Executor) Close() error {
 	return e.db.Close()
 }

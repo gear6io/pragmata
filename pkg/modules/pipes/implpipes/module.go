@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gear6io/pragmata/internal/executor"
+	"github.com/gear6io/pragmata/pkg/executor"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/orchestration"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
@@ -12,10 +12,10 @@ import (
 )
 
 type module struct {
-	store    sqlstore.SQLStore
-	orchest  orchestration.Orchestrator
-	exec     executor.Executor
-	sched    pipes.Scheduler
+	store   sqlstore.SQLStore
+	orchest orchestration.Orchestrator
+	exec    executor.Executor
+	sched   pipes.Scheduler
 }
 
 // NewModule constructs a Module with all required dependencies.
@@ -68,7 +68,6 @@ func (m *module) UpdatePipe(ctx context.Context, name string, pipe *pipetypes.Pi
 	if err := m.store.UpdatePipe(ctx, pipe); err != nil {
 		return nil, fmt.Errorf("store: %w", err)
 	}
-	// Re-sync orchestration for MATERIALIZED pipes on update.
 	if pipe.Type == pipetypes.PipeTypeMaterialized {
 		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{Pipe: pipe})
 		if err != nil {

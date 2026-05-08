@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gear6io/pragmata/internal/template"
+	"github.com/gear6io/pragmata/pkg/template"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 

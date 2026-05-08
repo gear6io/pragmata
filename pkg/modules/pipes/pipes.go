@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gear6io/pragmata/pkg/scheduler"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
@@ -29,11 +30,8 @@ type Module interface {
 	ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error)
 }
 
-// Scheduler manages cron schedules for COPY pipes.
-type Scheduler interface {
-	Register(pipe *pipetypes.Pipe) error
-	Unregister(pipeID string)
-}
+// Scheduler is re-exported from pkg/scheduler for use as a dependency type in this module.
+type Scheduler = scheduler.Scheduler
 
 // contextKey is a package-scoped type for context values to avoid collisions.
 type contextKey string

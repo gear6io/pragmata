@@ -1,9 +1,9 @@
-// Package goroutine provides a goroutine-based implementation of orchestration.Orchestrator.
+// Package goroutineorchestration provides a goroutine-based implementation of orchestration.Orchestrator.
 //
 // Long-running operations (SQLMesh apply + backfill) run in background goroutines.
 // Progress is checkpointed in SQLite after every interval so a process restart
 // can resume from where it left off via ResumeInterrupted.
-package goroutine
+package goroutineorchestration
 
 import (
 	"context"
@@ -12,9 +12,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/gear6io/pragmata/internal/sqlmesh"
 	"github.com/gear6io/pragmata/pkg/orchestration"
+	"github.com/gear6io/pragmata/pkg/sqlmesh"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
+	"github.com/gear6io/pragmata/pkg/types/sqlstoretypes"
 )
 
 // Orchestrator implements orchestration.Orchestrator using goroutines and SQLite checkpoints.
@@ -40,7 +41,7 @@ func (o *Orchestrator) ResumeInterrupted(ctx context.Context) error {
 		pipe, err := o.store.GetPipe(ctx, job.PipeID)
 		if err != nil {
 			// Pipe was deleted while job was running; mark it failed.
-			job.Status = sqlstore.BackfillStatusFailed
+			job.Status = sqlstoretypes.BackfillStatusFailed
 			job.LastError = "pipe not found on resume"
 			job.UpdatedAt = time.Now()
 			_ = o.store.UpdateBackfillJob(ctx, job)
@@ -58,11 +59,11 @@ func (o *Orchestrator) ResumeInterrupted(ctx context.Context) error {
 // in a background goroutine. Returns the job ID for status polling.
 func (o *Orchestrator) StartMaterializedPipe(ctx context.Context, params orchestration.MaterializedPipeParams) (orchestration.JobID, error) {
 	jobID := uuid.New().String()
-	job := &sqlstore.BackfillJob{
+	job := &sqlstoretypes.BackfillJob{
 		ID:             jobID,
 		PipeID:         params.Pipe.Name,
 		TotalIntervals: len(params.BackfillIntervals),
-		Status:         sqlstore.BackfillStatusRunning,
+		Status:         sqlstoretypes.BackfillStatusRunning,
 		UpdatedAt:      time.Now(),
 	}
 	if err := o.store.CreateBackfillJob(ctx, job); err != nil {
@@ -101,7 +102,7 @@ func (o *Orchestrator) GetJobStatus(ctx context.Context, jobID orchestration.Job
 }
 
 // runMaterializedPipeline is the full lifecycle: model sync → plan/apply → backfill.
-func (o *Orchestrator) runMaterializedPipeline(job *sqlstore.BackfillJob, pipeID string, intervals []sqlmesh.TimeInterval) {
+func (o *Orchestrator) runMaterializedPipeline(job *sqlstoretypes.BackfillJob, pipeID string, intervals []sqlmesh.TimeInterval) {
 	ctx := context.Background()
 
 	pipe, err := o.store.GetPipe(ctx, pipeID)
@@ -123,7 +124,7 @@ func (o *Orchestrator) runMaterializedPipeline(job *sqlstore.BackfillJob, pipeID
 }
 
 // runBackfill iterates over intervals, calling sqlmesh run for each, with checkpointing.
-func (o *Orchestrator) runBackfill(job *sqlstore.BackfillJob, pipeID string, intervals []sqlmesh.TimeInterval) {
+func (o *Orchestrator) runBackfill(job *sqlstoretypes.BackfillJob, pipeID string, intervals []sqlmesh.TimeInterval) {
 	ctx := context.Background()
 	for _, iv := range intervals {
 		if err := o.runner.Run(ctx, pipeID, &iv); err != nil {
@@ -134,13 +135,13 @@ func (o *Orchestrator) runBackfill(job *sqlstore.BackfillJob, pipeID string, int
 		job.UpdatedAt = time.Now()
 		_ = o.store.UpdateBackfillJob(ctx, job) // best-effort checkpoint
 	}
-	job.Status = sqlstore.BackfillStatusComplete
+	job.Status = sqlstoretypes.BackfillStatusComplete
 	job.UpdatedAt = time.Now()
 	_ = o.store.UpdateBackfillJob(ctx, job)
 }
 
-func (o *Orchestrator) failJob(ctx context.Context, job *sqlstore.BackfillJob, err error) {
-	job.Status = sqlstore.BackfillStatusFailed
+func (o *Orchestrator) failJob(ctx context.Context, job *sqlstoretypes.BackfillJob, err error) {
+	job.Status = sqlstoretypes.BackfillStatusFailed
 	job.LastError = err.Error()
 	job.UpdatedAt = time.Now()
 	_ = o.store.UpdateBackfillJob(ctx, job)

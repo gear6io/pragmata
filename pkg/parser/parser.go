@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/valuer"
 )
 
 // Parse converts raw .pipe file content into a Pipe. name is set as the pipe name.
@@ -133,7 +134,7 @@ func Parse(name, content string) (*pipetypes.Pipe, error) {
 	if len(p.Nodes) == 0 {
 		return nil, fmt.Errorf("pipe %q has no NODE blocks", name)
 	}
-	if p.Type == "" {
+	if p.Type == pipetypes.PipeTypeUndefined {
 		return nil, fmt.Errorf("pipe %q has no TYPE declaration", name)
 	}
 	if p.Type == pipetypes.PipeTypeMaterialized && p.Datasource == "" {
@@ -172,7 +173,7 @@ func applyDirective(p *pipetypes.Pipe, line string) error {
 			}
 		}
 	case strings.HasPrefix(line, "TYPE "):
-		p.Type = pipetypes.PipeType(strings.TrimSpace(strings.TrimPrefix(line, "TYPE ")))
+		p.Type = pipetypes.PipeType{valuer.NewString(strings.TrimSpace(strings.TrimPrefix(line, "TYPE ")))}
 	case strings.HasPrefix(line, "DATASOURCE "):
 		p.Datasource = strings.TrimSpace(strings.TrimPrefix(line, "DATASOURCE "))
 	case strings.HasPrefix(line, "TARGET_DATASOURCE "):

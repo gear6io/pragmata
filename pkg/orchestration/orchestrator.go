@@ -5,15 +5,18 @@ import (
 	"time"
 
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/valuer"
 )
 
 // JobStatus is the lifecycle state of an orchestration job.
-type JobStatus string
+type JobStatus struct {
+	valuer.String
+}
 
-const (
-	JobStatusRunning  JobStatus = "running"
-	JobStatusFailed   JobStatus = "failed"
-	JobStatusComplete JobStatus = "complete"
+var (
+	JobStatusRunning  = JobStatus{valuer.NewString("running")}
+	JobStatusFailed   = JobStatus{valuer.NewString("failed")}
+	JobStatusComplete = JobStatus{valuer.NewString("complete")}
 )
 
 // TimeInterval is a half-open time range [Start, End) used for backfill batching.

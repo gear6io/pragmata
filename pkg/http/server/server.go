@@ -18,15 +18,17 @@ type Server struct {
 	router  *gin.Engine
 	handler pipes.Handler
 	store   sqlstore.SQLStore
+	addr    string
 }
 
 // New builds a gin router with all pipe routes and auth middleware wired up.
-func New(handler pipes.Handler, store sqlstore.SQLStore) *Server {
+// addr is baked in at construction so Start satisfies factory.Service.
+func New(handler pipes.Handler, store sqlstore.SQLStore, addr string) *Server {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
 
-	s := &Server{router: r, handler: handler, store: store}
+	s := &Server{router: r, handler: handler, store: store, addr: addr}
 
 	v0 := r.Group("/v0")
 	v0.Use(s.bearerAuth())
@@ -39,16 +41,17 @@ func New(handler pipes.Handler, store sqlstore.SQLStore) *Server {
 	named := v0.Group("/pipes/:name")
 	named.Use(s.injectPipeName())
 	named.GET("", s.wrap(handler.ExecutePipe))    // GET /v0/pipes/:name   → execute
-	named.GET("/meta", s.wrap(handler.GetPipe))    // GET /v0/pipes/:name/meta → metadata
+	named.GET("/meta", s.wrap(handler.GetPipe))   // GET /v0/pipes/:name/meta → metadata
 	named.PUT("", s.wrap(handler.UpdatePipe))
 	named.DELETE("", s.wrap(handler.DeletePipe))
 
 	return s
 }
 
-// Start listens on addr (e.g. ":7181") until ctx is cancelled.
-func (s *Server) Start(ctx context.Context, addr string) error {
-	srv := &http.Server{Addr: addr, Handler: s.router}
+// Start listens on the configured addr until ctx is cancelled.
+// Implements factory.Service.
+func (s *Server) Start(ctx context.Context) error {
+	srv := &http.Server{Addr: s.addr, Handler: s.router}
 	errCh := make(chan error, 1)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -61,6 +64,22 @@ func (s *Server) Start(ctx context.Context, addr string) error {
 	case err := <-errCh:
 		return err
 	}
+}
+
+// Stop is a no-op: Start already handles graceful shutdown via ctx cancellation.
+// Implements factory.Service.
+func (s *Server) Stop(_ context.Context) error {
+	return nil
+}
+
+// Handler returns the underlying http.Handler for testing.
+func (s *Server) Handler() http.Handler {
+	return s.router
+}
+
+// Addr formats host:port from config values.
+func Addr(host string, port int) string {
+	return fmt.Sprintf("%s:%d", host, port)
 }
 
 // wrap converts a standard http.HandlerFunc to a gin.HandlerFunc.
@@ -104,14 +123,4 @@ func tokenFromRequest(r *http.Request) string {
 	}
 	// ?token=<token>
 	return r.URL.Query().Get("token")
-}
-
-// Handler returns the underlying http.Handler for testing.
-func (s *Server) Handler() http.Handler {
-	return s.router
-}
-
-// Addr formats host:port from config values.
-func Addr(host string, port int) string {
-	return fmt.Sprintf("%s:%d", host, port)
 }

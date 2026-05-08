@@ -10,14 +10,16 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/gear6io/pragmata/internal/config"
-	"github.com/gear6io/pragmata/internal/executor"
-	gorchest "github.com/gear6io/pragmata/internal/orchestration/goroutine"
-	"github.com/gear6io/pragmata/internal/scheduler"
-	"github.com/gear6io/pragmata/internal/server"
-	"github.com/gear6io/pragmata/internal/sqlmesh"
-	internalsqlstore "github.com/gear6io/pragmata/internal/sqlstore"
+	"github.com/gear6io/pragmata/pkg/config"
+	"github.com/gear6io/pragmata/pkg/executor/clickhouseexecutor"
+	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes/implpipes"
+	"github.com/gear6io/pragmata/pkg/orchestration/goroutineorchestration"
+	"github.com/gear6io/pragmata/pkg/scheduler/cronscheduler"
+	"github.com/gear6io/pragmata/pkg/sqlmesh"
+	"github.com/gear6io/pragmata/pkg/sqlmigration"
+	"github.com/gear6io/pragmata/pkg/sqlmigrator"
+	"github.com/gear6io/pragmata/pkg/sqlstore/sqlitesqlstore"
 )
 
 var configPath string
@@ -51,13 +53,24 @@ func serve(ctx context.Context) error {
 	}
 
 	// Storage
-	store, err := internalsqlstore.New(cfg.Database.Path)
+	store, err := sqlitesqlstore.New(cfg.Database.Path)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
 
+	// Migrations
+	migrations, err := sqlmigration.New([]sqlmigration.SQLMigration{
+		sqlmigration.NewInitialSchema(),
+	})
+	if err != nil {
+		return fmt.Errorf("build migrations: %w", err)
+	}
+	if err := sqlmigrator.New(store.BunDB(), migrations).Migrate(ctx); err != nil {
+		return fmt.Errorf("migrate: %w", err)
+	}
+
 	// ClickHouse executor
-	exec, err := executor.NewClickHouseExecutor(cfg.ClickHouse)
+	exec, err := clickhouseexecutor.New(cfg.ClickHouse)
 	if err != nil {
 		return fmt.Errorf("clickhouse: %w", err)
 	}
@@ -67,34 +80,30 @@ func serve(ctx context.Context) error {
 	runner := sqlmesh.New(cfg.SQLMesh.ProjectDir, cfg.SQLMesh.BinaryPath)
 
 	// Orchestrator
-	orchest := gorchest.New(store, runner)
+	orchest := goroutineorchestration.New(store, runner)
 	if err := orchest.ResumeInterrupted(ctx); err != nil {
 		log.Printf("warn: resume interrupted jobs: %v", err)
 	}
 
-	// Scheduler
-	allPipes, err := store.ListPipes(ctx)
-	if err != nil {
-		return fmt.Errorf("list pipes: %w", err)
-	}
-	sched := scheduler.New(orchest)
-	if err := sched.Start(allPipes); err != nil {
+	// Scheduler — loads its own pipes from the store on Start
+	sched := cronscheduler.New(orchest, store)
+	if err := sched.Start(ctx); err != nil {
 		return fmt.Errorf("start scheduler: %w", err)
 	}
-	defer sched.Stop()
+	defer func() { _ = sched.Stop(context.Background()) }()
 
 	// Module + handler
 	mod := implpipes.NewModule(store, orchest, exec, sched)
 	h := implpipes.NewHandler(mod)
 
 	// HTTP server
-	srv := server.New(h, store)
-	addr := server.Addr(cfg.Server.Host, cfg.Server.Port)
+	addr := httpserver.Addr(cfg.Server.Host, cfg.Server.Port)
+	srv := httpserver.New(h, store, addr)
 	log.Printf("pragmata listening on %s", addr)
 
 	// Graceful shutdown on SIGINT/SIGTERM
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	return srv.Start(ctx, addr)
+	return srv.Start(ctx)
 }
