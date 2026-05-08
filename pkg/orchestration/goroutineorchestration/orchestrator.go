@@ -15,6 +15,7 @@ import (
 	"github.com/gear6io/pragmata/pkg/orchestration"
 	"github.com/gear6io/pragmata/pkg/sqlmesh"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
+	"github.com/gear6io/pragmata/pkg/types/orchestratortypes"
 	"github.com/gear6io/pragmata/pkg/types/sqlstoretypes"
 )
 
@@ -71,9 +72,9 @@ func (o *Orchestrator) StartMaterializedPipe(ctx context.Context, params orchest
 	}
 
 	// Convert orchestration.TimeInterval to sqlmesh.TimeInterval (same fields).
-	intervals := make([]sqlmesh.TimeInterval, len(params.BackfillIntervals))
+	intervals := make([]orchestratortypes.TimeInterval, len(params.BackfillIntervals))
 	for i, iv := range params.BackfillIntervals {
-		intervals[i] = sqlmesh.TimeInterval{Start: iv.Start, End: iv.End}
+		intervals[i] = orchestratortypes.TimeInterval{Start: iv.Start, End: iv.End}
 	}
 
 	go o.runMaterializedPipeline(job, params.Pipe.Name, intervals)
@@ -102,7 +103,7 @@ func (o *Orchestrator) GetJobStatus(ctx context.Context, jobID orchestration.Job
 }
 
 // runMaterializedPipeline is the full lifecycle: model sync → plan/apply → backfill.
-func (o *Orchestrator) runMaterializedPipeline(job *sqlstoretypes.BackfillJob, pipeID string, intervals []sqlmesh.TimeInterval) {
+func (o *Orchestrator) runMaterializedPipeline(job *sqlstoretypes.BackfillJob, pipeID string, intervals []orchestratortypes.TimeInterval) {
 	ctx := context.Background()
 
 	pipe, err := o.store.GetPipe(ctx, pipeID)
@@ -124,7 +125,7 @@ func (o *Orchestrator) runMaterializedPipeline(job *sqlstoretypes.BackfillJob, p
 }
 
 // runBackfill iterates over intervals, calling sqlmesh run for each, with checkpointing.
-func (o *Orchestrator) runBackfill(job *sqlstoretypes.BackfillJob, pipeID string, intervals []sqlmesh.TimeInterval) {
+func (o *Orchestrator) runBackfill(job *sqlstoretypes.BackfillJob, pipeID string, intervals []orchestratortypes.TimeInterval) {
 	ctx := context.Background()
 	for _, iv := range intervals {
 		if err := o.runner.Run(ctx, pipeID, &iv); err != nil {

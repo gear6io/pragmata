@@ -6,16 +6,10 @@ package sqlmesh
 
 import (
 	"context"
-	"time"
 
+	"github.com/gear6io/pragmata/pkg/types/orchestratortypes"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
-
-// TimeInterval is a half-open time range used for incremental backfill runs.
-type TimeInterval struct {
-	Start time.Time
-	End   time.Time
-}
 
 // Runner wraps sqlmesh CLI invocations.
 type Runner struct {
@@ -52,13 +46,13 @@ func (r *Runner) PlanApply(_ context.Context) error {
 // Run executes `sqlmesh run [--model name] [--start S --end E]`.
 // interval may be nil for a full run (used by COPY pipes).
 // TODO Phase B: exec.CommandContext
-func (r *Runner) Run(_ context.Context, _ string, _ *TimeInterval) error {
+func (r *Runner) Run(_ context.Context, _ string, _ *orchestratortypes.TimeInterval) error {
 	return nil
 }
 
 // BackfillIntervals generates the list of daily intervals from the pipe's
 // configured start date to today. Used by the orchestrator on resume.
 // TODO Phase B: read start date from config.yaml or pipe metadata.
-func (r *Runner) BackfillIntervals(_ *pipetypes.Pipe) []TimeInterval {
+func (r *Runner) BackfillIntervals(_ *pipetypes.Pipe) []orchestratortypes.TimeInterval {
 	return nil
 }

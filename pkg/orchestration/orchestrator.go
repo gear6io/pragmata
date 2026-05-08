@@ -2,8 +2,8 @@ package orchestration
 
 import (
 	"context"
-	"time"
 
+	"github.com/gear6io/pragmata/pkg/types/orchestratortypes"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
 )
@@ -19,16 +19,10 @@ var (
 	JobStatusComplete = JobStatus{valuer.NewString("complete")}
 )
 
-// TimeInterval is a half-open time range [Start, End) used for backfill batching.
-type TimeInterval struct {
-	Start time.Time
-	End   time.Time
-}
-
 // MaterializedPipeParams carries everything needed to create a materialized pipe.
 type MaterializedPipeParams struct {
 	Pipe              *pipetypes.Pipe
-	BackfillIntervals []TimeInterval
+	BackfillIntervals []orchestratortypes.TimeInterval
 }
 
 // JobID is an opaque string identifying an orchestration job.
