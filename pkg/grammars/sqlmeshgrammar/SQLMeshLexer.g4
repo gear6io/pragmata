@@ -120,9 +120,9 @@ STRING_LITERAL
 IDENTIFIER : [a-zA-Z_] [a-zA-Z_0-9]* ;
 
 // Sentinel: declares the SQL_LINE token type so SQL_BODY_MODE can re-type
-// SQL_NL as SQL_LINE.  The null byte never appears in real input, so this
-// rule is never matched in DEFAULT_MODE.
-SQL_LINE : '\x00' ;
+// SQL_NL as SQL_LINE.  WS (above) skips spaces, so this rule is never matched
+// in DEFAULT_MODE — it only exists to reserve the token type integer.
+SQL_LINE : ' ' ;
 
 // ── SQL_BODY_MODE ──────────────────────────────────────────────────────────────
 //
