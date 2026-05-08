@@ -12,7 +12,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-GRAMMAR_DIR="$REPO_ROOT/pkg/parser/pipeparser/grammar"
+GRAMMAR_DIR="$REPO_ROOT/pkg/grammars/pipesgrammar"
 
 echo "Generating PipeLang Go parser in $GRAMMAR_DIR ..."
 
