@@ -1,0 +1,83 @@
+// Package scheduler manages cron-driven execution of COPY pipes using robfig/cron.
+package scheduler
+
+import (
+	"context"
+	"log"
+	"sync"
+
+	"github.com/robfig/cron/v3"
+
+	"github.com/gear6io/pragmata/pkg/orchestration"
+	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+)
+
+// Scheduler registers and fires COPY pipe cron jobs.
+type Scheduler struct {
+	cron    *cron.Cron
+	orchest orchestration.Orchestrator
+	entries map[string]cron.EntryID
+	mu      sync.Mutex
+}
+
+// New creates a Scheduler backed by the given orchestrator.
+func New(orchest orchestration.Orchestrator) *Scheduler {
+	return &Scheduler{
+		cron:    cron.New(),
+		orchest: orchest,
+		entries: make(map[string]cron.EntryID),
+	}
+}
+
+// Start registers all provided COPY pipes and starts the scheduler.
+func (s *Scheduler) Start(pipes []*pipetypes.Pipe) error {
+	for _, p := range pipes {
+		if p.Type == pipetypes.PipeTypeCopy && p.CopySchedule != "" {
+			if err := s.Register(p); err != nil {
+				return err
+			}
+		}
+	}
+	s.cron.Start()
+	return nil
+}
+
+// Register adds a COPY pipe to the cron scheduler.
+// If the pipe is already registered, it is replaced.
+func (s *Scheduler) Register(pipe *pipetypes.Pipe) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Remove existing entry for this pipe if present.
+	if entryID, ok := s.entries[pipe.Name]; ok {
+		s.cron.Remove(entryID)
+	}
+
+	pipeName := pipe.Name
+	orchest := s.orchest
+	entryID, err := s.cron.AddFunc(pipe.CopySchedule, func() {
+		if err := orchest.RunCopyPipe(context.Background(), pipeName); err != nil {
+			log.Printf("copy pipe %q run failed: %v", pipeName, err)
+		}
+	})
+	if err != nil {
+		return err
+	}
+	s.entries[pipe.Name] = entryID
+	return nil
+}
+
+// Unregister removes a COPY pipe from the cron scheduler.
+func (s *Scheduler) Unregister(pipeID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if entryID, ok := s.entries[pipeID]; ok {
+		s.cron.Remove(entryID)
+		delete(s.entries, pipeID)
+	}
+}
+
+// Stop gracefully halts the scheduler, waiting for any running jobs to finish.
+func (s *Scheduler) Stop() {
+	s.cron.Stop()
+}
