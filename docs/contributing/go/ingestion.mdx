@@ -1,0 +1,47 @@
+# Ingestion Format
+
+The ingestion model uses two tiers: **static columns** you define explicitly,
+and a **dynamic catch-all** (`attributes`) for everything else.
+
+## Static Columns (Order By)
+
+Any column you define at the top level becomes part of the table's `ORDER BY` key.
+These must be statically typed. Choose columns you will filter or sort on frequently —
+they determine query performance.
+
+`observed_timestamp` is a system column always present in every table. It stores
+epoch time, is set by the framework (not the user), and is always included in the `ORDER BY`.
+
+**Example schema:**
+
+```
+observed_timestamp  Int64   -- set by framework, always present
+id                  String
+name                String
+email               String
+
+attributes          JSON(max_dynamic_paths=0)
+```
+
+## Dynamic Columns (attributes)
+
+Any column in an ingested row that is **not** defined as a static column is
+automatically stored inside `attributes` by the framework. You never need to
+declare these upfront, and they do not need to be statically typed.
+
+`max_dynamic_paths=0` tells ClickHouse not to create internal sub-columns for
+each JSON key. Without this, ClickHouse materializes every key as a column
+fragment — even ones nobody queries — bloating the underlying table. Since
+analysts rarely use every ingested key, this keeps storage lean.
+
+The catch-all column is always named `attributes` and cannot be renamed.
+
+## Summary
+
+| | Static Columns | `attributes` |
+|---|---|---|
+| Typed | Yes | No |
+| Part of ORDER BY | Yes | No |
+| Declared upfront | Yes | No |
+| Set by framework | `observed_timestamp` only | — |
+| Extra ingested columns | — | Auto-routed here |

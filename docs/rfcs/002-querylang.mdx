@@ -1,0 +1,585 @@
+# RFC 002: QueryLang — Data-Aware Filter DSL and Pipe Transforms
+
+**Status**: Draft  
+**Depends on**: RFC 001 (Schema Registry)  
+**Created**: 2026-05-09
+
+## Summary
+
+Two interlocking grammar extensions that make the platform data-aware:
+
+1. **FilterLang** — a standalone filter expression DSL (`KEY OP VALUE`) that compiles to
+   ClickHouse WHERE clause SQL using schema registry type information. Users write
+   `status = 200` and the system generates the correct SQL regardless of whether `status`
+   is a static Int64 column, an attribute stored as String, or a field with a conflicted
+   type history.
+
+2. **PipeLang v2** — new structured node directives (`FROM`, `FILTER`, `DERIVE`,
+   `GROUP_BY`, `AGGREGATE`, `JOIN_ONE`, `JOIN_MANY`, `ORDER_BY`, `SELECT`, `LIMIT`,
+   `OFFSET`) that extend the existing pipe format. Nodes track schema through the
+   transformation graph; type mismatches on JOIN keys produce compile-time warnings.
+
+Both are additive — existing `SQL >` nodes continue working unchanged.
+
+## Motivation
+
+### The Pain: Complex SQL for Simple Intent
+
+This is what a data analyst writes today to query across a table where types drifted:
+
+```sql
+SELECT user_id, toStartOfDay(ts) AS day, sum(amount) AS revenue
+FROM orders
+WHERE
+    (CAST(status AS String) = '200' OR status = 200)
+    AND JSONExtractString(attributes, 'env') = 'prod'
+    AND (attributes_string['environment'] = 'production' OR
+         attributes_string['environment'] = 'prod')
+GROUP BY user_id, day
+```
+
+The analyst knows what they want: rows where the request succeeded and came from production.
+The SQL is a distraction — type casting, JSON path extraction, alias disambiguation.
+
+### The Goal: Simplicity as a First Principle (Inspired by SigNoz)
+
+SigNoz (observability platform on ClickHouse) lets users write `service.name = 'api'`
+and handles type routing automatically because they know their schema. We extend that
+principle to an arbitrary analytical platform with a dynamic schema: the schema registry
+(RFC 001) gives us the same knowledge, applied generically.
+
+The target: `status = 200 AND env = prod` compiles correctly whether `status` is a static
+Int64, a String attribute, a Dynamic field with type history, or all of the above across
+time.
+
+### Prior Art
+
+| System | Query abstraction | Schema-aware? | Compiles to |
+|--------|------------------|---------------|-------------|
+| PRQL | Pipelined transforms (from/filter/group/aggregate) | At compile time only | SQL |
+| Malloy | Semantic model + views (measures/dimensions) | Yes, via source definitions | SQL |
+| SigNoz | `KEY OP VALUE` filter DSL | Yes, fixed schema | ClickHouse SQL |
+| dbt | Jinja-templated SQL | No — manual COALESCE/CAST | SQL |
+| SQLMesh | SQL + Python models | No — explicit CAST encouraged | SQL |
+
+Our design takes PRQL's pipelined structure, Malloy's schema propagation through transforms,
+and SigNoz's type-transparent filter syntax — all on top of a dynamic schema (the registry).
+
+---
+
+## Layer 1: FilterLang Grammar
+
+### Design Principles
+
+- **Type-transparent**: `status = 200` works whether status is String, Int64, or Dynamic
+- **Bare words**: `env = prod` is valid (system infers String from context)
+- **Explicit cast**: `session_id::Int64 = 200` overrides registry resolution
+- **Jinja-first**: Jinja templates render before FilterLang parsing; the grammar never sees `{{ }}`
+- **SQL-embeddable**: output is a valid ClickHouse WHERE clause fragment
+
+### ANTLR4 Grammar: `pkg/grammars/filtergrammar/FilterLang.g4`
+
+```antlr4
+// FilterLang.g4 — schema-aware filter expression DSL
+// Operator precedence (lowest to highest): OR < AND < NOT < atom
+grammar FilterLang;
+
+filterExpr : filter EOF ;
+
+filter
+    : filter OR filter       # OrExpr
+    | filter AND filter      # AndExpr
+    | NOT filter             # NotExpr
+    | '(' filter ')'         # GroupExpr
+    | condition              # AtomExpr
+    ;
+
+condition
+    : path CAST_OP typeName OP scalar     # CastCompare
+    | path OP scalar                      # Compare
+    | path IN '(' scalarList ')'          # InList
+    | path NOT IN '(' scalarList ')'      # NotInList
+    | path HAS scalar                    # HasElement
+    | path HAS_ANY '(' scalarList ')'    # HasAny
+    | path HAS_ALL '(' scalarList ')'    # HasAll
+    | path CONTAINS scalar               # Contains
+    | path NOT CONTAINS scalar           # NotContains
+    | path LIKE scalar                   # Like
+    | path ILIKE scalar                  # ILike
+    | path NOT LIKE scalar               # NotLike
+    | path MATCHES scalar                # Matches
+    | path EXISTS                        # ExistsCheck
+    | path NOT EXISTS                    # NotExistsCheck
+    | path IS NULL                       # IsNull
+    | path IS NOT NULL                   # IsNotNull
+    ;
+
+// a, a.b, a.b.c — dot-path for nested attribute access
+path        : IDENT (DOT IDENT)* # FieldPath ;
+typeName    : IDENT               # TypeName  ;   // e.g. Int64, String, Float64
+scalarList  : scalar (COMMA scalar)* ;
+
+scalar
+    : STRING       # ScalarString
+    | INTEGER      # ScalarInt
+    | FLOAT        # ScalarFloat
+    | BOOL         # ScalarBool
+    | NULL         # ScalarNull
+    | UNQUOTED_WORD # ScalarBareWord   // env = prod (no quotes)
+    ;
+
+OP       : '=' | '!=' | '<' | '>' | '<=' | '>=' ;
+CAST_OP  : '::' ;
+DOT      : '.' ;
+COMMA    : ',' ;
+
+AND      : A N D ; OR : O R ; NOT : N O T ;
+IN       : I N ; HAS : H A S ;
+HAS_ANY  : H A S '_' A N Y ;
+HAS_ALL  : H A S '_' A L L ;
+CONTAINS : C O N T A I N S ;
+LIKE     : L I K E ; ILIKE : I L I K E ;
+MATCHES  : M A T C H E S ;
+EXISTS   : E X I S T S ;
+IS       : I S ; NULL : N U L L ;
+BOOL     : T R U E | F A L S E ;
+
+INTEGER      : '-'? DIGIT+ ;
+FLOAT        : '-'? DIGIT* '.' DIGIT+ ;
+STRING       : '\'' (~['\\\r\n] | '\\' .)* '\''
+             | '"' (~["\\\r\n] | '\\' .)* '"' ;
+IDENT        : [a-zA-Z_][a-zA-Z0-9_]* ;
+UNQUOTED_WORD: [a-zA-Z0-9_\-]+ ;   // lower priority than all keywords
+WS           : [ \t\r\n]+ -> skip ;
+
+fragment A:[Aa]; fragment N:[Nn]; fragment D:[Dd]; fragment O:[Oo];
+fragment R:[Rr]; fragment I:[Ii]; fragment S:[Ss]; fragment H:[Hh];
+fragment E:[Ee]; fragment X:[Xx]; fragment T:[Tt]; fragment L:[Ll];
+fragment K:[Kk]; fragment C:[Cc]; fragment U:[Uu]; fragment M:[Mm];
+fragment G:[Gg]; fragment F:[Ff]; fragment Y:[Yy]; fragment B:[Bb];
+fragment W:[Ww]; fragment P:[Pp]; fragment DIGIT:[0-9];
+```
+
+### Path Resolution
+
+The compiler consults the schema registry to resolve each `path` in a condition:
+
+```
+Resolve("status")
+  1. Is "status" a static column?           → NO
+  2. Is "status" in the attribute registry? → YES: {String:3000, Int64:5000}, DYNAMIC
+  → Location: ATTRIBUTE, Type: DYNAMIC
+
+Resolve("amount")
+  1. Is "amount" a static column?           → YES: Float64
+  → Location: STATIC, Type: FLOAT64
+
+Resolve("env")
+  1. Static column?                         → NO
+  2. Attribute registry?                    → YES: {String:12000}, confidence 99%
+  → Location: ATTRIBUTE, Type: STRING
+
+Resolve("attributes.env")
+  1. Multi-segment path, first = "attributes"
+  2. Lookup "env" in attribute registry     → String, confidence 99%
+  → Location: ATTRIBUTE, Type: STRING  (explicit path prefix, same result)
+
+Resolve("unknown_field")
+  1. Static?  NO
+  2. Registry? NO
+  → Location: UNKNOWN
+  → Warning: "Field 'unknown_field' not in schema. Filter may return no results."
+  → CompileAs: attributes.unknown_field::String (best-effort)
+```
+
+### Type Coercion Matrix
+
+```
+STATIC String,     user: status = 200        → status = '200'
+STATIC String,     user: status = 'ok'       → status = 'ok'
+STATIC Int64,      user: amount = '100'      → amount = 100
+STATIC Int64,      user: amount = 100        → amount = 100
+STATIC Float64,    user: score = 99          → score = toFloat64(99)
+STATIC Bool,       user: active = 1          → active = true
+STATIC Bool,       user: active = true       → active = true
+STATIC DateTime64, user: ts = '2024-01-01'  → ts = parseDateTimeBestEffort('2024-01-01')
+STATIC DateTime64, user: ts = 1704067200    → ts = fromUnixTimestamp64(1704067200)
+
+ATTR String (99%), user: env = prod         → attributes.env::String = 'prod'
+ATTR Int64 (95%),  user: status = 200       → attributes.status::Int64 = 200
+ATTR Dynamic,      user: x = 200            → (attributes.x::String = '200'
+                                                OR attributes.x::Int64 = 200)
+ATTR Dynamic,      user: x::Int64 = 200     → attributes.x::Int64 = 200
+UNKNOWN field,     user: foo = 'bar'        → attributes.foo::String = 'bar' + WARNING
+```
+
+### Operator → ClickHouse SQL
+
+```
+STATIC String "col":
+  col = 'v'           → col = 'v'
+  col != 'v'          → col != 'v'
+  col LIKE 'v%'       → col LIKE 'v%'
+  col ILIKE 'V'       → lower(col) = lower('V')
+  col CONTAINS 'sub'  → position(col, 'sub') > 0
+  col NOT CONTAINS    → position(col, 'sub') = 0
+  col MATCHES 'p.*'   → match(col, 'p.*')
+  col IN ('a','b')    → col IN ('a','b')
+  col EXISTS          → isNotNull(col) AND col != ''
+  col IS NULL         → isNull(col)
+
+ATTRIBUTE String "env" (ClickHouse 25.x new JSON type):
+  env = 'prod'        → attributes.env::String = 'prod'
+  env CONTAINS 'pr'   → position(attributes.env::String, 'pr') > 0
+  env EXISTS          → JSON_EXISTS(attributes, '$.env')
+  env IS NULL         → attributes.env IS NULL
+
+ATTRIBUTE DYNAMIC "status" (type conflict):
+  status = 200        → (attributes.status::String = '200'
+                         OR attributes.status::Int64 = 200)
+  status::Int64 = 200 → attributes.status::Int64 = 200
+
+ARRAY ATTRIBUTE "tags":
+  tags HAS 'prod'           → has(attributes.tags::Array(String), 'prod')
+  tags HAS_ANY ('a','b')    → hasAny(attributes.tags::Array(String), ['a','b'])
+  tags HAS_ALL ('a','b')    → hasAll(attributes.tags::Array(String), ['a','b'])
+
+STATIC Array "roles":
+  roles HAS 'admin'         → has(roles, 'admin')
+
+COLUMN ALIAS (if 'country' aliases ['geo_country_code']):
+  country = 'US'     → (country = 'US'
+                        OR attributes.geo_country_code::String = 'US')
+```
+
+### FilterLang Integration Points
+
+| Where | How |
+|-------|-----|
+| `FILTER >` in a pipe node | schema from `DATASOURCE` declaration + node's input schema |
+| `?filter=` URL param on auto-REST endpoint | schema from DataSource registry |
+| `?__filter=` URL param on ENDPOINT pipe | schema from the pipe's `DATASOURCE` |
+| CLI `lint` | validates filter against registry offline |
+
+---
+
+## Layer 2: PipeLang v2 — Data-Aware Transformation Nodes
+
+### New Node Types
+
+A pipe NODE body can now be either a `SQL >` block (unchanged) or a **query block**
+using structured directives. Both compile to CTEs.
+
+#### Complete PipeLang v2 Example
+
+```
+DESCRIPTION Daily revenue by country
+TAGS revenue, sales
+TYPE ENDPOINT
+DATASOURCE orders
+
+NODE source
+FROM orders
+
+NODE filtered
+FROM source
+FILTER >
+  observed_timestamp >= {{ start | default('2024-01-01') }}
+  AND country IN ('US', 'UK', 'DE')
+  AND status = 200
+  AND amount > {{ min_amount | default(0) | float }}
+
+NODE enriched
+FROM filtered
+DERIVE >
+  toStartOfDay(observed_timestamp) AS day
+  CASE WHEN amount > 1000 THEN 'high' ELSE 'normal' END AS tier
+  attributes.env::String AS env
+
+NODE aggregated
+FROM enriched
+GROUP_BY >
+  day
+  country
+  tier
+AGGREGATE >
+  sum(amount) AS revenue
+  count() AS order_count
+  uniqExact(user_id) AS unique_users
+  quantile(0.95)(attributes.response_time_ms::Float64) AS p95_latency
+
+NODE joined
+FROM aggregated
+JOIN_ONE dim_country ON country = dim_country.code
+
+NODE result
+FROM joined
+FILTER > revenue > 1000
+ORDER_BY > -day, -revenue
+LIMIT {{ limit | default(100) | int }}
+OFFSET {{ offset | default(0) | int }}
+SELECT >
+  day
+  country
+  revenue
+  order_count
+  p95_latency
+```
+
+#### Compiled CTE SQL
+
+```sql
+WITH
+  source AS (
+    SELECT * FROM orders
+  ),
+  filtered AS (
+    SELECT * FROM source
+    WHERE observed_timestamp >= parseDateTimeBestEffort('2024-01-01')
+      AND country IN ('US', 'UK', 'DE')
+      AND attributes.status::Int64 = 200
+      AND amount > 0.0
+  ),
+  enriched AS (
+    SELECT *,
+      toStartOfDay(observed_timestamp) AS day,
+      CASE WHEN amount > 1000 THEN 'high' ELSE 'normal' END AS tier,
+      attributes.env::String AS env
+    FROM filtered
+  ),
+  aggregated AS (
+    SELECT
+      day, country, tier,
+      sum(amount)                                AS revenue,
+      count()                                    AS order_count,
+      uniqExact(user_id)                         AS unique_users,
+      quantile(0.95)(attributes.response_time_ms::Float64) AS p95_latency
+    FROM enriched
+    GROUP BY day, country, tier
+  ),
+  joined AS (
+    SELECT aggregated.*, dim_country.region
+    FROM aggregated
+    LEFT JOIN dim_country ON aggregated.country = dim_country.code
+  ),
+  result AS (
+    SELECT day, country, revenue, order_count, p95_latency
+    FROM joined
+    WHERE revenue > 1000
+    ORDER BY day DESC, revenue DESC
+    LIMIT 100
+    OFFSET 0
+  )
+SELECT * FROM result
+```
+
+### Grammar Extension to PipeLang.g4
+
+```antlr4
+// Extensions to existing PipeLang.g4
+
+KW_FROM           : F R O M ;
+KW_FILTER_ARROW   : F I L T E R WS '>' ;
+KW_DERIVE_ARROW   : D E R I V E WS '>' ;
+KW_GROUP_BY_ARROW : G R O U P '_' B Y WS '>' ;
+KW_AGGREGATE_ARROW: A G G R E G A T E WS '>' ;
+KW_SELECT_ARROW   : S E L E C T WS '>' ;
+KW_ORDER_BY_ARROW : O R D E R '_' B Y WS '>' ;
+KW_JOIN_ONE       : J O I N '_' O N E ;
+KW_JOIN_MANY      : J O I N '_' M A N Y ;
+KW_LIMIT          : L I M I T ;
+KW_OFFSET         : O F F S E T ;
+
+// In DEFAULT_MODE, new node body alternative:
+nodeBody
+    : sqlBlock         // existing
+    | queryBlock       // new
+    ;
+
+queryBlock
+    : fromClause
+      (filterClause | deriveClause | joinClause
+      | groupByClause | aggregateClause
+      | selectClause | orderByClause
+      | limitClause | offsetClause)*
+    ;
+
+fromClause      : KW_FROM REST_OF_LINE ;       // table name or previous node name
+filterClause    : KW_FILTER_ARROW filterLine+ ; // each filterLine is a FilterLang fragment
+filterLine      : INDENTED_CONTENT NEWLINE ;
+deriveClause    : KW_DERIVE_ARROW opaqueLine+ ; // "expr AS alias" per line
+groupByClause   : KW_GROUP_BY_ARROW opaqueLine+ ;
+aggregateClause : KW_AGGREGATE_ARROW opaqueLine+ ;
+selectClause    : KW_SELECT_ARROW opaqueLine+ ;
+orderByClause   : KW_ORDER_BY_ARROW opaqueLine+ ; // '-field' means DESC
+limitClause     : KW_LIMIT REST_OF_LINE ;
+offsetClause    : KW_OFFSET REST_OF_LINE ;
+joinClause      : (KW_JOIN_ONE | KW_JOIN_MANY) REST_OF_LINE ; // "table ON cond"
+opaqueLine      : INDENTED_CONTENT NEWLINE ;
+```
+
+`FILTER` lines are individually parsed by the FilterLang parser after Jinja rendering.
+`DERIVE`, `GROUP_BY`, `AGGREGATE`, `ORDER_BY`, `SELECT` lines are opaque text — the
+compiler extracts `expr AS alias` pairs via regex to build the output schema, but does
+not parse the expressions themselves.
+
+### Schema Propagation
+
+The compiler tracks output schema at each node boundary:
+
+```
+source: full DataSource schema (static cols + attribute registry)
+
+filtered: same schema as source  (FILTER never changes schema)
+
+enriched: source schema plus:
+  day            Date    (toStartOfDay return type, known function)
+  tier           String  (CASE WHEN → String branches)
+  env            String  (explicit ::String cast, promoted from attribute)
+
+aggregated: NEW schema — only GROUP_BY cols + AGGREGATE cols:
+  day            Date       (carried from GROUP_BY)
+  country        String     (carried from GROUP_BY)
+  tier           String     (carried from GROUP_BY)
+  revenue        Float64    (sum(amount), Float64 input)
+  order_count    Int64      (count() → always Int64)
+  unique_users   Int64      (uniqExact → always Int64)
+  p95_latency    Float64    (quantile → Float64)
+  [attributes registry is gone — cannot reference 'status' or 'env' after aggregation]
+
+joined: aggregated schema + dim_country columns
+
+result: projected subset (SELECT > clause)
+```
+
+**Schema reset after AGGREGATE** is enforced: referencing `observed_timestamp` in a
+downstream FILTER after an AGGREGATE node is a compile-time error — the compiler knows
+that column is no longer in scope.
+
+### Type Inference for DERIVE / GROUP_BY / AGGREGATE
+
+The compiler infers output column types without a full ClickHouse expression parser:
+
+| Expression pattern | Inferred output type |
+|-------------------|----------------------|
+| `count()`, `count(col)` | Int64 |
+| `sum(col)` | same as col |
+| `avg(col)` | Float64 |
+| `min(col)`, `max(col)` | same as col |
+| `uniq*(col)`, `uniqExact(col)` | Int64 |
+| `quantile*(col)`, `median(col)` | Float64 |
+| `any(col)` | same as col |
+| `groupArray(col)` | Array(type of col) |
+| `topK(n)(col)` | Array(type of col) |
+| `toStartOfDay(col)` | Date |
+| `toStartOfHour(col)` | DateTime |
+| `toYYYYMM(col)` | Int32 |
+| `upper(col)`, `lower(col)`, `toString(col)` | String |
+| `toInt64(col)`, `toInt32(col)` | Int64 |
+| `toFloat64(col)` | Float64 |
+| `CASE WHEN ... THEN 'str'` | String |
+| `CASE WHEN ... THEN 42` | Int64 |
+| bare column reference | lookup in input schema |
+| arithmetic `+`, `-`, `*`, `/` | type promotion rules |
+| everything else | Dynamic |
+
+### JOIN Type Safety
+
+```
+NODE joined
+FROM aggregated
+JOIN_ONE dim_country ON country = dim_country.code
+
+Compiler:
+  aggregated.country     → String (from GROUP_BY, static column origin)
+  dim_country.code       → String (from dim_country DataSource schema)
+  → Types match → safe JOIN, no warning
+
+Different case:
+JOIN_ONE sessions ON user_id = sessions.uid
+
+Compiler:
+  user_id  → String (static column)
+  sessions.uid → Int64 (from sessions schema)
+  → MISMATCH
+  → ERROR: "Join key type mismatch: user_id (String) vs sessions.uid (Int64)"
+  → Suggested fix: ON user_id = sessions.uid::String
+  → Auto-fix available via --auto-cast flag
+```
+
+---
+
+## New Files
+
+```
+pkg/grammars/filtergrammar/
+  FilterLang.g4              ← grammar specification (this RFC)
+  FilterLangParser.go        ← ANTLR4 generated
+  FilterLangLexer.go         ← ANTLR4 generated
+  FilterLangVisitor.go       ← ANTLR4 generated
+
+pkg/filtercompiler/
+  compiler.go                ← AST → ClickHouse SQL using schema registry
+  coerce.go                  ← type coercion matrix implementation
+  resolver.go                ← path → FieldResolution (static/attribute/unknown)
+  clickhouse_compat.go       ← detect CH version → new JSON vs JSONExtract* fallback
+
+pkg/ingestion/
+  typeinfer.go               ← JSON value → FieldDataType
+  ingester.go                ← row splitting + CH insert + registry upsert
+
+scripts/
+  generate-filter-grammar.sh ← antlr4-go invocation for FilterLang.g4
+```
+
+**Modified files**:
+```
+pkg/grammars/pipesgrammar/PipeLang.g4          ← add new node directive keywords
+pkg/grammars/pipesgrammar/PipeLangLexer.g4     ← add new lexer tokens
+pkg/parser/pipeparser/converter.go             ← handle queryBlock in visitor
+pkg/types/datasourcetypes/datastoretypes.go    ← fill Schema, add ColumnDef, AttrDef
+pkg/metadatastore/store.go                     ← add GetSchema, ResolveField, UpsertAttributes
+```
+
+---
+
+## ClickHouse Version Compatibility
+
+The new ClickHouse JSON type dot-notation (`attributes.env::String`) is production-ready
+in ClickHouse 25.3+. For earlier versions we fall back to `JSONExtractString(attributes, 'env')`.
+
+The compiler detects the ClickHouse version at startup and chooses a generation strategy:
+
+| CH version | Attribute access pattern |
+|------------|-------------------------|
+| ≥ 25.3 | `attributes.field::Type` |
+| 24.x | `JSONExtractString(attributes, 'field')` etc. |
+| < 24.0 | same as 24.x |
+
+Both strategies work with `JSON(max_dynamic_paths=0)` storage — only the query syntax differs.
+
+---
+
+## Open Questions
+
+1. **FILTER multi-line**: should multi-line filter expressions be joined with implicit AND
+   (each indented line = one condition) or treated as one continuous expression with
+   explicit AND/OR? Implicit AND is simpler for common cases; explicit is more expressive.
+   Current design: explicit — the entire FILTER block is one FilterLang expression.
+
+2. **SQL node FROM declaration**: should SQL nodes be required or encouraged to declare
+   `FROM node_name` at the top for explicit dependency tracking? Currently SQL nodes
+   reference other nodes in their SQL body (opaque to the parser). Making dependencies
+   explicit would improve lineage but is a breaking change.
+
+3. **ORDER_BY direction shorthand**: `-field` for DESC (PostgREST convention) vs
+   `field DESC` (SQL convention). The plan uses `-field`; should we support both?
+
+4. **SELECT projection and `SELECT *`**: without a `SELECT >` block, the compiler emits
+   `SELECT *`. In FILTER and DERIVE nodes this pulls the full `attributes` JSON column.
+   Column pruning optimization (trace which columns are actually used downstream and
+   rewrite upstream SELECTs) should be planned for performance at scale.
+
+5. **ClickHouse version enforcement**: should the platform require ≥ 25.3 for all new
+   DataSources (to use new JSON type) and maintain legacy compatibility only for existing
+   DataSources created on older versions? Clean break vs graceful degradation.

@@ -1,0 +1,234 @@
+# RFC 001: Schema Registry
+
+**Status**: Draft  
+**Created**: 2026-05-09
+
+## Summary
+
+Introduce a living schema registry that tracks every field ingested into a DataSource —
+its type(s), how they evolved over time, statistical confidence, and known aliases across
+column renames. This registry is the foundational data structure that makes the filter DSL
+and data-aware pipe nodes (RFC 002) possible.
+
+## Motivation
+
+Data engineers using dbt-core and SQLMesh write defensive SQL like this in every staging model:
+
+```sql
+-- The source renamed 'country' to 'geo_country_code' 6 months ago
+COALESCE(country, geo_country_code) AS country,
+
+-- status was String '200'/'404' for 3 years, became Int64 in new microservice
+CASE
+    WHEN typeof(status) = 'String' THEN CAST(status AS Int64)
+    ELSE status
+END AS status,
+
+-- 'environment' and 'env' mean the same thing across different sources
+COALESCE(environment, env, 'unknown') AS env
+```
+
+This is not bad engineering. It is the only option when the transformation layer has no
+memory of how data evolved. Three common causes:
+
+1. **Type drift**: a field changes type over time (String `"200"` → Int64 `200`) as
+   upstream services evolve
+2. **Column renames**: the source team renames a field; pipelines break until every
+   downstream reference is manually updated
+3. **Semantic duplicates**: two source systems call the same concept by different names;
+   JOIN and union logic requires manual mapping
+
+The schema registry gives the system a memory. Once the system knows that `status` was a
+String until 2024-09-01 and then became Int64, or that `country` and `geo_country_code`
+refer to the same thing, it can handle these cases automatically at query and transform time.
+
+## Design
+
+### Two-Tier Storage Model
+
+Every DataSource has two categories of fields:
+
+**Static columns** — declared explicitly when the DataSource is created, become part of
+the ClickHouse `ORDER BY` key, always statically typed.
+
+**Dynamic attributes** — any ingested field not declared as a static column is routed
+to the `attributes JSON(max_dynamic_paths=0)` catch-all column. The schema registry
+tracks everything that has ever appeared there.
+
+### Registry Data Model
+
+```
+DataSource: orders
+  Static Columns (declared at creation):
+    observed_timestamp  Int64     (system, always present)
+    user_id             String
+    amount              Float64
+    country             String
+
+  Attribute Registry (auto-discovered during ingestion):
+    key              | types observed      | count | confidence | aliases
+    ─────────────────────────────────────────────────────────────────────
+    status           | String: 3000,       | 8000  | DYNAMIC    | []
+                     | Int64: 5000         |       |            |
+    env              | String: 12000       | 12000 | String 99% | [environment]
+    response_time_ms | Float64: 8000       | 8000  | Float64 99%| [response_ms]
+    tags             | Array(String): 2000 | 2000  | ArrStr 95% | []
+    session_id       | String: 600,        | 1000  | DYNAMIC    | []
+                     | Int64: 400          |       |            |
+```
+
+**Confidence** is computed as `max(type_count) / total_count`. When confidence for any
+single type exceeds a threshold (default: 90%) across a minimum sample (default: 50
+observations), the registry assigns that type. Otherwise the field is `DYNAMIC`.
+
+**Type evolution log** tracks when type changes occurred:
+
+```
+datasource: orders, key: status
+  2024-01-01 → 2024-08-31: String (3000 observations)
+  2024-09-01 → present:    Int64  (5000 observations)
+  current verdict: DYNAMIC
+```
+
+### SQLite Schema
+
+Two new tables added via migration `002_schema_registry.go`:
+
+```sql
+CREATE TABLE datasources (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL UNIQUE,
+    database    TEXT NOT NULL,
+    schema_json TEXT NOT NULL DEFAULT '{}',
+    created_at  INTEGER NOT NULL,
+    updated_at  INTEGER NOT NULL
+);
+
+CREATE TABLE attribute_registry (
+    datasource_id   TEXT NOT NULL,
+    key             TEXT NOT NULL,
+    type_counts     TEXT NOT NULL, -- JSON: {"String":3000,"Int64":5000}
+    total_count     INTEGER NOT NULL DEFAULT 0,
+    resolved_type   TEXT NOT NULL, -- "String" | "Int64" | ... | "Dynamic"
+    confidence      REAL NOT NULL DEFAULT 0,
+    aliases         TEXT NOT NULL DEFAULT '[]', -- JSON array of strings
+    first_seen_at   INTEGER NOT NULL,
+    last_seen_at    INTEGER NOT NULL,
+    PRIMARY KEY (datasource_id, key)
+);
+```
+
+### Ingestion Flow
+
+```
+POST /v0/events?name=orders  (NDJSON body)
+  ↓
+Parse rows → []map[string]any
+  ↓
+Load DataSource static column schema
+  ↓
+For each row:
+  1. Static columns   → typed values for direct ClickHouse insert
+  2. Remaining keys   → attributes JSON map for ClickHouse insert
+  3. Type inference on attribute values:
+       JSON boolean literal     → Bool
+       JSON integer literal     → Int64
+       JSON float literal       → Float64
+       JSON string, RFC3339     → DateTime64
+       JSON string              → String
+       JSON array               → Array(element_type)
+       JSON object              → Dynamic
+  ↓
+Batch INSERT to ClickHouse: (observed_timestamp, static_cols..., attributes)
+  ↓
+UpsertAttributes to attribute_registry (async, best-effort):
+  - Increment type count for each observed type
+  - Recalculate confidence and resolved_type
+  - Update first_seen_at / last_seen_at
+```
+
+### Column Alias Registration
+
+Aliases can be declared in two ways:
+
+**Explicit annotation** in the DataSource definition file:
+
+```
+# orders.datasource
+SCHEMA >
+  user_id   String
+  amount    Float64
+  country   String
+
+ALIASES >
+  country = geo_country_code, customer_country
+  env     = environment
+```
+
+**Statistical suggestion** (background job): when two attribute keys have Jaccard similarity
+> 0.85 across their value sets, the system surfaces a suggestion:
+```
+Suggested alias: 'env' ≈ 'environment' (similarity: 0.91, shared values: ['prod','dev','staging'])
+Accept with: [product] alias orders.env environment
+```
+
+### Type Resolution API
+
+Other components use `MetadataStore.ResolveField(ctx, datasourceID, fieldName)`:
+
+```go
+type FieldResolution struct {
+    Location     FieldLocation // Static | Attribute
+    Type         FieldDataType // String | Int64 | Float64 | Bool | DateTime64 | Date | Array* | Dynamic
+    Confidence   float64       // 0-1, meaningful only for Attribute location
+    Aliases      []string      // other names for the same logical field
+}
+
+type FieldLocation int
+const (
+    FieldLocationStatic    FieldLocation = iota // direct column access
+    FieldLocationAttribute                      // inside attributes JSON
+    FieldLocationUnknown                        // not seen in registry
+)
+```
+
+## What the Registry Enables
+
+| Consumer | How it uses the registry |
+|---------|--------------------------|
+| FilterLang compiler | resolves field → location + type → correct ClickHouse SQL with coercion |
+| PipeLang v2 FILTER nodes | same as FilterLang |
+| PipeLang v2 JOIN nodes | checks type compatibility of join keys, emits warnings |
+| PipeLang v2 DERIVE nodes | promotes attributes to typed columns |
+| CLI `lint` command | validates column references in pipes at deploy time |
+| Auto-REST endpoint | builds SELECT / WHERE / ORDER BY from URL params with type awareness |
+| Schema migration planner | detects sort key changes before they break production |
+
+## Alternatives Considered
+
+**Three typed maps (SigNoz style)**: `attributes_string`, `attributes_number`,
+`attributes_bool`. Simpler query SQL but three separate ClickHouse columns per attribute,
+triples storage for dynamic fields, requires choosing the "right" map at insert time.
+Rejected in favour of ClickHouse's new JSON type which handles this more elegantly.
+
+**No registry, infer at query time**: run `JSONAllPathsWithTypes(attributes)` on a sample
+of rows to infer schema at query execution. Non-deterministic, slow for large tables,
+produces different results as data changes. Rejected — the registry gives stable, auditable
+type information.
+
+**External catalog (Apache Atlas, DataHub)**: mature systems but heavyweight external
+dependency. Rejected for Phase 1 — we build a lightweight SQLite-backed registry that
+integrates natively with the existing `sqlstore` layer. Can be replaced by an external
+catalog in Phase 3 if needed.
+
+## Open Questions
+
+1. **Confidence threshold**: Default 90% agreement across 50+ samples before assigning a
+   type. Should this be configurable per DataSource?
+
+2. **Alias scope**: DataSource-level aliases (global across all pipes reading this source)
+   vs pipe-level aliases (local override). Both seem useful — which ships first?
+
+3. **Type evolution cutoff**: When `status` was String for years and then switched to Int64,
+   do we keep the String history indefinitely? Proposal: keep the last 90 days of type
+   distribution, archive older periods. Configurable TTL.
