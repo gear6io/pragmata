@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Regenerate pkg/grammars/filtergrammar/*.go from the split grammars:
-#   FilterLangLexer.g4  — lexer grammar
-#   FilterLang.g4       — parser grammar (tokenVocab=FilterLangLexer)
+#   FilterQueryLexer.g4  — lexer grammar
+#   FilterQuery.g4       — parser grammar (tokenVocab=FilterQueryLexer)
 #
 # Requires ANTLR 4.13.x and Java.
 # Quick install (macOS):
@@ -14,7 +14,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GRAMMAR_DIR="$REPO_ROOT/pkg/grammars/filtergrammar"
 
-echo "Generating FilterLang Go parser in $GRAMMAR_DIR ..."
+echo "Generating FilterQuery Go parser in $GRAMMAR_DIR ..."
 
 rm -f "$GRAMMAR_DIR"/filterlang_lexer.go \
       "$GRAMMAR_DIR"/filterlang_parser.go \
@@ -30,13 +30,13 @@ rm -f "$GRAMMAR_DIR"/filterlang_lexer.go \
   antlr \
     -Dlanguage=Go \
     -package filtergrammar \
-    FilterLangLexer.g4
+    FilterQueryLexer.g4
 
   antlr \
     -visitor \
     -Dlanguage=Go \
     -package filtergrammar \
-    FilterLang.g4
+    FilterQuery.g4
 )
 
 echo "Done. Generated files in $GRAMMAR_DIR"
