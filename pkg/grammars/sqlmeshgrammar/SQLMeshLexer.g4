@@ -3,8 +3,9 @@ lexer grammar SQLMeshLexer;
 // Tracks nesting depth inside MODEL/AUDIT parens.
 // When depth returns to 0 on RPAREN, the lexer pushes SQL_BODY_MODE so the
 // SQL query that follows is captured as opaque SQL_LINE tokens.
+// _depth is a package-level var (Go target: @lexer::members is package scope).
 @lexer::members {
-    int _depth = 0;
+    var _depth int
 }
 
 // ── Comments & whitespace ──────────────────────────────────────────────────────
@@ -74,11 +75,11 @@ PROP_QUERY                   : 'query' ;
 // LPAREN/RPAREN maintain the depth counter.  When RPAREN brings depth to 0 the
 // MODEL/AUDIT block has closed and the SQL body follows.
 
-LPAREN : '(' { p._depth++; } ;
+LPAREN : '(' { _depth++ } ;
 RPAREN : ')' {
-    p._depth--;
-    if p._depth == 0 {
-        p.PushMode(SQLMeshLexerSQL_BODY_MODE)
+    _depth--
+    if _depth == 0 {
+        l.PushMode(SQLMeshLexerSQL_BODY_MODE)
     }
 } ;
 LBRACKET : '[' ;

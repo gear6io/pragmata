@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
-	"github.com/gear6io/pragmata/pkg/parser/pipeparser/grammar"
+	grammar "github.com/gear6io/pragmata/pkg/grammars/pipesgrammar"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 

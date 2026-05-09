@@ -4,8 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"time"
 
+	"github.com/gear6io/pragmata/pkg/types"
 	"github.com/gear6io/pragmata/pkg/valuer"
 	"github.com/uptrace/bun"
 )
@@ -87,17 +87,18 @@ func (t *Tags) Scan(src any) error {
 
 // Pipe is the core abstraction — a named chain of SQL nodes with an execution type.
 type Pipe struct {
-	bun.BaseModel    `bun:"table:pipes"`
-	Name             string    `bun:"name,pk"                                       json:"name"`
-	Type             PipeType  `bun:"type,notnull"                                  json:"type"`
-	Description      string    `bun:"description"                                   json:"description,omitempty"`
-	Tags             Tags      `bun:"tags"                                          json:"tags,omitempty"`
-	Nodes            Nodes     `bun:"nodes,notnull"                                 json:"nodes"`
-	Datasource       string    `bun:"datasource"                                    json:"datasource,omitempty"`
-	TargetDatasource string    `bun:"target_datasource"                             json:"targetDatasource,omitempty"`
-	CopySchedule     string    `bun:"copy_schedule"                                 json:"copySchedule,omitempty"`
-	CreatedAt        time.Time `bun:"created_at,nullzero,default:current_timestamp" json:"-"`
-	UpdatedAt        time.Time `bun:"updated_at,nullzero,default:current_timestamp" json:"-"`
+	bun.BaseModel `bun:"table:pipes"`
+	types.UserAuditable
+	types.TimeAuditable
+
+	Name             string   `bun:"name,pk"                                       json:"name"`
+	Type             PipeType `bun:"type,notnull"                                  json:"type"`
+	Description      string   `bun:"description"                                   json:"description,omitempty"`
+	Tags             Tags     `bun:"tags"                                          json:"tags,omitempty"`
+	Nodes            Nodes    `bun:"nodes,notnull"                                 json:"nodes"`
+	Datasource       string   `bun:"datasource"                                    json:"datasource,omitempty"`
+	TargetDatasource string   `bun:"target_datasource"                             json:"targetDatasource,omitempty"`
+	CopySchedule     string   `bun:"copy_schedule"                                 json:"copySchedule,omitempty"`
 }
 
 // Column describes a single column in a query result.

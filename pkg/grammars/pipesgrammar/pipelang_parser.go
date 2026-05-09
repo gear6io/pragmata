@@ -32,12 +32,12 @@ var PipeLangParserStaticData struct {
 func pipelangParserInit() {
 	staticData := &PipeLangParserStaticData
 	staticData.LiteralNames = []string{
-		"", "", "", "", "", "", "", "", "", "", "", "", "", "'\\u0000'",
+		"", "", "", "", "", "", "", "", "", "", "", "", "' '",
 	}
 	staticData.SymbolicNames = []string{
 		"", "COMMENT", "WS_BLANK", "WS", "KW_DESCRIPTION", "KW_TAGS", "KW_TYPE",
 		"KW_NODE", "KW_COPY_SCHEDULE", "KW_DATASOURCE", "KW_TARGET_DATASOURCE",
-		"KW_SQL_ARROW", "REST_OF_LINE", "SQL_LINE",
+		"KW_SQL_ARROW", "SQL_LINE", "REST_OF_LINE",
 	}
 	staticData.RuleNames = []string{
 		"pipeFile", "statement", "directive", "nodeBlock", "sqlBlock", "sqlBody",
@@ -55,14 +55,14 @@ func pipelangParserInit() {
 		0, 15, 16, 1, 0, 0, 0, 16, 18, 1, 0, 0, 0, 17, 15, 1, 0, 0, 0, 18, 19,
 		5, 0, 0, 1, 19, 1, 1, 0, 0, 0, 20, 23, 3, 4, 2, 0, 21, 23, 3, 6, 3, 0,
 		22, 20, 1, 0, 0, 0, 22, 21, 1, 0, 0, 0, 23, 3, 1, 0, 0, 0, 24, 25, 5, 4,
-		0, 0, 25, 37, 5, 12, 0, 0, 26, 27, 5, 5, 0, 0, 27, 37, 5, 12, 0, 0, 28,
-		29, 5, 6, 0, 0, 29, 37, 5, 12, 0, 0, 30, 31, 5, 9, 0, 0, 31, 37, 5, 12,
-		0, 0, 32, 33, 5, 10, 0, 0, 33, 37, 5, 12, 0, 0, 34, 35, 5, 8, 0, 0, 35,
-		37, 5, 12, 0, 0, 36, 24, 1, 0, 0, 0, 36, 26, 1, 0, 0, 0, 36, 28, 1, 0,
+		0, 0, 25, 37, 5, 13, 0, 0, 26, 27, 5, 5, 0, 0, 27, 37, 5, 13, 0, 0, 28,
+		29, 5, 6, 0, 0, 29, 37, 5, 13, 0, 0, 30, 31, 5, 9, 0, 0, 31, 37, 5, 13,
+		0, 0, 32, 33, 5, 10, 0, 0, 33, 37, 5, 13, 0, 0, 34, 35, 5, 8, 0, 0, 35,
+		37, 5, 13, 0, 0, 36, 24, 1, 0, 0, 0, 36, 26, 1, 0, 0, 0, 36, 28, 1, 0,
 		0, 0, 36, 30, 1, 0, 0, 0, 36, 32, 1, 0, 0, 0, 36, 34, 1, 0, 0, 0, 37, 5,
-		1, 0, 0, 0, 38, 39, 5, 7, 0, 0, 39, 40, 5, 12, 0, 0, 40, 41, 3, 8, 4, 0,
+		1, 0, 0, 0, 38, 39, 5, 7, 0, 0, 39, 40, 5, 13, 0, 0, 40, 41, 3, 8, 4, 0,
 		41, 7, 1, 0, 0, 0, 42, 43, 5, 11, 0, 0, 43, 44, 3, 10, 5, 0, 44, 9, 1,
-		0, 0, 0, 45, 47, 5, 13, 0, 0, 46, 45, 1, 0, 0, 0, 47, 50, 1, 0, 0, 0, 48,
+		0, 0, 0, 45, 47, 5, 12, 0, 0, 46, 45, 1, 0, 0, 0, 47, 50, 1, 0, 0, 0, 48,
 		46, 1, 0, 0, 0, 48, 49, 1, 0, 0, 0, 49, 11, 1, 0, 0, 0, 50, 48, 1, 0, 0,
 		0, 4, 15, 22, 36, 48,
 	}
@@ -114,8 +114,8 @@ const (
 	PipeLangKW_DATASOURCE        = 9
 	PipeLangKW_TARGET_DATASOURCE = 10
 	PipeLangKW_SQL_ARROW         = 11
-	PipeLangREST_OF_LINE         = 12
-	PipeLangSQL_LINE             = 13
+	PipeLangSQL_LINE             = 12
+	PipeLangREST_OF_LINE         = 13
 )
 
 // PipeLang rules.
