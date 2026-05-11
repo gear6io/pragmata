@@ -1,0 +1,19 @@
+# --- METADATA ---
+type: endpoint            # endpoint | table | view | incremental | snapshot
+name: daily_active_users
+description: |
+  DAU rollup for the dashboard API.
+tags: [analytics, dashboard]
+owner: data-team@company.com
+
+# --- INPUTS ---
+sources:
+  - events: raw.events
+  - users: raw.users
+params:
+  country: { type: string, default: "US" }
+  days_back: { type: int, default: 30 }
+
+# --- LOGIC ---
+pipeline:
+  ...PRQL goes here...
