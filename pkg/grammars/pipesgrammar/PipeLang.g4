@@ -2,37 +2,38 @@ parser grammar PipeLang;
 
 options { tokenVocab=PipeLangLexer; }
 
-// ── Parser rules ──────────────────────────────────────────────────────────────
+// ── Top-level rule ─────────────────────────────────────────────────────────────
 
 pipeFile
-    : statement* EOF
+    : directive* EOF
     ;
 
-statement
-    : directive
-    | nodeBlock
-    ;
+// ── Directives ─────────────────────────────────────────────────────────────────
 
 directive
-    : KW_DESCRIPTION REST_OF_LINE    # descriptionDir
-    | KW_TAGS        REST_OF_LINE    # tagsDir
-    | KW_TYPE        REST_OF_LINE    # typeDir
-    | KW_DATASOURCE  REST_OF_LINE    # datasourceDir
-    | KW_TARGET_DATASOURCE REST_OF_LINE # targetDatasourceDir
-    | KW_COPY_SCHEDULE REST_OF_LINE  # copyScheduleDir
+    : TYPE          REST_OF_LINE    # typeDir
+    | NAME          REST_OF_LINE    # nameDir
+    | DESCRIPTION   REST_OF_LINE    # descriptionDir
+    | DESCRIPTION_ML BLOCK_LINE*    # descriptionMLDir
+    | TAGS          REST_OF_LINE    # tagsDir
+    | OWNER         REST_OF_LINE    # ownerDir
+    | DESTINATION   REST_OF_LINE    # destinationDir
+    | SCHEDULE      REST_OF_LINE    # scheduleDir
+    | SOURCES       BLOCK_LINE*     # sourcesDir
+    | PARAMS        BLOCK_LINE*     # paramsDir
+    | PIPELINE      pipelineBlock   # pipelineDir
     ;
 
-nodeBlock
-    : KW_NODE REST_OF_LINE sqlBlock
+// ── Pipeline block ─────────────────────────────────────────────────────────────
+
+// A pipeline block is a sequence of named PRQL nodes.
+// Each node starts with a NODE_HEADER (@name:) and is followed by PRQL_LINE
+// tokens that form the PRQL query body.
+
+pipelineBlock
+    : pipelineNode*
     ;
 
-sqlBlock
-    : KW_SQL_ARROW sqlBody
-    ;
-
-// SQL content is opaque: one SQL_LINE token per input line, emitted by the
-// lexer's SQL_BODY_MODE.  The converter inspects the first line for the
-// '%' template marker and applies dedent to the remainder.
-sqlBody
-    : SQL_LINE*
+pipelineNode
+    : NODE_HEADER PRQL_LINE*
     ;

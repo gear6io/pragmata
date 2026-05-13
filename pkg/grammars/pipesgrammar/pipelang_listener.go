@@ -10,66 +10,84 @@ type PipeLangListener interface {
 	// EnterPipeFile is called when entering the pipeFile production.
 	EnterPipeFile(c *PipeFileContext)
 
-	// EnterStatement is called when entering the statement production.
-	EnterStatement(c *StatementContext)
+	// EnterTypeDir is called when entering the typeDir production.
+	EnterTypeDir(c *TypeDirContext)
+
+	// EnterNameDir is called when entering the nameDir production.
+	EnterNameDir(c *NameDirContext)
 
 	// EnterDescriptionDir is called when entering the descriptionDir production.
 	EnterDescriptionDir(c *DescriptionDirContext)
 
+	// EnterDescriptionMLDir is called when entering the descriptionMLDir production.
+	EnterDescriptionMLDir(c *DescriptionMLDirContext)
+
 	// EnterTagsDir is called when entering the tagsDir production.
 	EnterTagsDir(c *TagsDirContext)
 
-	// EnterTypeDir is called when entering the typeDir production.
-	EnterTypeDir(c *TypeDirContext)
+	// EnterOwnerDir is called when entering the ownerDir production.
+	EnterOwnerDir(c *OwnerDirContext)
 
-	// EnterDatasourceDir is called when entering the datasourceDir production.
-	EnterDatasourceDir(c *DatasourceDirContext)
+	// EnterDestinationDir is called when entering the destinationDir production.
+	EnterDestinationDir(c *DestinationDirContext)
 
-	// EnterTargetDatasourceDir is called when entering the targetDatasourceDir production.
-	EnterTargetDatasourceDir(c *TargetDatasourceDirContext)
+	// EnterScheduleDir is called when entering the scheduleDir production.
+	EnterScheduleDir(c *ScheduleDirContext)
 
-	// EnterCopyScheduleDir is called when entering the copyScheduleDir production.
-	EnterCopyScheduleDir(c *CopyScheduleDirContext)
+	// EnterSourcesDir is called when entering the sourcesDir production.
+	EnterSourcesDir(c *SourcesDirContext)
 
-	// EnterNodeBlock is called when entering the nodeBlock production.
-	EnterNodeBlock(c *NodeBlockContext)
+	// EnterParamsDir is called when entering the paramsDir production.
+	EnterParamsDir(c *ParamsDirContext)
 
-	// EnterSqlBlock is called when entering the sqlBlock production.
-	EnterSqlBlock(c *SqlBlockContext)
+	// EnterPipelineDir is called when entering the pipelineDir production.
+	EnterPipelineDir(c *PipelineDirContext)
 
-	// EnterSqlBody is called when entering the sqlBody production.
-	EnterSqlBody(c *SqlBodyContext)
+	// EnterPipelineBlock is called when entering the pipelineBlock production.
+	EnterPipelineBlock(c *PipelineBlockContext)
+
+	// EnterPipelineNode is called when entering the pipelineNode production.
+	EnterPipelineNode(c *PipelineNodeContext)
 
 	// ExitPipeFile is called when exiting the pipeFile production.
 	ExitPipeFile(c *PipeFileContext)
 
-	// ExitStatement is called when exiting the statement production.
-	ExitStatement(c *StatementContext)
+	// ExitTypeDir is called when exiting the typeDir production.
+	ExitTypeDir(c *TypeDirContext)
+
+	// ExitNameDir is called when exiting the nameDir production.
+	ExitNameDir(c *NameDirContext)
 
 	// ExitDescriptionDir is called when exiting the descriptionDir production.
 	ExitDescriptionDir(c *DescriptionDirContext)
 
+	// ExitDescriptionMLDir is called when exiting the descriptionMLDir production.
+	ExitDescriptionMLDir(c *DescriptionMLDirContext)
+
 	// ExitTagsDir is called when exiting the tagsDir production.
 	ExitTagsDir(c *TagsDirContext)
 
-	// ExitTypeDir is called when exiting the typeDir production.
-	ExitTypeDir(c *TypeDirContext)
+	// ExitOwnerDir is called when exiting the ownerDir production.
+	ExitOwnerDir(c *OwnerDirContext)
 
-	// ExitDatasourceDir is called when exiting the datasourceDir production.
-	ExitDatasourceDir(c *DatasourceDirContext)
+	// ExitDestinationDir is called when exiting the destinationDir production.
+	ExitDestinationDir(c *DestinationDirContext)
 
-	// ExitTargetDatasourceDir is called when exiting the targetDatasourceDir production.
-	ExitTargetDatasourceDir(c *TargetDatasourceDirContext)
+	// ExitScheduleDir is called when exiting the scheduleDir production.
+	ExitScheduleDir(c *ScheduleDirContext)
 
-	// ExitCopyScheduleDir is called when exiting the copyScheduleDir production.
-	ExitCopyScheduleDir(c *CopyScheduleDirContext)
+	// ExitSourcesDir is called when exiting the sourcesDir production.
+	ExitSourcesDir(c *SourcesDirContext)
 
-	// ExitNodeBlock is called when exiting the nodeBlock production.
-	ExitNodeBlock(c *NodeBlockContext)
+	// ExitParamsDir is called when exiting the paramsDir production.
+	ExitParamsDir(c *ParamsDirContext)
 
-	// ExitSqlBlock is called when exiting the sqlBlock production.
-	ExitSqlBlock(c *SqlBlockContext)
+	// ExitPipelineDir is called when exiting the pipelineDir production.
+	ExitPipelineDir(c *PipelineDirContext)
 
-	// ExitSqlBody is called when exiting the sqlBody production.
-	ExitSqlBody(c *SqlBodyContext)
+	// ExitPipelineBlock is called when exiting the pipelineBlock production.
+	ExitPipelineBlock(c *PipelineBlockContext)
+
+	// ExitPipelineNode is called when exiting the pipelineNode production.
+	ExitPipelineNode(c *PipelineNodeContext)
 }

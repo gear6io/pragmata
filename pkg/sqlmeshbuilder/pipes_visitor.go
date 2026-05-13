@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/antlr4-go/antlr/v4"
-	pipelang "github.com/gear6io/pragmata/pkg/grammars/pipesgrammar"
 	sqlmesh "github.com/gear6io/pragmata/pkg/grammars/sqlmeshgrammar"
+	"github.com/gear6io/pragmata/pkg/parser/pipeparser"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
@@ -19,180 +18,64 @@ func tok(tokenType int) string {
 // dialect is the ClickHouse dialect value emitted in every model block.
 const dialect = "clickhouse"
 
-// PipesVisitor walks a PipeLang parse tree and emits a SQLMesh model definition.
-// It embeds BasePipeLangVisitor so only the directives we care about need overrides.
-type PipesVisitor struct {
-	pipelang.BasePipeLangVisitor
-	name        string
-	kind        string // tok(SQLMeshKIND_FULL) or tok(SQLMeshKIND_VIEW)
-	modelName   string // defaults to pipe name; overridden by datasource directives
-	copyTarget  string // non-empty for COPY pipes — used for INSERT INTO
-	cron        string
-	description string
-	tags        []string
-	nodes       []pipetypes.Node
-	errs        []error
-}
-
-// Visit dispatches to the typed VisitXxx method via Accept.
-func (v *PipesVisitor) Visit(tree antlr.ParseTree) interface{} {
-	return tree.Accept(v)
-}
-
-// VisitChildren visits all child nodes of a rule node in order.
-func (v *PipesVisitor) VisitChildren(node antlr.RuleNode) interface{} {
-	for i := 0; i < node.GetChildCount(); i++ {
-		if pt, ok := node.GetChild(i).(antlr.ParseTree); ok {
-			pt.Accept(v)
-		}
-	}
-	return nil
-}
-
-// ── Directive visitors ────────────────────────────────────────────────────────
-
-func (v *PipesVisitor) VisitPipeFile(ctx *pipelang.PipeFileContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *PipesVisitor) VisitStatement(ctx *pipelang.StatementContext) interface{} {
-	return v.VisitChildren(ctx)
-}
-
-func (v *PipesVisitor) VisitDescriptionDir(ctx *pipelang.DescriptionDirContext) interface{} {
-	v.description = strings.TrimSpace(ctx.REST_OF_LINE().GetText())
-	return nil
-}
-
-func (v *PipesVisitor) VisitTagsDir(ctx *pipelang.TagsDirContext) interface{} {
-	raw := strings.TrimSpace(ctx.REST_OF_LINE().GetText())
-	for _, t := range strings.Split(raw, ",") {
-		if tag := strings.TrimSpace(t); tag != "" {
-			v.tags = append(v.tags, tag)
-		}
-	}
-	return nil
-}
-
-func (v *PipesVisitor) VisitTypeDir(ctx *pipelang.TypeDirContext) interface{} {
-	raw := strings.ToLower(strings.TrimSpace(ctx.REST_OF_LINE().GetText()))
-	switch raw {
-	case "materialized", "copy":
-		v.kind = tok(sqlmesh.SQLMeshKIND_FULL)
-	default:
-		v.kind = tok(sqlmesh.SQLMeshKIND_VIEW)
-	}
-	return nil
-}
-
-func (v *PipesVisitor) VisitDatasourceDir(ctx *pipelang.DatasourceDirContext) interface{} {
-	v.modelName = strings.TrimSpace(ctx.REST_OF_LINE().GetText())
-	return nil
-}
-
-func (v *PipesVisitor) VisitTargetDatasourceDir(ctx *pipelang.TargetDatasourceDirContext) interface{} {
-	ds := strings.TrimSpace(ctx.REST_OF_LINE().GetText())
-	v.modelName = ds
-	v.copyTarget = ds
-	return nil
-}
-
-func (v *PipesVisitor) VisitCopyScheduleDir(ctx *pipelang.CopyScheduleDirContext) interface{} {
-	v.cron = strings.TrimSpace(ctx.REST_OF_LINE().GetText())
-	return nil
-}
-
-// ── Node / SQL visitors ───────────────────────────────────────────────────────
-
-func (v *PipesVisitor) VisitNodeBlock(ctx *pipelang.NodeBlockContext) interface{} {
-	name := strings.TrimSpace(ctx.REST_OF_LINE().GetText())
-	if name == "" {
-		v.errs = append(v.errs, fmt.Errorf("NODE requires a name"))
-		return nil
-	}
-	result := v.Visit(ctx.SqlBlock())
-	node, ok := result.(pipetypes.Node)
-	if !ok {
-		return nil
-	}
-	node.Name = name
-	v.nodes = append(v.nodes, node)
-	return nil
-}
-
-func (v *PipesVisitor) VisitSqlBlock(ctx *pipelang.SqlBlockContext) interface{} {
-	return v.Visit(ctx.SqlBody())
-}
-
-func (v *PipesVisitor) VisitSqlBody(ctx *pipelang.SqlBodyContext) interface{} {
-	lines := make([]string, 0, len(ctx.AllSQL_LINE()))
-	for _, t := range ctx.AllSQL_LINE() {
-		lines = append(lines, strings.TrimRight(t.GetText(), "\r\n"))
-	}
-	raw := strings.Join(lines, "\n")
-
-	isTemplated := false
-	trimmedRaw := strings.TrimLeft(raw, "\n\r ")
-	if strings.HasPrefix(trimmedRaw, "%") {
-		afterPercent := strings.TrimPrefix(trimmedRaw, "%")
-		switch {
-		case strings.HasPrefix(afterPercent, "\n"):
-			raw = afterPercent[1:]
-		case afterPercent == "":
-			raw = ""
-		default:
-			raw = afterPercent
-		}
-		isTemplated = true
+// FromContent parses raw .pipe file content and returns a SQLMesh .sql string.
+func FromContent(pipeName, content string) (string, error) {
+	pipe, err := pipeparser.Parse(pipeName, content)
+	if err != nil {
+		return "", err
 	}
 
-	return pipetypes.Node{
-		SQL:         strings.TrimSpace(dedent(raw)),
-		IsTemplated: isTemplated,
-	}
-}
-
-// ── Output assembly ───────────────────────────────────────────────────────────
-
-// Build validates the collected state and returns the SQLMesh model definition.
-func (v *PipesVisitor) Build() (string, error) {
-	if len(v.errs) > 0 {
-		return "", v.errs[0]
-	}
-	if len(v.nodes) == 0 {
-		return "", fmt.Errorf("pipe %q has no NODE blocks", v.name)
-	}
-	if v.kind == "" {
-		return "", fmt.Errorf("pipe %q has no TYPE declaration", v.name)
-	}
+	kind := kindForType(pipe.Type)
+	modelName := coalesce(pipe.Destination, pipeName)
 
 	var sb strings.Builder
 
 	// MODEL ( ... )
 	sb.WriteString(tok(sqlmesh.SQLMeshMODEL))
 	sb.WriteString(" (\n")
-	writeProp(&sb, tok(sqlmesh.SQLMeshPROP_NAME), v.modelName)
-	writeProp(&sb, tok(sqlmesh.SQLMeshPROP_KIND), v.kind)
+	writeProp(&sb, tok(sqlmesh.SQLMeshPROP_NAME), modelName)
+	writeProp(&sb, tok(sqlmesh.SQLMeshPROP_KIND), kind)
 	writeProp(&sb, tok(sqlmesh.SQLMeshPROP_DIALECT), quoted(dialect))
-	if v.description != "" {
-		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_DESCRIPTION), quoted(v.description))
+	if pipe.Description != "" {
+		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_DESCRIPTION), quoted(pipe.Description))
 	}
-	if len(v.tags) > 0 {
-		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_TAGS), tagsArray(v.tags))
+	if len(pipe.Tags) > 0 {
+		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_TAGS), tagsArray(pipe.Tags))
 	}
-	if v.cron != "" {
-		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_CRON), quoted(v.cron))
+	if pipe.Schedule != "" {
+		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_CRON), quoted(pipe.Schedule))
 	}
 	sb.WriteString(");\n\n")
 
-	// SQL body
-	sql := buildSQL(v.nodes, v.copyTarget)
+	// SQL body — copyTarget is empty for the new format (destination is the model name).
+	sql := buildSQL(pipe.Nodes, "")
 	sb.WriteString(sql)
 	if !strings.HasSuffix(sql, "\n") {
 		sb.WriteByte('\n')
 	}
 
 	return sb.String(), nil
+}
+
+// kindForType maps a PipeType to a SQLMesh KIND value.
+func kindForType(t pipetypes.PipeType) string {
+	switch t {
+	case pipetypes.PipeTypeMaterialized, pipetypes.PipeTypeCopy,
+		pipetypes.PipeTypeTable, pipetypes.PipeTypeIncremental, pipetypes.PipeTypeSnapshot:
+		return tok(sqlmesh.SQLMeshKIND_FULL)
+	default:
+		return tok(sqlmesh.SQLMeshKIND_VIEW)
+	}
+}
+
+// coalesce returns the first non-empty string.
+func coalesce(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // writeProp appends "  key = value,\n" using grammar-derived key names.
@@ -216,7 +99,7 @@ func tagsArray(tags []string) string {
 
 // buildSQL assembles the SQL body from nodes.
 // All-but-last nodes become CTEs; the last node's SQL is the final SELECT.
-// COPY pipes prepend INSERT INTO <target>.
+// copyTarget, when non-empty, prepends INSERT INTO <target>.
 func buildSQL(nodes []pipetypes.Node, copyTarget string) string {
 	var sb strings.Builder
 
@@ -271,56 +154,9 @@ func dedent(s string) string {
 	return strings.Join(out, "\n")
 }
 
-// ── Entry point ───────────────────────────────────────────────────────────────
-
-// FromContent parses raw .pipe file content and returns a SQLMesh .sql string.
-func FromContent(pipeName, content string) (string, error) {
-	if !strings.HasSuffix(content, "\n") {
-		content += "\n"
-	}
-
-	lexer := pipelang.NewPipeLangLexer(antlr.NewInputStream(content))
-	lexErr := &errListener{}
-	lexer.RemoveErrorListeners()
-	lexer.AddErrorListener(lexErr)
-
-	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
-
-	p := pipelang.NewPipeLang(stream)
-	parseErr := &errListener{}
-	p.RemoveErrorListeners()
-	p.AddErrorListener(parseErr)
-
-	tree := p.PipeFile()
-
-	if lexErr.msg != "" {
-		return "", fmt.Errorf("lex error in %q: %s", pipeName, lexErr.msg)
-	}
-	if parseErr.msg != "" {
-		return "", fmt.Errorf("parse error in %q: %s", pipeName, parseErr.msg)
-	}
-
-	v := &PipesVisitor{name: pipeName, modelName: pipeName}
-	v.Visit(tree)
-	return v.Build()
-}
-
-// errListener collects the first syntax error produced by the lexer or parser.
+// errListener is kept for parity; SQLMesh grammar errors surface via pipeparser.
 type errListener struct {
-	*antlr.DefaultErrorListener
 	msg string
-}
-
-func (e *errListener) SyntaxError(
-	_ antlr.Recognizer,
-	_ interface{},
-	line, col int,
-	msg string,
-	_ antlr.RecognitionException,
-) {
-	if e.msg == "" {
-		e.msg = fmt.Sprintf("line %d:%d %s", line, col, msg)
-	}
 }
 
 func init() {

@@ -31,40 +31,47 @@ var PipeLangParserStaticData struct {
 
 func pipelangParserInit() {
 	staticData := &PipeLangParserStaticData
-	staticData.LiteralNames = []string{
-		"", "", "", "", "", "", "", "", "", "", "", "", "' '",
-	}
 	staticData.SymbolicNames = []string{
-		"", "COMMENT", "WS_BLANK", "WS", "KW_DESCRIPTION", "KW_TAGS", "KW_TYPE",
-		"KW_NODE", "KW_COPY_SCHEDULE", "KW_DATASOURCE", "KW_TARGET_DATASOURCE",
-		"KW_SQL_ARROW", "SQL_LINE", "REST_OF_LINE",
+		"", "COMMENT", "WS_BLANK", "WS", "TYPE", "NAME", "TAGS", "OWNER", "DESTINATION",
+		"SCHEDULE", "DESCRIPTION_ML", "DESCRIPTION", "SOURCES", "PARAMS", "PIPELINE",
+		"REST_OF_LINE", "BLOCK_LINE", "BLOCK_BLANK", "BLOCK_COMMENT", "NODE_HEADER",
+		"PRQL_LINE", "PIPE_BLANK", "PIPE_COMMENT",
 	}
 	staticData.RuleNames = []string{
-		"pipeFile", "statement", "directive", "nodeBlock", "sqlBlock", "sqlBody",
+		"pipeFile", "directive", "pipelineBlock", "pipelineNode",
 	}
 	staticData.PredictionContextCache = antlr.NewPredictionContextCache()
 	staticData.serializedATN = []int32{
-		4, 1, 13, 52, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
-		4, 2, 5, 7, 5, 1, 0, 5, 0, 14, 8, 0, 10, 0, 12, 0, 17, 9, 0, 1, 0, 1, 0,
-		1, 1, 1, 1, 3, 1, 23, 8, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1,
-		2, 1, 2, 1, 2, 1, 2, 1, 2, 3, 2, 37, 8, 2, 1, 3, 1, 3, 1, 3, 1, 3, 1, 4,
-		1, 4, 1, 4, 1, 5, 5, 5, 47, 8, 5, 10, 5, 12, 5, 50, 9, 5, 1, 5, 0, 0, 6,
-		0, 2, 4, 6, 8, 10, 0, 0, 53, 0, 15, 1, 0, 0, 0, 2, 22, 1, 0, 0, 0, 4, 36,
-		1, 0, 0, 0, 6, 38, 1, 0, 0, 0, 8, 42, 1, 0, 0, 0, 10, 48, 1, 0, 0, 0, 12,
-		14, 3, 2, 1, 0, 13, 12, 1, 0, 0, 0, 14, 17, 1, 0, 0, 0, 15, 13, 1, 0, 0,
-		0, 15, 16, 1, 0, 0, 0, 16, 18, 1, 0, 0, 0, 17, 15, 1, 0, 0, 0, 18, 19,
-		5, 0, 0, 1, 19, 1, 1, 0, 0, 0, 20, 23, 3, 4, 2, 0, 21, 23, 3, 6, 3, 0,
-		22, 20, 1, 0, 0, 0, 22, 21, 1, 0, 0, 0, 23, 3, 1, 0, 0, 0, 24, 25, 5, 4,
-		0, 0, 25, 37, 5, 13, 0, 0, 26, 27, 5, 5, 0, 0, 27, 37, 5, 13, 0, 0, 28,
-		29, 5, 6, 0, 0, 29, 37, 5, 13, 0, 0, 30, 31, 5, 9, 0, 0, 31, 37, 5, 13,
-		0, 0, 32, 33, 5, 10, 0, 0, 33, 37, 5, 13, 0, 0, 34, 35, 5, 8, 0, 0, 35,
-		37, 5, 13, 0, 0, 36, 24, 1, 0, 0, 0, 36, 26, 1, 0, 0, 0, 36, 28, 1, 0,
-		0, 0, 36, 30, 1, 0, 0, 0, 36, 32, 1, 0, 0, 0, 36, 34, 1, 0, 0, 0, 37, 5,
-		1, 0, 0, 0, 38, 39, 5, 7, 0, 0, 39, 40, 5, 13, 0, 0, 40, 41, 3, 8, 4, 0,
-		41, 7, 1, 0, 0, 0, 42, 43, 5, 11, 0, 0, 43, 44, 3, 10, 5, 0, 44, 9, 1,
-		0, 0, 0, 45, 47, 5, 12, 0, 0, 46, 45, 1, 0, 0, 0, 47, 50, 1, 0, 0, 0, 48,
-		46, 1, 0, 0, 0, 48, 49, 1, 0, 0, 0, 49, 11, 1, 0, 0, 0, 50, 48, 1, 0, 0,
-		0, 4, 15, 22, 36, 48,
+		4, 1, 22, 69, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 1, 0, 5,
+		0, 10, 8, 0, 10, 0, 12, 0, 13, 9, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 25, 8, 1, 10, 1, 12, 1, 28, 9, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 40, 8, 1, 10,
+		1, 12, 1, 43, 9, 1, 1, 1, 1, 1, 5, 1, 47, 8, 1, 10, 1, 12, 1, 50, 9, 1,
+		1, 1, 1, 1, 3, 1, 54, 8, 1, 1, 2, 5, 2, 57, 8, 2, 10, 2, 12, 2, 60, 9,
+		2, 1, 3, 1, 3, 5, 3, 64, 8, 3, 10, 3, 12, 3, 67, 9, 3, 1, 3, 0, 0, 4, 0,
+		2, 4, 6, 0, 0, 80, 0, 11, 1, 0, 0, 0, 2, 53, 1, 0, 0, 0, 4, 58, 1, 0, 0,
+		0, 6, 61, 1, 0, 0, 0, 8, 10, 3, 2, 1, 0, 9, 8, 1, 0, 0, 0, 10, 13, 1, 0,
+		0, 0, 11, 9, 1, 0, 0, 0, 11, 12, 1, 0, 0, 0, 12, 14, 1, 0, 0, 0, 13, 11,
+		1, 0, 0, 0, 14, 15, 5, 0, 0, 1, 15, 1, 1, 0, 0, 0, 16, 17, 5, 4, 0, 0,
+		17, 54, 5, 15, 0, 0, 18, 19, 5, 5, 0, 0, 19, 54, 5, 15, 0, 0, 20, 21, 5,
+		11, 0, 0, 21, 54, 5, 15, 0, 0, 22, 26, 5, 10, 0, 0, 23, 25, 5, 16, 0, 0,
+		24, 23, 1, 0, 0, 0, 25, 28, 1, 0, 0, 0, 26, 24, 1, 0, 0, 0, 26, 27, 1,
+		0, 0, 0, 27, 54, 1, 0, 0, 0, 28, 26, 1, 0, 0, 0, 29, 30, 5, 6, 0, 0, 30,
+		54, 5, 15, 0, 0, 31, 32, 5, 7, 0, 0, 32, 54, 5, 15, 0, 0, 33, 34, 5, 8,
+		0, 0, 34, 54, 5, 15, 0, 0, 35, 36, 5, 9, 0, 0, 36, 54, 5, 15, 0, 0, 37,
+		41, 5, 12, 0, 0, 38, 40, 5, 16, 0, 0, 39, 38, 1, 0, 0, 0, 40, 43, 1, 0,
+		0, 0, 41, 39, 1, 0, 0, 0, 41, 42, 1, 0, 0, 0, 42, 54, 1, 0, 0, 0, 43, 41,
+		1, 0, 0, 0, 44, 48, 5, 13, 0, 0, 45, 47, 5, 16, 0, 0, 46, 45, 1, 0, 0,
+		0, 47, 50, 1, 0, 0, 0, 48, 46, 1, 0, 0, 0, 48, 49, 1, 0, 0, 0, 49, 54,
+		1, 0, 0, 0, 50, 48, 1, 0, 0, 0, 51, 52, 5, 14, 0, 0, 52, 54, 3, 4, 2, 0,
+		53, 16, 1, 0, 0, 0, 53, 18, 1, 0, 0, 0, 53, 20, 1, 0, 0, 0, 53, 22, 1,
+		0, 0, 0, 53, 29, 1, 0, 0, 0, 53, 31, 1, 0, 0, 0, 53, 33, 1, 0, 0, 0, 53,
+		35, 1, 0, 0, 0, 53, 37, 1, 0, 0, 0, 53, 44, 1, 0, 0, 0, 53, 51, 1, 0, 0,
+		0, 54, 3, 1, 0, 0, 0, 55, 57, 3, 6, 3, 0, 56, 55, 1, 0, 0, 0, 57, 60, 1,
+		0, 0, 0, 58, 56, 1, 0, 0, 0, 58, 59, 1, 0, 0, 0, 59, 5, 1, 0, 0, 0, 60,
+		58, 1, 0, 0, 0, 61, 65, 5, 19, 0, 0, 62, 64, 5, 20, 0, 0, 63, 62, 1, 0,
+		0, 0, 64, 67, 1, 0, 0, 0, 65, 63, 1, 0, 0, 0, 65, 66, 1, 0, 0, 0, 66, 7,
+		1, 0, 0, 0, 67, 65, 1, 0, 0, 0, 7, 11, 26, 41, 48, 53, 58, 65,
 	}
 	deserializer := antlr.NewATNDeserializer(nil)
 	staticData.atn = deserializer.Deserialize(staticData.serializedATN)
@@ -102,30 +109,37 @@ func NewPipeLang(input antlr.TokenStream) *PipeLang {
 
 // PipeLang tokens.
 const (
-	PipeLangEOF                  = antlr.TokenEOF
-	PipeLangCOMMENT              = 1
-	PipeLangWS_BLANK             = 2
-	PipeLangWS                   = 3
-	PipeLangKW_DESCRIPTION       = 4
-	PipeLangKW_TAGS              = 5
-	PipeLangKW_TYPE              = 6
-	PipeLangKW_NODE              = 7
-	PipeLangKW_COPY_SCHEDULE     = 8
-	PipeLangKW_DATASOURCE        = 9
-	PipeLangKW_TARGET_DATASOURCE = 10
-	PipeLangKW_SQL_ARROW         = 11
-	PipeLangSQL_LINE             = 12
-	PipeLangREST_OF_LINE         = 13
+	PipeLangEOF            = antlr.TokenEOF
+	PipeLangCOMMENT        = 1
+	PipeLangWS_BLANK       = 2
+	PipeLangWS             = 3
+	PipeLangTYPE           = 4
+	PipeLangNAME           = 5
+	PipeLangTAGS           = 6
+	PipeLangOWNER          = 7
+	PipeLangDESTINATION    = 8
+	PipeLangSCHEDULE       = 9
+	PipeLangDESCRIPTION_ML = 10
+	PipeLangDESCRIPTION    = 11
+	PipeLangSOURCES        = 12
+	PipeLangPARAMS         = 13
+	PipeLangPIPELINE       = 14
+	PipeLangREST_OF_LINE   = 15
+	PipeLangBLOCK_LINE     = 16
+	PipeLangBLOCK_BLANK    = 17
+	PipeLangBLOCK_COMMENT  = 18
+	PipeLangNODE_HEADER    = 19
+	PipeLangPRQL_LINE      = 20
+	PipeLangPIPE_BLANK     = 21
+	PipeLangPIPE_COMMENT   = 22
 )
 
 // PipeLang rules.
 const (
-	PipeLangRULE_pipeFile  = 0
-	PipeLangRULE_statement = 1
-	PipeLangRULE_directive = 2
-	PipeLangRULE_nodeBlock = 3
-	PipeLangRULE_sqlBlock  = 4
-	PipeLangRULE_sqlBody   = 5
+	PipeLangRULE_pipeFile      = 0
+	PipeLangRULE_directive     = 1
+	PipeLangRULE_pipelineBlock = 2
+	PipeLangRULE_pipelineNode  = 3
 )
 
 // IPipeFileContext is an interface to support dynamic dispatch.
@@ -137,8 +151,8 @@ type IPipeFileContext interface {
 
 	// Getter signatures
 	EOF() antlr.TerminalNode
-	AllStatement() []IStatementContext
-	Statement(i int) IStatementContext
+	AllDirective() []IDirectiveContext
+	Directive(i int) IDirectiveContext
 
 	// IsPipeFileContext differentiates from other interfaces.
 	IsPipeFileContext()
@@ -180,20 +194,20 @@ func (s *PipeFileContext) EOF() antlr.TerminalNode {
 	return s.GetToken(PipeLangEOF, 0)
 }
 
-func (s *PipeFileContext) AllStatement() []IStatementContext {
+func (s *PipeFileContext) AllDirective() []IDirectiveContext {
 	children := s.GetChildren()
 	len := 0
 	for _, ctx := range children {
-		if _, ok := ctx.(IStatementContext); ok {
+		if _, ok := ctx.(IDirectiveContext); ok {
 			len++
 		}
 	}
 
-	tst := make([]IStatementContext, len)
+	tst := make([]IDirectiveContext, len)
 	i := 0
 	for _, ctx := range children {
-		if t, ok := ctx.(IStatementContext); ok {
-			tst[i] = t.(IStatementContext)
+		if t, ok := ctx.(IDirectiveContext); ok {
+			tst[i] = t.(IDirectiveContext)
 			i++
 		}
 	}
@@ -201,11 +215,11 @@ func (s *PipeFileContext) AllStatement() []IStatementContext {
 	return tst
 }
 
-func (s *PipeFileContext) Statement(i int) IStatementContext {
+func (s *PipeFileContext) Directive(i int) IDirectiveContext {
 	var t antlr.RuleContext
 	j := 0
 	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(IStatementContext); ok {
+		if _, ok := ctx.(IDirectiveContext); ok {
 			if j == i {
 				t = ctx.(antlr.RuleContext)
 				break
@@ -218,7 +232,7 @@ func (s *PipeFileContext) Statement(i int) IStatementContext {
 		return nil
 	}
 
-	return t.(IStatementContext)
+	return t.(IDirectiveContext)
 }
 
 func (s *PipeFileContext) GetRuleContext() antlr.RuleContext {
@@ -257,20 +271,20 @@ func (p *PipeLang) PipeFile() (localctx IPipeFileContext) {
 	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(15)
+	p.SetState(11)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 	_la = p.GetTokenStream().LA(1)
 
-	for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&2032) != 0 {
+	for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&32752) != 0 {
 		{
-			p.SetState(12)
-			p.Statement()
+			p.SetState(8)
+			p.Directive()
 		}
 
-		p.SetState(17)
+		p.SetState(13)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -278,163 +292,12 @@ func (p *PipeLang) PipeFile() (localctx IPipeFileContext) {
 		_la = p.GetTokenStream().LA(1)
 	}
 	{
-		p.SetState(18)
+		p.SetState(14)
 		p.Match(PipeLangEOF)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
 		}
-	}
-
-errorExit:
-	if p.HasError() {
-		v := p.GetError()
-		localctx.SetException(v)
-		p.GetErrorHandler().ReportError(p, v)
-		p.GetErrorHandler().Recover(p, v)
-		p.SetError(nil)
-	}
-	p.ExitRule()
-	return localctx
-	goto errorExit // Trick to prevent compiler error if the label is not used
-}
-
-// IStatementContext is an interface to support dynamic dispatch.
-type IStatementContext interface {
-	antlr.ParserRuleContext
-
-	// GetParser returns the parser.
-	GetParser() antlr.Parser
-
-	// Getter signatures
-	Directive() IDirectiveContext
-	NodeBlock() INodeBlockContext
-
-	// IsStatementContext differentiates from other interfaces.
-	IsStatementContext()
-}
-
-type StatementContext struct {
-	antlr.BaseParserRuleContext
-	parser antlr.Parser
-}
-
-func NewEmptyStatementContext() *StatementContext {
-	var p = new(StatementContext)
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = PipeLangRULE_statement
-	return p
-}
-
-func InitEmptyStatementContext(p *StatementContext) {
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = PipeLangRULE_statement
-}
-
-func (*StatementContext) IsStatementContext() {}
-
-func NewStatementContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *StatementContext {
-	var p = new(StatementContext)
-
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
-
-	p.parser = parser
-	p.RuleIndex = PipeLangRULE_statement
-
-	return p
-}
-
-func (s *StatementContext) GetParser() antlr.Parser { return s.parser }
-
-func (s *StatementContext) Directive() IDirectiveContext {
-	var t antlr.RuleContext
-	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(IDirectiveContext); ok {
-			t = ctx.(antlr.RuleContext)
-			break
-		}
-	}
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(IDirectiveContext)
-}
-
-func (s *StatementContext) NodeBlock() INodeBlockContext {
-	var t antlr.RuleContext
-	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(INodeBlockContext); ok {
-			t = ctx.(antlr.RuleContext)
-			break
-		}
-	}
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(INodeBlockContext)
-}
-
-func (s *StatementContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *StatementContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
-	return antlr.TreesStringTree(s, ruleNames, recog)
-}
-
-func (s *StatementContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterStatement(s)
-	}
-}
-
-func (s *StatementContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitStatement(s)
-	}
-}
-
-func (s *StatementContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case PipeLangVisitor:
-		return t.VisitStatement(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-func (p *PipeLang) Statement() (localctx IStatementContext) {
-	localctx = NewStatementContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 2, PipeLangRULE_statement)
-	p.SetState(22)
-	p.GetErrorHandler().Sync(p)
-	if p.HasError() {
-		goto errorExit
-	}
-
-	switch p.GetTokenStream().LA(1) {
-	case PipeLangKW_DESCRIPTION, PipeLangKW_TAGS, PipeLangKW_TYPE, PipeLangKW_COPY_SCHEDULE, PipeLangKW_DATASOURCE, PipeLangKW_TARGET_DATASOURCE:
-		p.EnterOuterAlt(localctx, 1)
-		{
-			p.SetState(20)
-			p.Directive()
-		}
-
-	case PipeLangKW_NODE:
-		p.EnterOuterAlt(localctx, 2)
-		{
-			p.SetState(21)
-			p.NodeBlock()
-		}
-
-	default:
-		p.SetError(antlr.NewNoViableAltException(p, nil, nil, nil, nil, nil))
-		goto errorExit
 	}
 
 errorExit:
@@ -504,12 +367,12 @@ func (s *DirectiveContext) ToStringTree(ruleNames []string, recog antlr.Recogniz
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-type TargetDatasourceDirContext struct {
+type NameDirContext struct {
 	DirectiveContext
 }
 
-func NewTargetDatasourceDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *TargetDatasourceDirContext {
-	var p = new(TargetDatasourceDirContext)
+func NewNameDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *NameDirContext {
+	var p = new(NameDirContext)
 
 	InitEmptyDirectiveContext(&p.DirectiveContext)
 	p.parser = parser
@@ -518,34 +381,146 @@ func NewTargetDatasourceDirContext(parser antlr.Parser, ctx antlr.ParserRuleCont
 	return p
 }
 
-func (s *TargetDatasourceDirContext) GetRuleContext() antlr.RuleContext {
+func (s *NameDirContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *TargetDatasourceDirContext) KW_TARGET_DATASOURCE() antlr.TerminalNode {
-	return s.GetToken(PipeLangKW_TARGET_DATASOURCE, 0)
+func (s *NameDirContext) NAME() antlr.TerminalNode {
+	return s.GetToken(PipeLangNAME, 0)
 }
 
-func (s *TargetDatasourceDirContext) REST_OF_LINE() antlr.TerminalNode {
+func (s *NameDirContext) REST_OF_LINE() antlr.TerminalNode {
 	return s.GetToken(PipeLangREST_OF_LINE, 0)
 }
 
-func (s *TargetDatasourceDirContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *NameDirContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterTargetDatasourceDir(s)
+		listenerT.EnterNameDir(s)
 	}
 }
 
-func (s *TargetDatasourceDirContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *NameDirContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitTargetDatasourceDir(s)
+		listenerT.ExitNameDir(s)
 	}
 }
 
-func (s *TargetDatasourceDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *NameDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitTargetDatasourceDir(s)
+		return t.VisitNameDir(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+type ParamsDirContext struct {
+	DirectiveContext
+}
+
+func NewParamsDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *ParamsDirContext {
+	var p = new(ParamsDirContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *ParamsDirContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *ParamsDirContext) PARAMS() antlr.TerminalNode {
+	return s.GetToken(PipeLangPARAMS, 0)
+}
+
+func (s *ParamsDirContext) AllBLOCK_LINE() []antlr.TerminalNode {
+	return s.GetTokens(PipeLangBLOCK_LINE)
+}
+
+func (s *ParamsDirContext) BLOCK_LINE(i int) antlr.TerminalNode {
+	return s.GetToken(PipeLangBLOCK_LINE, i)
+}
+
+func (s *ParamsDirContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterParamsDir(s)
+	}
+}
+
+func (s *ParamsDirContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitParamsDir(s)
+	}
+}
+
+func (s *ParamsDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitParamsDir(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+type PipelineDirContext struct {
+	DirectiveContext
+}
+
+func NewPipelineDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *PipelineDirContext {
+	var p = new(PipelineDirContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *PipelineDirContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *PipelineDirContext) PIPELINE() antlr.TerminalNode {
+	return s.GetToken(PipeLangPIPELINE, 0)
+}
+
+func (s *PipelineDirContext) PipelineBlock() IPipelineBlockContext {
+	var t antlr.RuleContext
+	for _, ctx := range s.GetChildren() {
+		if _, ok := ctx.(IPipelineBlockContext); ok {
+			t = ctx.(antlr.RuleContext)
+			break
+		}
+	}
+
+	if t == nil {
+		return nil
+	}
+
+	return t.(IPipelineBlockContext)
+}
+
+func (s *PipelineDirContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterPipelineDir(s)
+	}
+}
+
+func (s *PipelineDirContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitPipelineDir(s)
+	}
+}
+
+func (s *PipelineDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitPipelineDir(s)
 
 	default:
 		return t.VisitChildren(s)
@@ -570,8 +545,8 @@ func (s *TypeDirContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *TypeDirContext) KW_TYPE() antlr.TerminalNode {
-	return s.GetToken(PipeLangKW_TYPE, 0)
+func (s *TypeDirContext) TYPE() antlr.TerminalNode {
+	return s.GetToken(PipeLangTYPE, 0)
 }
 
 func (s *TypeDirContext) REST_OF_LINE() antlr.TerminalNode {
@@ -600,12 +575,12 @@ func (s *TypeDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	}
 }
 
-type CopyScheduleDirContext struct {
+type DestinationDirContext struct {
 	DirectiveContext
 }
 
-func NewCopyScheduleDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *CopyScheduleDirContext {
-	var p = new(CopyScheduleDirContext)
+func NewDestinationDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DestinationDirContext {
+	var p = new(DestinationDirContext)
 
 	InitEmptyDirectiveContext(&p.DirectiveContext)
 	p.parser = parser
@@ -614,34 +589,86 @@ func NewCopyScheduleDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext)
 	return p
 }
 
-func (s *CopyScheduleDirContext) GetRuleContext() antlr.RuleContext {
+func (s *DestinationDirContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *CopyScheduleDirContext) KW_COPY_SCHEDULE() antlr.TerminalNode {
-	return s.GetToken(PipeLangKW_COPY_SCHEDULE, 0)
+func (s *DestinationDirContext) DESTINATION() antlr.TerminalNode {
+	return s.GetToken(PipeLangDESTINATION, 0)
 }
 
-func (s *CopyScheduleDirContext) REST_OF_LINE() antlr.TerminalNode {
+func (s *DestinationDirContext) REST_OF_LINE() antlr.TerminalNode {
 	return s.GetToken(PipeLangREST_OF_LINE, 0)
 }
 
-func (s *CopyScheduleDirContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *DestinationDirContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterCopyScheduleDir(s)
+		listenerT.EnterDestinationDir(s)
 	}
 }
 
-func (s *CopyScheduleDirContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *DestinationDirContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitCopyScheduleDir(s)
+		listenerT.ExitDestinationDir(s)
 	}
 }
 
-func (s *CopyScheduleDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *DestinationDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitCopyScheduleDir(s)
+		return t.VisitDestinationDir(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+type DescriptionMLDirContext struct {
+	DirectiveContext
+}
+
+func NewDescriptionMLDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DescriptionMLDirContext {
+	var p = new(DescriptionMLDirContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *DescriptionMLDirContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *DescriptionMLDirContext) DESCRIPTION_ML() antlr.TerminalNode {
+	return s.GetToken(PipeLangDESCRIPTION_ML, 0)
+}
+
+func (s *DescriptionMLDirContext) AllBLOCK_LINE() []antlr.TerminalNode {
+	return s.GetTokens(PipeLangBLOCK_LINE)
+}
+
+func (s *DescriptionMLDirContext) BLOCK_LINE(i int) antlr.TerminalNode {
+	return s.GetToken(PipeLangBLOCK_LINE, i)
+}
+
+func (s *DescriptionMLDirContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterDescriptionMLDir(s)
+	}
+}
+
+func (s *DescriptionMLDirContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitDescriptionMLDir(s)
+	}
+}
+
+func (s *DescriptionMLDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitDescriptionMLDir(s)
 
 	default:
 		return t.VisitChildren(s)
@@ -666,8 +693,8 @@ func (s *DescriptionDirContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *DescriptionDirContext) KW_DESCRIPTION() antlr.TerminalNode {
-	return s.GetToken(PipeLangKW_DESCRIPTION, 0)
+func (s *DescriptionDirContext) DESCRIPTION() antlr.TerminalNode {
+	return s.GetToken(PipeLangDESCRIPTION, 0)
 }
 
 func (s *DescriptionDirContext) REST_OF_LINE() antlr.TerminalNode {
@@ -696,6 +723,154 @@ func (s *DescriptionDirContext) Accept(visitor antlr.ParseTreeVisitor) interface
 	}
 }
 
+type OwnerDirContext struct {
+	DirectiveContext
+}
+
+func NewOwnerDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *OwnerDirContext {
+	var p = new(OwnerDirContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *OwnerDirContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *OwnerDirContext) OWNER() antlr.TerminalNode {
+	return s.GetToken(PipeLangOWNER, 0)
+}
+
+func (s *OwnerDirContext) REST_OF_LINE() antlr.TerminalNode {
+	return s.GetToken(PipeLangREST_OF_LINE, 0)
+}
+
+func (s *OwnerDirContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterOwnerDir(s)
+	}
+}
+
+func (s *OwnerDirContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitOwnerDir(s)
+	}
+}
+
+func (s *OwnerDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitOwnerDir(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+type ScheduleDirContext struct {
+	DirectiveContext
+}
+
+func NewScheduleDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *ScheduleDirContext {
+	var p = new(ScheduleDirContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *ScheduleDirContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *ScheduleDirContext) SCHEDULE() antlr.TerminalNode {
+	return s.GetToken(PipeLangSCHEDULE, 0)
+}
+
+func (s *ScheduleDirContext) REST_OF_LINE() antlr.TerminalNode {
+	return s.GetToken(PipeLangREST_OF_LINE, 0)
+}
+
+func (s *ScheduleDirContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterScheduleDir(s)
+	}
+}
+
+func (s *ScheduleDirContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitScheduleDir(s)
+	}
+}
+
+func (s *ScheduleDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitScheduleDir(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+type SourcesDirContext struct {
+	DirectiveContext
+}
+
+func NewSourcesDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *SourcesDirContext {
+	var p = new(SourcesDirContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *SourcesDirContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *SourcesDirContext) SOURCES() antlr.TerminalNode {
+	return s.GetToken(PipeLangSOURCES, 0)
+}
+
+func (s *SourcesDirContext) AllBLOCK_LINE() []antlr.TerminalNode {
+	return s.GetTokens(PipeLangBLOCK_LINE)
+}
+
+func (s *SourcesDirContext) BLOCK_LINE(i int) antlr.TerminalNode {
+	return s.GetToken(PipeLangBLOCK_LINE, i)
+}
+
+func (s *SourcesDirContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterSourcesDir(s)
+	}
+}
+
+func (s *SourcesDirContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitSourcesDir(s)
+	}
+}
+
+func (s *SourcesDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitSourcesDir(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
 type TagsDirContext struct {
 	DirectiveContext
 }
@@ -714,8 +889,8 @@ func (s *TagsDirContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *TagsDirContext) KW_TAGS() antlr.TerminalNode {
-	return s.GetToken(PipeLangKW_TAGS, 0)
+func (s *TagsDirContext) TAGS() antlr.TerminalNode {
+	return s.GetToken(PipeLangTAGS, 0)
 }
 
 func (s *TagsDirContext) REST_OF_LINE() antlr.TerminalNode {
@@ -744,77 +919,31 @@ func (s *TagsDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	}
 }
 
-type DatasourceDirContext struct {
-	DirectiveContext
-}
-
-func NewDatasourceDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DatasourceDirContext {
-	var p = new(DatasourceDirContext)
-
-	InitEmptyDirectiveContext(&p.DirectiveContext)
-	p.parser = parser
-	p.CopyAll(ctx.(*DirectiveContext))
-
-	return p
-}
-
-func (s *DatasourceDirContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *DatasourceDirContext) KW_DATASOURCE() antlr.TerminalNode {
-	return s.GetToken(PipeLangKW_DATASOURCE, 0)
-}
-
-func (s *DatasourceDirContext) REST_OF_LINE() antlr.TerminalNode {
-	return s.GetToken(PipeLangREST_OF_LINE, 0)
-}
-
-func (s *DatasourceDirContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterDatasourceDir(s)
-	}
-}
-
-func (s *DatasourceDirContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitDatasourceDir(s)
-	}
-}
-
-func (s *DatasourceDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case PipeLangVisitor:
-		return t.VisitDatasourceDir(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
 func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 	localctx = NewDirectiveContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 4, PipeLangRULE_directive)
-	p.SetState(36)
+	p.EnterRule(localctx, 2, PipeLangRULE_directive)
+	var _la int
+
+	p.SetState(53)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 
 	switch p.GetTokenStream().LA(1) {
-	case PipeLangKW_DESCRIPTION:
-		localctx = NewDescriptionDirContext(p, localctx)
+	case PipeLangTYPE:
+		localctx = NewTypeDirContext(p, localctx)
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(24)
-			p.Match(PipeLangKW_DESCRIPTION)
+			p.SetState(16)
+			p.Match(PipeLangTYPE)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
 		{
-			p.SetState(25)
+			p.SetState(17)
 			p.Match(PipeLangREST_OF_LINE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -822,19 +951,19 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 			}
 		}
 
-	case PipeLangKW_TAGS:
-		localctx = NewTagsDirContext(p, localctx)
+	case PipeLangNAME:
+		localctx = NewNameDirContext(p, localctx)
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(26)
-			p.Match(PipeLangKW_TAGS)
+			p.SetState(18)
+			p.Match(PipeLangNAME)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
 		{
-			p.SetState(27)
+			p.SetState(19)
 			p.Match(PipeLangREST_OF_LINE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -842,19 +971,19 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 			}
 		}
 
-	case PipeLangKW_TYPE:
-		localctx = NewTypeDirContext(p, localctx)
+	case PipeLangDESCRIPTION:
+		localctx = NewDescriptionDirContext(p, localctx)
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(28)
-			p.Match(PipeLangKW_TYPE)
+			p.SetState(20)
+			p.Match(PipeLangDESCRIPTION)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
 		{
-			p.SetState(29)
+			p.SetState(21)
 			p.Match(PipeLangREST_OF_LINE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -862,39 +991,55 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 			}
 		}
 
-	case PipeLangKW_DATASOURCE:
-		localctx = NewDatasourceDirContext(p, localctx)
+	case PipeLangDESCRIPTION_ML:
+		localctx = NewDescriptionMLDirContext(p, localctx)
 		p.EnterOuterAlt(localctx, 4)
 		{
-			p.SetState(30)
-			p.Match(PipeLangKW_DATASOURCE)
+			p.SetState(22)
+			p.Match(PipeLangDESCRIPTION_ML)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
-		{
-			p.SetState(31)
-			p.Match(PipeLangREST_OF_LINE)
+		p.SetState(26)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+
+		for _la == PipeLangBLOCK_LINE {
+			{
+				p.SetState(23)
+				p.Match(PipeLangBLOCK_LINE)
+				if p.HasError() {
+					// Recognition error - abort rule
+					goto errorExit
+				}
+			}
+
+			p.SetState(28)
+			p.GetErrorHandler().Sync(p)
 			if p.HasError() {
-				// Recognition error - abort rule
 				goto errorExit
 			}
+			_la = p.GetTokenStream().LA(1)
 		}
 
-	case PipeLangKW_TARGET_DATASOURCE:
-		localctx = NewTargetDatasourceDirContext(p, localctx)
+	case PipeLangTAGS:
+		localctx = NewTagsDirContext(p, localctx)
 		p.EnterOuterAlt(localctx, 5)
 		{
-			p.SetState(32)
-			p.Match(PipeLangKW_TARGET_DATASOURCE)
+			p.SetState(29)
+			p.Match(PipeLangTAGS)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
 		{
-			p.SetState(33)
+			p.SetState(30)
 			p.Match(PipeLangREST_OF_LINE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -902,24 +1047,152 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 			}
 		}
 
-	case PipeLangKW_COPY_SCHEDULE:
-		localctx = NewCopyScheduleDirContext(p, localctx)
+	case PipeLangOWNER:
+		localctx = NewOwnerDirContext(p, localctx)
 		p.EnterOuterAlt(localctx, 6)
 		{
-			p.SetState(34)
-			p.Match(PipeLangKW_COPY_SCHEDULE)
+			p.SetState(31)
+			p.Match(PipeLangOWNER)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
 		{
-			p.SetState(35)
+			p.SetState(32)
 			p.Match(PipeLangREST_OF_LINE)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
+		}
+
+	case PipeLangDESTINATION:
+		localctx = NewDestinationDirContext(p, localctx)
+		p.EnterOuterAlt(localctx, 7)
+		{
+			p.SetState(33)
+			p.Match(PipeLangDESTINATION)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		{
+			p.SetState(34)
+			p.Match(PipeLangREST_OF_LINE)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+
+	case PipeLangSCHEDULE:
+		localctx = NewScheduleDirContext(p, localctx)
+		p.EnterOuterAlt(localctx, 8)
+		{
+			p.SetState(35)
+			p.Match(PipeLangSCHEDULE)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		{
+			p.SetState(36)
+			p.Match(PipeLangREST_OF_LINE)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+
+	case PipeLangSOURCES:
+		localctx = NewSourcesDirContext(p, localctx)
+		p.EnterOuterAlt(localctx, 9)
+		{
+			p.SetState(37)
+			p.Match(PipeLangSOURCES)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		p.SetState(41)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+
+		for _la == PipeLangBLOCK_LINE {
+			{
+				p.SetState(38)
+				p.Match(PipeLangBLOCK_LINE)
+				if p.HasError() {
+					// Recognition error - abort rule
+					goto errorExit
+				}
+			}
+
+			p.SetState(43)
+			p.GetErrorHandler().Sync(p)
+			if p.HasError() {
+				goto errorExit
+			}
+			_la = p.GetTokenStream().LA(1)
+		}
+
+	case PipeLangPARAMS:
+		localctx = NewParamsDirContext(p, localctx)
+		p.EnterOuterAlt(localctx, 10)
+		{
+			p.SetState(44)
+			p.Match(PipeLangPARAMS)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		p.SetState(48)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+
+		for _la == PipeLangBLOCK_LINE {
+			{
+				p.SetState(45)
+				p.Match(PipeLangBLOCK_LINE)
+				if p.HasError() {
+					// Recognition error - abort rule
+					goto errorExit
+				}
+			}
+
+			p.SetState(50)
+			p.GetErrorHandler().Sync(p)
+			if p.HasError() {
+				goto errorExit
+			}
+			_la = p.GetTokenStream().LA(1)
+		}
+
+	case PipeLangPIPELINE:
+		localctx = NewPipelineDirContext(p, localctx)
+		p.EnterOuterAlt(localctx, 11)
+		{
+			p.SetState(51)
+			p.Match(PipeLangPIPELINE)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		{
+			p.SetState(52)
+			p.PipelineBlock()
 		}
 
 	default:
@@ -940,68 +1213,84 @@ errorExit:
 	goto errorExit // Trick to prevent compiler error if the label is not used
 }
 
-// INodeBlockContext is an interface to support dynamic dispatch.
-type INodeBlockContext interface {
+// IPipelineBlockContext is an interface to support dynamic dispatch.
+type IPipelineBlockContext interface {
 	antlr.ParserRuleContext
 
 	// GetParser returns the parser.
 	GetParser() antlr.Parser
 
 	// Getter signatures
-	KW_NODE() antlr.TerminalNode
-	REST_OF_LINE() antlr.TerminalNode
-	SqlBlock() ISqlBlockContext
+	AllPipelineNode() []IPipelineNodeContext
+	PipelineNode(i int) IPipelineNodeContext
 
-	// IsNodeBlockContext differentiates from other interfaces.
-	IsNodeBlockContext()
+	// IsPipelineBlockContext differentiates from other interfaces.
+	IsPipelineBlockContext()
 }
 
-type NodeBlockContext struct {
+type PipelineBlockContext struct {
 	antlr.BaseParserRuleContext
 	parser antlr.Parser
 }
 
-func NewEmptyNodeBlockContext() *NodeBlockContext {
-	var p = new(NodeBlockContext)
+func NewEmptyPipelineBlockContext() *PipelineBlockContext {
+	var p = new(PipelineBlockContext)
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = PipeLangRULE_nodeBlock
+	p.RuleIndex = PipeLangRULE_pipelineBlock
 	return p
 }
 
-func InitEmptyNodeBlockContext(p *NodeBlockContext) {
+func InitEmptyPipelineBlockContext(p *PipelineBlockContext) {
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = PipeLangRULE_nodeBlock
+	p.RuleIndex = PipeLangRULE_pipelineBlock
 }
 
-func (*NodeBlockContext) IsNodeBlockContext() {}
+func (*PipelineBlockContext) IsPipelineBlockContext() {}
 
-func NewNodeBlockContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *NodeBlockContext {
-	var p = new(NodeBlockContext)
+func NewPipelineBlockContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *PipelineBlockContext {
+	var p = new(PipelineBlockContext)
 
 	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
 
 	p.parser = parser
-	p.RuleIndex = PipeLangRULE_nodeBlock
+	p.RuleIndex = PipeLangRULE_pipelineBlock
 
 	return p
 }
 
-func (s *NodeBlockContext) GetParser() antlr.Parser { return s.parser }
+func (s *PipelineBlockContext) GetParser() antlr.Parser { return s.parser }
 
-func (s *NodeBlockContext) KW_NODE() antlr.TerminalNode {
-	return s.GetToken(PipeLangKW_NODE, 0)
+func (s *PipelineBlockContext) AllPipelineNode() []IPipelineNodeContext {
+	children := s.GetChildren()
+	len := 0
+	for _, ctx := range children {
+		if _, ok := ctx.(IPipelineNodeContext); ok {
+			len++
+		}
+	}
+
+	tst := make([]IPipelineNodeContext, len)
+	i := 0
+	for _, ctx := range children {
+		if t, ok := ctx.(IPipelineNodeContext); ok {
+			tst[i] = t.(IPipelineNodeContext)
+			i++
+		}
+	}
+
+	return tst
 }
 
-func (s *NodeBlockContext) REST_OF_LINE() antlr.TerminalNode {
-	return s.GetToken(PipeLangREST_OF_LINE, 0)
-}
-
-func (s *NodeBlockContext) SqlBlock() ISqlBlockContext {
+func (s *PipelineBlockContext) PipelineNode(i int) IPipelineNodeContext {
 	var t antlr.RuleContext
+	j := 0
 	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(ISqlBlockContext); ok {
-			t = ctx.(antlr.RuleContext)
-			break
+		if _, ok := ctx.(IPipelineNodeContext); ok {
+			if j == i {
+				t = ctx.(antlr.RuleContext)
+				break
+			}
+			j++
 		}
 	}
 
@@ -1009,313 +1298,201 @@ func (s *NodeBlockContext) SqlBlock() ISqlBlockContext {
 		return nil
 	}
 
-	return t.(ISqlBlockContext)
+	return t.(IPipelineNodeContext)
 }
 
-func (s *NodeBlockContext) GetRuleContext() antlr.RuleContext {
+func (s *PipelineBlockContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *NodeBlockContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+func (s *PipelineBlockContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-func (s *NodeBlockContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *PipelineBlockContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterNodeBlock(s)
+		listenerT.EnterPipelineBlock(s)
 	}
 }
 
-func (s *NodeBlockContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *PipelineBlockContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitNodeBlock(s)
+		listenerT.ExitPipelineBlock(s)
 	}
 }
 
-func (s *NodeBlockContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *PipelineBlockContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitNodeBlock(s)
+		return t.VisitPipelineBlock(s)
 
 	default:
 		return t.VisitChildren(s)
 	}
 }
 
-func (p *PipeLang) NodeBlock() (localctx INodeBlockContext) {
-	localctx = NewNodeBlockContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 6, PipeLangRULE_nodeBlock)
-	p.EnterOuterAlt(localctx, 1)
-	{
-		p.SetState(38)
-		p.Match(PipeLangKW_NODE)
-		if p.HasError() {
-			// Recognition error - abort rule
-			goto errorExit
-		}
-	}
-	{
-		p.SetState(39)
-		p.Match(PipeLangREST_OF_LINE)
-		if p.HasError() {
-			// Recognition error - abort rule
-			goto errorExit
-		}
-	}
-	{
-		p.SetState(40)
-		p.SqlBlock()
-	}
-
-errorExit:
-	if p.HasError() {
-		v := p.GetError()
-		localctx.SetException(v)
-		p.GetErrorHandler().ReportError(p, v)
-		p.GetErrorHandler().Recover(p, v)
-		p.SetError(nil)
-	}
-	p.ExitRule()
-	return localctx
-	goto errorExit // Trick to prevent compiler error if the label is not used
-}
-
-// ISqlBlockContext is an interface to support dynamic dispatch.
-type ISqlBlockContext interface {
-	antlr.ParserRuleContext
-
-	// GetParser returns the parser.
-	GetParser() antlr.Parser
-
-	// Getter signatures
-	KW_SQL_ARROW() antlr.TerminalNode
-	SqlBody() ISqlBodyContext
-
-	// IsSqlBlockContext differentiates from other interfaces.
-	IsSqlBlockContext()
-}
-
-type SqlBlockContext struct {
-	antlr.BaseParserRuleContext
-	parser antlr.Parser
-}
-
-func NewEmptySqlBlockContext() *SqlBlockContext {
-	var p = new(SqlBlockContext)
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = PipeLangRULE_sqlBlock
-	return p
-}
-
-func InitEmptySqlBlockContext(p *SqlBlockContext) {
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = PipeLangRULE_sqlBlock
-}
-
-func (*SqlBlockContext) IsSqlBlockContext() {}
-
-func NewSqlBlockContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *SqlBlockContext {
-	var p = new(SqlBlockContext)
-
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
-
-	p.parser = parser
-	p.RuleIndex = PipeLangRULE_sqlBlock
-
-	return p
-}
-
-func (s *SqlBlockContext) GetParser() antlr.Parser { return s.parser }
-
-func (s *SqlBlockContext) KW_SQL_ARROW() antlr.TerminalNode {
-	return s.GetToken(PipeLangKW_SQL_ARROW, 0)
-}
-
-func (s *SqlBlockContext) SqlBody() ISqlBodyContext {
-	var t antlr.RuleContext
-	for _, ctx := range s.GetChildren() {
-		if _, ok := ctx.(ISqlBodyContext); ok {
-			t = ctx.(antlr.RuleContext)
-			break
-		}
-	}
-
-	if t == nil {
-		return nil
-	}
-
-	return t.(ISqlBodyContext)
-}
-
-func (s *SqlBlockContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *SqlBlockContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
-	return antlr.TreesStringTree(s, ruleNames, recog)
-}
-
-func (s *SqlBlockContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterSqlBlock(s)
-	}
-}
-
-func (s *SqlBlockContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitSqlBlock(s)
-	}
-}
-
-func (s *SqlBlockContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case PipeLangVisitor:
-		return t.VisitSqlBlock(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-func (p *PipeLang) SqlBlock() (localctx ISqlBlockContext) {
-	localctx = NewSqlBlockContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 8, PipeLangRULE_sqlBlock)
-	p.EnterOuterAlt(localctx, 1)
-	{
-		p.SetState(42)
-		p.Match(PipeLangKW_SQL_ARROW)
-		if p.HasError() {
-			// Recognition error - abort rule
-			goto errorExit
-		}
-	}
-	{
-		p.SetState(43)
-		p.SqlBody()
-	}
-
-errorExit:
-	if p.HasError() {
-		v := p.GetError()
-		localctx.SetException(v)
-		p.GetErrorHandler().ReportError(p, v)
-		p.GetErrorHandler().Recover(p, v)
-		p.SetError(nil)
-	}
-	p.ExitRule()
-	return localctx
-	goto errorExit // Trick to prevent compiler error if the label is not used
-}
-
-// ISqlBodyContext is an interface to support dynamic dispatch.
-type ISqlBodyContext interface {
-	antlr.ParserRuleContext
-
-	// GetParser returns the parser.
-	GetParser() antlr.Parser
-
-	// Getter signatures
-	AllSQL_LINE() []antlr.TerminalNode
-	SQL_LINE(i int) antlr.TerminalNode
-
-	// IsSqlBodyContext differentiates from other interfaces.
-	IsSqlBodyContext()
-}
-
-type SqlBodyContext struct {
-	antlr.BaseParserRuleContext
-	parser antlr.Parser
-}
-
-func NewEmptySqlBodyContext() *SqlBodyContext {
-	var p = new(SqlBodyContext)
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = PipeLangRULE_sqlBody
-	return p
-}
-
-func InitEmptySqlBodyContext(p *SqlBodyContext) {
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
-	p.RuleIndex = PipeLangRULE_sqlBody
-}
-
-func (*SqlBodyContext) IsSqlBodyContext() {}
-
-func NewSqlBodyContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *SqlBodyContext {
-	var p = new(SqlBodyContext)
-
-	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
-
-	p.parser = parser
-	p.RuleIndex = PipeLangRULE_sqlBody
-
-	return p
-}
-
-func (s *SqlBodyContext) GetParser() antlr.Parser { return s.parser }
-
-func (s *SqlBodyContext) AllSQL_LINE() []antlr.TerminalNode {
-	return s.GetTokens(PipeLangSQL_LINE)
-}
-
-func (s *SqlBodyContext) SQL_LINE(i int) antlr.TerminalNode {
-	return s.GetToken(PipeLangSQL_LINE, i)
-}
-
-func (s *SqlBodyContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *SqlBodyContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
-	return antlr.TreesStringTree(s, ruleNames, recog)
-}
-
-func (s *SqlBodyContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterSqlBody(s)
-	}
-}
-
-func (s *SqlBodyContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitSqlBody(s)
-	}
-}
-
-func (s *SqlBodyContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case PipeLangVisitor:
-		return t.VisitSqlBody(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-func (p *PipeLang) SqlBody() (localctx ISqlBodyContext) {
-	localctx = NewSqlBodyContext(p, p.GetParserRuleContext(), p.GetState())
-	p.EnterRule(localctx, 10, PipeLangRULE_sqlBody)
+func (p *PipeLang) PipelineBlock() (localctx IPipelineBlockContext) {
+	localctx = NewPipelineBlockContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 4, PipeLangRULE_pipelineBlock)
 	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(48)
+	p.SetState(58)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 	_la = p.GetTokenStream().LA(1)
 
-	for _la == PipeLangSQL_LINE {
+	for _la == PipeLangNODE_HEADER {
 		{
-			p.SetState(45)
-			p.Match(PipeLangSQL_LINE)
+			p.SetState(55)
+			p.PipelineNode()
+		}
+
+		p.SetState(60)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+	}
+
+errorExit:
+	if p.HasError() {
+		v := p.GetError()
+		localctx.SetException(v)
+		p.GetErrorHandler().ReportError(p, v)
+		p.GetErrorHandler().Recover(p, v)
+		p.SetError(nil)
+	}
+	p.ExitRule()
+	return localctx
+	goto errorExit // Trick to prevent compiler error if the label is not used
+}
+
+// IPipelineNodeContext is an interface to support dynamic dispatch.
+type IPipelineNodeContext interface {
+	antlr.ParserRuleContext
+
+	// GetParser returns the parser.
+	GetParser() antlr.Parser
+
+	// Getter signatures
+	NODE_HEADER() antlr.TerminalNode
+	AllPRQL_LINE() []antlr.TerminalNode
+	PRQL_LINE(i int) antlr.TerminalNode
+
+	// IsPipelineNodeContext differentiates from other interfaces.
+	IsPipelineNodeContext()
+}
+
+type PipelineNodeContext struct {
+	antlr.BaseParserRuleContext
+	parser antlr.Parser
+}
+
+func NewEmptyPipelineNodeContext() *PipelineNodeContext {
+	var p = new(PipelineNodeContext)
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
+	p.RuleIndex = PipeLangRULE_pipelineNode
+	return p
+}
+
+func InitEmptyPipelineNodeContext(p *PipelineNodeContext) {
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, nil, -1)
+	p.RuleIndex = PipeLangRULE_pipelineNode
+}
+
+func (*PipelineNodeContext) IsPipelineNodeContext() {}
+
+func NewPipelineNodeContext(parser antlr.Parser, parent antlr.ParserRuleContext, invokingState int) *PipelineNodeContext {
+	var p = new(PipelineNodeContext)
+
+	antlr.InitBaseParserRuleContext(&p.BaseParserRuleContext, parent, invokingState)
+
+	p.parser = parser
+	p.RuleIndex = PipeLangRULE_pipelineNode
+
+	return p
+}
+
+func (s *PipelineNodeContext) GetParser() antlr.Parser { return s.parser }
+
+func (s *PipelineNodeContext) NODE_HEADER() antlr.TerminalNode {
+	return s.GetToken(PipeLangNODE_HEADER, 0)
+}
+
+func (s *PipelineNodeContext) AllPRQL_LINE() []antlr.TerminalNode {
+	return s.GetTokens(PipeLangPRQL_LINE)
+}
+
+func (s *PipelineNodeContext) PRQL_LINE(i int) antlr.TerminalNode {
+	return s.GetToken(PipeLangPRQL_LINE, i)
+}
+
+func (s *PipelineNodeContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *PipelineNodeContext) ToStringTree(ruleNames []string, recog antlr.Recognizer) string {
+	return antlr.TreesStringTree(s, ruleNames, recog)
+}
+
+func (s *PipelineNodeContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterPipelineNode(s)
+	}
+}
+
+func (s *PipelineNodeContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitPipelineNode(s)
+	}
+}
+
+func (s *PipelineNodeContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitPipelineNode(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+func (p *PipeLang) PipelineNode() (localctx IPipelineNodeContext) {
+	localctx = NewPipelineNodeContext(p, p.GetParserRuleContext(), p.GetState())
+	p.EnterRule(localctx, 6, PipeLangRULE_pipelineNode)
+	var _la int
+
+	p.EnterOuterAlt(localctx, 1)
+	{
+		p.SetState(61)
+		p.Match(PipeLangNODE_HEADER)
+		if p.HasError() {
+			// Recognition error - abort rule
+			goto errorExit
+		}
+	}
+	p.SetState(65)
+	p.GetErrorHandler().Sync(p)
+	if p.HasError() {
+		goto errorExit
+	}
+	_la = p.GetTokenStream().LA(1)
+
+	for _la == PipeLangPRQL_LINE {
+		{
+			p.SetState(62)
+			p.Match(PipeLangPRQL_LINE)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
 
-		p.SetState(50)
+		p.SetState(67)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit

@@ -17,7 +17,7 @@ type Handler interface {
 	UpdatePipe(w http.ResponseWriter, r *http.Request)
 	DeletePipe(w http.ResponseWriter, r *http.Request)
 	// Execution
-	ExecutePipe(w http.ResponseWriter, r *http.Request)
+	// ExecutePipe(w http.ResponseWriter, r *http.Request)
 }
 
 // Module is the business logic layer for pipe operations.
@@ -27,7 +27,7 @@ type Module interface {
 	ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error)
 	UpdatePipe(ctx context.Context, name string, pipe *pipetypes.Pipe) (*pipetypes.Pipe, error)
 	DeletePipe(ctx context.Context, name string) error
-	ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error)
+	// ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error)
 }
 
 // Scheduler is re-exported from pkg/scheduler for use as a dependency type in this module.

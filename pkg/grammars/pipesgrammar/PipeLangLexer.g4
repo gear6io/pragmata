@@ -1,88 +1,177 @@
 lexer grammar PipeLangLexer;
 
-// ── Default mode ──────────────────────────────────────────────────────────────
+// ── Shared fragments ──────────────────────────────────────────────────────────
+
+// COLON abstracts the separator so ':' is never repeated literally in keyword rules.
+fragment COLON : ':' [ \t]* ;
+
+// REST captures the remainder of a line including its newline terminator.
+fragment REST  : ~[\r\n]* [\r\n] ;
+
+// ID is a standard identifier used in node names.
+fragment ID    : [a-zA-Z_][a-zA-Z0-9_]* ;
+
+// ── DEFAULT mode ──────────────────────────────────────────────────────────────
 
 COMMENT  : '#' ~[\r\n]* -> skip ;
 WS_BLANK : [ \t]* [\r\n]+ -> skip ;
 WS       : [ \t]+ -> skip ;
 
-// KW_COPY_SCHEDULE must precede any COPY-prefix token (longer match wins on
-// maximal munch, but explicit ordering makes the intent clear).
+// Simple value directives: keyword at column 0, value on the same line.
+// Each pushes VALUE_MODE; REST_OF_LINE there captures the value and pops back.
+TYPE        : 'type'        COLON -> pushMode(VALUE_MODE) ;
+NAME        : 'name'        COLON -> pushMode(VALUE_MODE) ;
+TAGS        : 'tags'        COLON -> pushMode(VALUE_MODE) ;
+OWNER       : 'owner'       COLON -> pushMode(VALUE_MODE) ;
+DESTINATION : 'destination' COLON -> pushMode(VALUE_MODE) ;
+SCHEDULE    : 'schedule'    COLON -> pushMode(VALUE_MODE) ;
+
+// Description has two forms.  DESCRIPTION_ML must be declared first so that
+// ANTLR's maximal-munch rule picks it when '|' follows the colon.
+DESCRIPTION_ML : 'description' COLON '|' REST -> pushMode(BLOCK_MODE) ;
+DESCRIPTION    : 'description' COLON          -> pushMode(VALUE_MODE) ;
+
+// Block sections: the entire header line (including any comment) is consumed
+// before the mode is pushed, so the block mode starts at column 0 of the
+// first indented content line.
+SOURCES  : 'sources'  COLON REST -> pushMode(BLOCK_MODE) ;
+PARAMS   : 'params'   COLON REST -> pushMode(BLOCK_MODE) ;
+PIPELINE : 'pipeline' COLON REST -> pushMode(PIPELINE_MODE) ;
+
+// ── VALUE_MODE ────────────────────────────────────────────────────────────────
 //
-// Each keyword pushes DIRECTIVE_VALUE_MODE so that REST_OF_LINE (defined only
-// there) cannot compete with the keyword tokens in default mode via maximal munch.
-KW_DESCRIPTION       : 'DESCRIPTION'       [ \t]+ -> pushMode(DIRECTIVE_VALUE_MODE) ;
-KW_TAGS              : 'TAGS'              [ \t]+ -> pushMode(DIRECTIVE_VALUE_MODE) ;
-KW_TYPE              : 'TYPE'              [ \t]+ -> pushMode(DIRECTIVE_VALUE_MODE) ;
-KW_NODE              : 'NODE'              [ \t]+ -> pushMode(DIRECTIVE_VALUE_MODE) ;
-KW_COPY_SCHEDULE     : 'COPY_SCHEDULE'     [ \t]+ -> pushMode(DIRECTIVE_VALUE_MODE) ;
-KW_DATASOURCE        : 'DATASOURCE'        [ \t]+ -> pushMode(DIRECTIVE_VALUE_MODE) ;
-KW_TARGET_DATASOURCE : 'TARGET_DATASOURCE' [ \t]+ -> pushMode(DIRECTIVE_VALUE_MODE) ;
+// Active after any simple-value keyword.  REST_OF_LINE captures everything
+// through the newline and pops back to DEFAULT (or, when called from BLOCK_MODE
+// via mode(VALUE_MODE), back to DEFAULT via the mode stack).
 
-// Consumes the entire "SQL >" line (optional spaces around >), any trailing
-// text on that line, and the newline.  After consuming the newline the lexer
-// is in SQL_BODY_MODE positioned at column 0 of the next line.
-KW_SQL_ARROW
-    : 'SQL' [ \t]* '>' ~[\r\n]* [\r\n]+ -> pushMode(SQL_BODY_MODE)
-    ;
-
-// Placeholder declaration for the SQL_LINE token type.
-// The null byte never appears in real .pipe input, so this rule is never
-// matched directly.  SQL_NL in SQL_BODY_MODE re-types itself as SQL_LINE.
-SQL_LINE : ' ' ;
-
-// ── DIRECTIVE_VALUE_MODE ──────────────────────────────────────────────────────
-//
-// Active immediately after any KW_XXX token.  REST_OF_LINE captures everything
-// up to and including the newline, then pops back to the calling mode.
-
-mode DIRECTIVE_VALUE_MODE;
+mode VALUE_MODE;
 
 REST_OF_LINE : ~[\r\n]* [\r\n] -> popMode ;
 
-// ── SQL_BODY_MODE ─────────────────────────────────────────────────────────────
+// ── BLOCK_MODE ────────────────────────────────────────────────────────────────
 //
-// After KW_SQL_ARROW, every non-newline character is accumulated via `-> more`
-// without emitting a token.  When a newline is reached, SQL_NL emits a
-// SQL_LINE token containing the entire buffered line text plus the newline.
+// Used for sources:, params:, and multi-line description: | blocks.
 //
-// Top-level keywords are recognised only at the start of a line.
-// GetCharPositionInLine() returns 0 immediately after any newline, so the
-// predicate replaces the hand-managed atLineStart flag with no extra state.
+// Col-0 keyword re-emitters follow the same pattern as the existing SQL_KW_*
+// rules: when a top-level keyword is recognised at column 0, its token type is
+// reassigned and the mode is switched so VALUE_MODE can recapture the value
+// (for simple directives) or BLOCK_MODE / PIPELINE_MODE can start fresh.
 //
-// On keyword match we switch (not pop) into DIRECTIVE_VALUE_MODE so the mode
-// stack stays correct: [DEFAULT, DIRECTIVE_VALUE_MODE].  REST_OF_LINE then
-// pops back to DEFAULT.
+// mode(X) replaces the current mode stack entry, keeping DEFAULT beneath it, so
+// that REST_OF_LINE -> popMode returns correctly to DEFAULT.
 
-mode SQL_BODY_MODE;
+mode BLOCK_MODE;
 
-SQL_KW_DESCRIPTION
-    : { p.GetCharPositionInLine() == 0 }? 'DESCRIPTION' [ \t]+
-      -> type(KW_DESCRIPTION), mode(DIRECTIVE_VALUE_MODE) ;
+BLOCK_TYPE
+    : { p.GetCharPositionInLine() == 0 }? 'type'        COLON
+      -> type(TYPE), mode(VALUE_MODE) ;
 
-SQL_KW_TAGS
-    : { p.GetCharPositionInLine() == 0 }? 'TAGS' [ \t]+
-      -> type(KW_TAGS), mode(DIRECTIVE_VALUE_MODE) ;
+BLOCK_NAME
+    : { p.GetCharPositionInLine() == 0 }? 'name'        COLON
+      -> type(NAME), mode(VALUE_MODE) ;
 
-SQL_KW_TYPE
-    : { p.GetCharPositionInLine() == 0 }? 'TYPE' [ \t]+
-      -> type(KW_TYPE), mode(DIRECTIVE_VALUE_MODE) ;
+BLOCK_DESC_ML
+    : { p.GetCharPositionInLine() == 0 }? 'description' COLON '|' REST
+      -> type(DESCRIPTION_ML), mode(BLOCK_MODE) ;
 
-SQL_KW_NODE
-    : { p.GetCharPositionInLine() == 0 }? 'NODE' [ \t]+
-      -> type(KW_NODE), mode(DIRECTIVE_VALUE_MODE) ;
+BLOCK_DESC
+    : { p.GetCharPositionInLine() == 0 }? 'description' COLON
+      -> type(DESCRIPTION), mode(VALUE_MODE) ;
 
-SQL_KW_DATASOURCE
-    : { p.GetCharPositionInLine() == 0 }? 'DATASOURCE' [ \t]+
-      -> type(KW_DATASOURCE), mode(DIRECTIVE_VALUE_MODE) ;
+BLOCK_TAGS
+    : { p.GetCharPositionInLine() == 0 }? 'tags'        COLON
+      -> type(TAGS), mode(VALUE_MODE) ;
 
-SQL_KW_TARGET_DATASOURCE
-    : { p.GetCharPositionInLine() == 0 }? 'TARGET_DATASOURCE' [ \t]+
-      -> type(KW_TARGET_DATASOURCE), mode(DIRECTIVE_VALUE_MODE) ;
+BLOCK_OWNER
+    : { p.GetCharPositionInLine() == 0 }? 'owner'       COLON
+      -> type(OWNER), mode(VALUE_MODE) ;
 
-SQL_KW_COPY_SCHEDULE
-    : { p.GetCharPositionInLine() == 0 }? 'COPY_SCHEDULE' [ \t]+
-      -> type(KW_COPY_SCHEDULE), mode(DIRECTIVE_VALUE_MODE) ;
+BLOCK_DESTINATION
+    : { p.GetCharPositionInLine() == 0 }? 'destination' COLON
+      -> type(DESTINATION), mode(VALUE_MODE) ;
 
-SQL_CHAR : ~[\r\n] -> more ;
-SQL_NL   : [\r\n]  -> type(SQL_LINE) ;
+BLOCK_SCHEDULE
+    : { p.GetCharPositionInLine() == 0 }? 'schedule'    COLON
+      -> type(SCHEDULE), mode(VALUE_MODE) ;
+
+BLOCK_SOURCES
+    : { p.GetCharPositionInLine() == 0 }? 'sources'     COLON REST
+      -> type(SOURCES), mode(BLOCK_MODE) ;
+
+BLOCK_PARAMS
+    : { p.GetCharPositionInLine() == 0 }? 'params'      COLON REST
+      -> type(PARAMS), mode(BLOCK_MODE) ;
+
+BLOCK_PIPELINE
+    : { p.GetCharPositionInLine() == 0 }? 'pipeline'    COLON REST
+      -> type(PIPELINE), mode(PIPELINE_MODE) ;
+
+// Indented content lines (the actual block data — sources list items, param
+// definitions, or description continuation lines).
+BLOCK_LINE : [ \t]+ ~[\r\n]* [\r\n] ;
+
+// Blank lines and column-0 comments are skipped within blocks.
+BLOCK_BLANK   : [ \t]* [\r\n] -> skip ;
+BLOCK_COMMENT : { p.GetCharPositionInLine() == 0 }? '#' ~[\r\n]* [\r\n]? -> skip ;
+
+// ── PIPELINE_MODE ─────────────────────────────────────────────────────────────
+//
+// Used for the pipeline: section.  Like BLOCK_MODE, col-0 keywords end the
+// section and re-emit with the correct type.  Within the section, @name: lines
+// are NODE_HEADER tokens and all other indented lines are PRQL_LINE tokens.
+// NODE_HEADER is declared before PRQL_LINE so it wins when both could match.
+
+mode PIPELINE_MODE;
+
+PIPE_TYPE
+    : { p.GetCharPositionInLine() == 0 }? 'type'        COLON
+      -> type(TYPE), mode(VALUE_MODE) ;
+
+PIPE_NAME
+    : { p.GetCharPositionInLine() == 0 }? 'name'        COLON
+      -> type(NAME), mode(VALUE_MODE) ;
+
+PIPE_DESC_ML
+    : { p.GetCharPositionInLine() == 0 }? 'description' COLON '|' REST
+      -> type(DESCRIPTION_ML), mode(BLOCK_MODE) ;
+
+PIPE_DESC
+    : { p.GetCharPositionInLine() == 0 }? 'description' COLON
+      -> type(DESCRIPTION), mode(VALUE_MODE) ;
+
+PIPE_TAGS
+    : { p.GetCharPositionInLine() == 0 }? 'tags'        COLON
+      -> type(TAGS), mode(VALUE_MODE) ;
+
+PIPE_OWNER
+    : { p.GetCharPositionInLine() == 0 }? 'owner'       COLON
+      -> type(OWNER), mode(VALUE_MODE) ;
+
+PIPE_DESTINATION
+    : { p.GetCharPositionInLine() == 0 }? 'destination' COLON
+      -> type(DESTINATION), mode(VALUE_MODE) ;
+
+PIPE_SCHEDULE
+    : { p.GetCharPositionInLine() == 0 }? 'schedule'    COLON
+      -> type(SCHEDULE), mode(VALUE_MODE) ;
+
+PIPE_SOURCES
+    : { p.GetCharPositionInLine() == 0 }? 'sources'     COLON REST
+      -> type(SOURCES), mode(BLOCK_MODE) ;
+
+PIPE_PARAMS
+    : { p.GetCharPositionInLine() == 0 }? 'params'      COLON REST
+      -> type(PARAMS), mode(BLOCK_MODE) ;
+
+PIPE_PIPELINE
+    : { p.GetCharPositionInLine() == 0 }? 'pipeline'    COLON REST
+      -> type(PIPELINE), mode(PIPELINE_MODE) ;
+
+// @name: node header — must come before PRQL_LINE (both start with [ \t]+).
+NODE_HEADER : [ \t]+ '@' ID COLON ~[\r\n]* [\r\n]? ;
+
+// PRQL body lines: any other indented content.
+PRQL_LINE : [ \t]+ ~[\r\n]+ [\r\n]? ;
+
+PIPE_BLANK   : [ \t]* [\r\n] -> skip ;
+PIPE_COMMENT : { p.GetCharPositionInLine() == 0 }? '#' ~[\r\n]* [\r\n]? -> skip ;

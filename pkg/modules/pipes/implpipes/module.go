@@ -91,18 +91,18 @@ func (m *module) DeletePipe(ctx context.Context, name string) error {
 	return m.store.DeletePipe(ctx, name)
 }
 
-func (m *module) ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error) {
-	pipe, err := m.store.GetPipe(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("load pipe: %w", err)
-	}
-	sql, err := executor.BuildCTE(pipe.Nodes, params)
-	if err != nil {
-		return nil, fmt.Errorf("build query: %w", err)
-	}
-	result, err := m.exec.Query(ctx, sql)
-	if err != nil {
-		return nil, fmt.Errorf("execute: %w", err)
-	}
-	return result, nil
-}
+// func (m *module) ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error) {
+// 	pipe, err := m.store.GetPipe(ctx, name)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("load pipe: %w", err)
+// 	}
+// 	sql, err := executor.BuildCTE(pipe.Nodes, params)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("build query: %w", err)
+// 	}
+// 	result, err := m.exec.Query(ctx, sql)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("execute: %w", err)
+// 	}
+// 	return result, nil
+// }
