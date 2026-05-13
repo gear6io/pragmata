@@ -1,4 +1,4 @@
-# RFC 002: QueryLang — Data-Aware Filter DSL and Pipe Transforms
+# RFC 002: QueryLang — Data-Aware Filter DSL and Pipeline Body
 
 **Status**: Draft  
 **Depends on**: RFC 001 (Schema Registry)  
@@ -6,40 +6,93 @@
 
 ## Summary
 
-Two interlocking grammar extensions that make the platform data-aware:
+Two interlocking additions to the platform:
 
 1. **FilterLang** — a standalone filter expression DSL (`KEY OP VALUE`) that compiles to
    ClickHouse WHERE clause SQL using schema registry type information. Users write
    `status = 200` and the system generates the correct SQL regardless of whether `status`
-   is a static Int64 column, an attribute stored as String, or a field with a conflicted
+   is a static Int64 column, an attribute stored as String, or a field with conflicted
    type history.
 
-2. **PipeLang v2** — new structured node directives (`FROM`, `FILTER`, `DERIVE`,
-   `GROUP_BY`, `AGGREGATE`, `JOIN_ONE`, `JOIN_MANY`, `ORDER_BY`, `SELECT`, `LIMIT`,
-   `OFFSET`) that extend the existing pipe format. Nodes track schema through the
-   transformation graph; type mismatches on JOIN keys produce compile-time warnings.
+2. **PQL (Pipeline Query Language)** — a PRQL-inspired pipeline syntax that replaces
+   `NODE name\nSQL > ...` blocks as the body of a `.pipe` file. The existing PipeLang
+   metadata directives — `DESCRIPTION`, `TAGS`, `TYPE`, `DATASOURCE`, `TARGET_DATASOURCE`,
+   `COPY_SCHEDULE` — are **completely unchanged**. Only the query body changes.
 
-Both are additive — existing `SQL >` nodes continue working unchanged.
+### What stays the same in PipeLang
+
+```
+DESCRIPTION Daily revenue by country   ← unchanged
+TAGS revenue, sales                    ← unchanged
+TYPE ENDPOINT                          ← unchanged (ENDPOINT | MATERIALIZED | COPY)
+DATASOURCE orders                      ← unchanged
+TARGET_DATASOURCE summary              ← unchanged (COPY pipes)
+COPY_SCHEDULE 0 * * * *               ← unchanged (COPY pipes)
+```
+
+### What changes: the query body
+
+Old (NODE blocks with raw SQL):
+```
+NODE filter_orders
+SQL >
+  SELECT * FROM orders WHERE status = 200
+
+NODE daily
+SQL >
+  SELECT toStartOfDay(ts) AS day, sum(amount) AS revenue
+  FROM filter_orders GROUP BY day
+```
+
+New (PQL pipeline, PRQL-inspired):
+```
+from orders
+filter status = 200
+derive { day = toStartOfDay(ts) }
+group { day } ( aggregate { revenue = sum(amount) } )
+```
+
+Legacy `NODE + SQL >` pipes continue to work unchanged — the parser detects which
+syntax is present and dispatches accordingly.
 
 ## Motivation
 
-### The Pain: Complex SQL for Simple Intent
+### The Pain: Type Drift and JSON Extraction in SQL Nodes
 
-This is what a data analyst writes today to query across a table where types drifted:
+Today a pipe author writes raw SQL inside `NODE` blocks. When the underlying DataSource
+has dynamic attributes or type drift, the SQL quickly becomes defensive:
 
 ```sql
-SELECT user_id, toStartOfDay(ts) AS day, sum(amount) AS revenue
+-- Inside a NODE SQL > block, filtering on a DataSource with dynamic attributes
+SELECT
+    toStartOfDay(observed_timestamp) AS day,
+    country,
+    sum(amount) AS revenue
 FROM orders
 WHERE
-    (CAST(status AS String) = '200' OR status = 200)
-    AND JSONExtractString(attributes, 'env') = 'prod'
-    AND (attributes_string['environment'] = 'production' OR
-         attributes_string['environment'] = 'prod')
-GROUP BY user_id, day
+    -- status was ingested as String for a year, then switched to Int64
+    (JSONExtractString(attributes, 'status') = '200'
+     OR JSONExtractInt(attributes, 'status') = 200)
+    -- env and environment are two names for the same concept in different sources
+    AND (JSONExtractString(attributes, 'env') = 'prod'
+         OR JSONExtractString(attributes, 'environment') = 'prod')
+GROUP BY day, country
 ```
 
-The analyst knows what they want: rows where the request succeeded and came from production.
-The SQL is a distraction — type casting, JSON path extraction, alias disambiguation.
+The author knows what they want. The JSON extraction and type hedging are noise
+forced by lack of schema awareness in the query layer.
+
+The same pipe in PQL, with FilterLang handling type resolution:
+
+```
+from orders
+filter status = 200 AND env = prod
+derive { day = toStartOfDay(observed_timestamp) }
+group { day, country } ( aggregate { revenue = sum(amount) } )
+```
+
+FilterLang consults the schema registry, knows `status` is Int64 in attributes and
+`env` aliases `environment`, and generates the correct ClickHouse SQL automatically.
 
 ### The Goal: Simplicity as a First Principle (Inspired by SigNoz)
 
@@ -256,218 +309,470 @@ COLUMN ALIAS (if 'country' aliases ['geo_country_code']):
 
 | Where | How |
 |-------|-----|
-| `FILTER >` in a pipe node | schema from `DATASOURCE` declaration + node's input schema |
+| `filter` transform in a PQL pipeline | schema from `DATASOURCE` declaration, propagated through prior transforms |
 | `?filter=` URL param on auto-REST endpoint | schema from DataSource registry |
-| `?__filter=` URL param on ENDPOINT pipe | schema from the pipe's `DATASOURCE` |
+| `?__filter=` URL param on legacy ENDPOINT pipe | schema from the pipe's `DATASOURCE` |
+| `join` condition in PQL | FilterLang condition with access to both sides' schemas |
 | CLI `lint` | validates filter against registry offline |
 
 ---
 
-## Layer 2: PipeLang v2 — Data-Aware Transformation Nodes
+## Layer 2: PQL — PRQL-Inspired Pipeline Body
 
-### New Node Types
+### Design Philosophy
 
-A pipe NODE body can now be either a `SQL >` block (unchanged) or a **query block**
-using structured directives. Both compile to CTEs.
+PipeLang handles **metadata** (DESCRIPTION, TAGS, TYPE, DATASOURCE, etc.) and continues
+to do so unchanged. The **body** of the pipe — what was `NODE name\nSQL > ...` — becomes
+a linear PRQL-inspired pipeline.
 
-#### Complete PipeLang v2 Example
+PRQL's core insight: a query is a sequence of transforms where each step narrows, reshapes,
+or aggregates the previous step's output. Reading top-to-bottom tells you exactly what the
+data went through. SQL's problem is that the logical order of thought (filter early, then
+group, then sort) doesn't match the written order (SELECT → FROM → WHERE → GROUP BY →
+ORDER BY → LIMIT). PQL follows the logical order.
+
+Key differences from PRQL:
+- `filter` uses **FilterLang** syntax — schema-aware, type-transparent, no `==` confusion
+- Expressions (in `derive`, `aggregate`) are **ClickHouse-native** — `toStartOfDay`, `quantile(0.95)`, `uniqExact`
+- Jinja templates (`{{ param | default(x) }}`) render before PQL parsing — parameterization is first-class
+- No separate `.prql` file — the PQL pipeline IS the `.pipe` body when there are no `NODE` keywords
+- ClickHouse-specific extensions: `array_join`, `FINAL`, `SETTINGS`
+
+### Backward Compatibility
+
+Detection is automatic: if the pipe file body contains the `NODE` keyword → legacy parser.
+No `NODE` keyword → PQL parser. Both parsers produce the same `Pipe` struct; the rest of
+the system (executor, HTTP handler, scheduler, SQLMesh builder) is unchanged.
+
+### PQL With Each Pipe Type
+
+**TYPE ENDPOINT** — live parameterized query, exposed as REST API:
+```
+DESCRIPTION Top countries by revenue
+TAGS revenue, api
+TYPE ENDPOINT
+DATASOURCE orders
+
+from orders
+filter env = prod
+  AND observed_timestamp >= {{ start | default('2024-01-01') }}
+group { country } (
+  aggregate { revenue = sum(amount), orders = count() }
+)
+sort { -revenue }
+take {{ limit | default(10) }}
+```
+
+**TYPE MATERIALIZED** — pre-computed ClickHouse materialized view, managed by SQLMesh:
+```
+DESCRIPTION Daily revenue summary (pre-aggregated)
+TYPE MATERIALIZED
+DATASOURCE orders
+
+from orders
+filter env = prod
+derive { day = toStartOfDay(observed_timestamp) }
+group { day, country } (
+  aggregate { revenue = sum(amount), order_count = count() }
+)
+```
+
+**TYPE COPY** — scheduled SQL-to-table write, runs on cron:
+```
+DESCRIPTION Copy last 24h of orders to cold storage
+TYPE COPY
+DATASOURCE orders
+TARGET_DATASOURCE orders_archive
+COPY_SCHEDULE 0 2 * * *
+
+from orders
+filter observed_timestamp >= now() - toIntervalDay(1)
+  AND env = prod
+select { user_id, amount, country, observed_timestamp }
+```
+
+### Full PQL Example — ENDPOINT with JOIN
 
 ```
-DESCRIPTION Daily revenue by country
+DESCRIPTION Daily revenue by country with JOIN enrichment
 TAGS revenue, sales
 TYPE ENDPOINT
 DATASOURCE orders
 
-NODE source
-FROM orders
-
-NODE filtered
-FROM source
-FILTER >
-  observed_timestamp >= {{ start | default('2024-01-01') }}
+from orders
+filter status = 200
   AND country IN ('US', 'UK', 'DE')
-  AND status = 200
+  AND observed_timestamp >= {{ start | default('2024-01-01') }}
   AND amount > {{ min_amount | default(0) | float }}
-
-NODE enriched
-FROM filtered
-DERIVE >
-  toStartOfDay(observed_timestamp) AS day
-  CASE WHEN amount > 1000 THEN 'high' ELSE 'normal' END AS tier
-  attributes.env::String AS env
-
-NODE aggregated
-FROM enriched
-GROUP_BY >
-  day
-  country
-  tier
-AGGREGATE >
-  sum(amount) AS revenue
-  count() AS order_count
-  uniqExact(user_id) AS unique_users
-  quantile(0.95)(attributes.response_time_ms::Float64) AS p95_latency
-
-NODE joined
-FROM aggregated
-JOIN_ONE dim_country ON country = dim_country.code
-
-NODE result
-FROM joined
-FILTER > revenue > 1000
-ORDER_BY > -day, -revenue
-LIMIT {{ limit | default(100) | int }}
-OFFSET {{ offset | default(0) | int }}
-SELECT >
-  day
-  country
-  revenue
-  order_count
-  p95_latency
+derive {
+  day = toStartOfDay(observed_timestamp),
+  tier = multiIf(amount > 1000, 'high', amount > 100, 'medium', 'low')
+}
+group { day, country, tier } (
+  aggregate {
+    revenue = sum(amount),
+    order_count = count(),
+    unique_users = uniqExact(user_id),
+    p95_latency = quantile(0.95)(response_time_ms)
+  }
+)
+join side:left dim_country (country = dim_country.code)
+filter revenue > 1000
+sort { -day, revenue }
+take {{ limit | default(100) }}
+skip {{ offset | default(0) }}
 ```
 
-#### Compiled CTE SQL
+Compiled ClickHouse SQL:
 
 ```sql
 WITH
-  source AS (
-    SELECT * FROM orders
-  ),
-  filtered AS (
-    SELECT * FROM source
-    WHERE observed_timestamp >= parseDateTimeBestEffort('2024-01-01')
-      AND country IN ('US', 'UK', 'DE')
-      AND attributes.status::Int64 = 200
-      AND amount > 0.0
-  ),
-  enriched AS (
+  __derive AS (
     SELECT *,
       toStartOfDay(observed_timestamp) AS day,
-      CASE WHEN amount > 1000 THEN 'high' ELSE 'normal' END AS tier,
-      attributes.env::String AS env
-    FROM filtered
+      multiIf(amount > 1000, 'high', amount > 100, 'medium', 'low') AS tier
+    FROM orders
+    WHERE attributes.status::Int64 = 200
+      AND country IN ('US', 'UK', 'DE')
+      AND observed_timestamp >= parseDateTimeBestEffort('2024-01-01')
+      AND amount > 0.0
   ),
-  aggregated AS (
+  __agg AS (
     SELECT
       day, country, tier,
-      sum(amount)                                AS revenue,
-      count()                                    AS order_count,
-      uniqExact(user_id)                         AS unique_users,
+      sum(amount)                              AS revenue,
+      count()                                  AS order_count,
+      uniqExact(user_id)                       AS unique_users,
       quantile(0.95)(attributes.response_time_ms::Float64) AS p95_latency
-    FROM enriched
+    FROM __derive
     GROUP BY day, country, tier
   ),
-  joined AS (
-    SELECT aggregated.*, dim_country.region
-    FROM aggregated
-    LEFT JOIN dim_country ON aggregated.country = dim_country.code
-  ),
-  result AS (
-    SELECT day, country, revenue, order_count, p95_latency
-    FROM joined
-    WHERE revenue > 1000
-    ORDER BY day DESC, revenue DESC
-    LIMIT 100
-    OFFSET 0
+  __join AS (
+    SELECT __agg.*, dim_country.region
+    FROM __agg
+    LEFT JOIN dim_country ON __agg.country = dim_country.code
   )
-SELECT * FROM result
+SELECT *
+FROM __join
+WHERE revenue > 1000
+ORDER BY day DESC, revenue ASC
+LIMIT 100
+OFFSET 0
 ```
 
-### Grammar Extension to PipeLang.g4
+### Grammar: `PQL.g4`
 
 ```antlr4
-// Extensions to existing PipeLang.g4
+// PQL.g4 — PRQL-inspired pipeline query language
+// Parses the body of a .pipe file when no NODE keyword is present.
+// Jinja rendering happens BEFORE this parser runs.
+grammar PQL;
 
-KW_FROM           : F R O M ;
-KW_FILTER_ARROW   : F I L T E R WS '>' ;
-KW_DERIVE_ARROW   : D E R I V E WS '>' ;
-KW_GROUP_BY_ARROW : G R O U P '_' B Y WS '>' ;
-KW_AGGREGATE_ARROW: A G G R E G A T E WS '>' ;
-KW_SELECT_ARROW   : S E L E C T WS '>' ;
-KW_ORDER_BY_ARROW : O R D E R '_' B Y WS '>' ;
-KW_JOIN_ONE       : J O I N '_' O N E ;
-KW_JOIN_MANY      : J O I N '_' M A N Y ;
-KW_LIMIT          : L I M I T ;
-KW_OFFSET         : O F F S E T ;
+pipeline : transform+ EOF ;
 
-// In DEFAULT_MODE, new node body alternative:
-nodeBody
-    : sqlBlock         // existing
-    | queryBlock       // new
+transform
+    : fromTransform
+    | filterTransform
+    | deriveTransform
+    | selectTransform
+    | groupTransform
+    | joinTransform
+    | arrayJoinTransform
+    | sortTransform
+    | takeTransform
+    | skipTransform
+    | windowTransform
     ;
 
-queryBlock
-    : fromClause
-      (filterClause | deriveClause | joinClause
-      | groupByClause | aggregateClause
-      | selectClause | orderByClause
-      | limitClause | offsetClause)*
+// ─── Transforms ────────────────────────────────────────────────────────────
+
+// from table_name [final]
+// 'final' maps to ClickHouse FINAL modifier for ReplacingMergeTree
+fromTransform
+    : KW_FROM IDENT KW_FINAL?
     ;
 
-fromClause      : KW_FROM REST_OF_LINE ;       // table name or previous node name
-filterClause    : KW_FILTER_ARROW filterLine+ ; // each filterLine is a FilterLang fragment
-filterLine      : INDENTED_CONTENT NEWLINE ;
-deriveClause    : KW_DERIVE_ARROW opaqueLine+ ; // "expr AS alias" per line
-groupByClause   : KW_GROUP_BY_ARROW opaqueLine+ ;
-aggregateClause : KW_AGGREGATE_ARROW opaqueLine+ ;
-selectClause    : KW_SELECT_ARROW opaqueLine+ ;
-orderByClause   : KW_ORDER_BY_ARROW opaqueLine+ ; // '-field' means DESC
-limitClause     : KW_LIMIT REST_OF_LINE ;
-offsetClause    : KW_OFFSET REST_OF_LINE ;
-joinClause      : (KW_JOIN_ONE | KW_JOIN_MANY) REST_OF_LINE ; // "table ON cond"
-opaqueLine      : INDENTED_CONTENT NEWLINE ;
+// filter condition [continuation lines]
+// condition is parsed by the FilterLang parser (separate pass after Jinja render)
+// multi-line: subsequent indented lines continue the same FilterLang expression
+filterTransform
+    : KW_FILTER filterLine (INDENT filterLine)*
+    ;
+filterLine : REST_OF_LINE ;
+
+// derive { name = expr [, name = expr]* }
+// One or more named computed columns added to each row (no grouping)
+deriveTransform
+    : KW_DERIVE '{' assignmentList '}'
+    ;
+
+// select { col [, col]* }  OR  select { name = expr [, name = expr]* }
+// Projection — optional, default is SELECT *
+selectTransform
+    : KW_SELECT '{' selectionList '}'
+    ;
+
+// group { key [, key]* } ( aggregate { name = expr [, name = expr]* } )
+// GROUP BY + aggregation combined — always appear together
+groupTransform
+    : KW_GROUP '{' keyList '}' '(' KW_AGGREGATE '{' assignmentList '}' ')'
+    ;
+
+// join [side:left|right|inner|full] table_name (filter_condition)
+// join condition is a FilterLang expression referencing both sides
+// shorthand: (==col_name) means this.col_name = that.col_name
+joinTransform
+    : KW_JOIN (KW_SIDE ':' joinSide)? IDENT '(' joinCond ')'
+    ;
+joinCond
+    : '==' IDENT                    # SelfJoinCond   // (==user_id) shorthand
+    | filterLine                    # ExplicitCond   // (user_id = sessions.uid)
+    ;
+joinSide : KW_INNER | KW_LEFT | KW_RIGHT | KW_FULL ;
+
+// array_join column_name [as alias]
+// ClickHouse-specific: unnests an array column into rows
+arrayJoinTransform
+    : KW_ARRAY_JOIN IDENT (KW_AS IDENT)?
+    ;
+
+// sort { [-]col [, [-]col]* }
+// '-' prefix = DESC. Without prefix = ASC.
+sortTransform
+    : KW_SORT '{' sortList '}'
+    ;
+
+// take n      → LIMIT n
+// take n..m   → LIMIT (m-n) OFFSET n
+takeTransform
+    : KW_TAKE INTEGER ('..' INTEGER)?
+    ;
+
+// skip n → OFFSET n (used after take when n..m shorthand is not enough)
+skipTransform
+    : KW_SKIP INTEGER
+    ;
+
+// window { name = window_func(col) OVER (PARTITION BY ... ORDER BY ...) }
+// ClickHouse window functions — expressions are opaque
+windowTransform
+    : KW_WINDOW '{' assignmentList '}'
+    ;
+
+// ─── Sub-rules ─────────────────────────────────────────────────────────────
+
+assignmentList
+    : assignment (COMMA assignment)*
+    ;
+// name = expr   where expr is opaque ClickHouse SQL captured as raw text
+assignment
+    : IDENT '=' opaqueExpr
+    ;
+
+selectionList
+    : selectionItem (COMMA selectionItem)*
+    ;
+// col_name  OR  alias = expr
+selectionItem
+    : IDENT '=' opaqueExpr
+    | opaqueExpr
+    ;
+
+keyList
+    : keyItem (COMMA keyItem)*
+    ;
+// plain column ref  OR  alias = expr (for computed grouping keys)
+keyItem
+    : IDENT '=' opaqueExpr
+    | IDENT
+    ;
+
+sortList
+    : sortItem (COMMA sortItem)*
+    ;
+sortItem
+    : '-' IDENT                     // DESC
+    | '+' IDENT                     // ASC (explicit)
+    | IDENT                         // ASC (default)
+    ;
+
+// opaqueExpr: raw text up to the next structural delimiter ( , } ) or newline )
+// The lexer captures this as a single token, respecting nested parentheses.
+// ClickHouse expressions — functions, CASE, arithmetic, subexpressions — are not
+// parsed further by PQL. They are passed verbatim into generated SQL.
+opaqueExpr : OPAQUE_EXPR ;
+
+// ─── Lexer Tokens ──────────────────────────────────────────────────────────
+
+KW_FROM       : F R O M ;
+KW_FILTER     : F I L T E R ;
+KW_DERIVE     : D E R I V E ;
+KW_SELECT     : S E L E C T ;
+KW_GROUP      : G R O U P ;
+KW_AGGREGATE  : A G G R E G A T E ;
+KW_JOIN       : J O I N ;
+KW_SIDE       : S I D E ;
+KW_INNER      : I N N E R ;
+KW_LEFT       : L E F T ;
+KW_RIGHT      : R I G H T ;
+KW_FULL       : F U L L ;
+KW_ARRAY_JOIN : A R R A Y '_' J O I N ;
+KW_SORT       : S O R T ;
+KW_TAKE       : T A K E ;
+KW_SKIP       : S K I P ;
+KW_FINAL      : F I N A L ;
+KW_WINDOW     : W I N D O W ;
+KW_AS         : A S ;
+
+IDENT         : [a-zA-Z_][a-zA-Z0-9_]* ;
+INTEGER       : [0-9]+ ;
+INDENT        : '  ' | '\t' ;       // two spaces or tab = continuation
+COMMA         : ',' ;
+NEWLINE       : [\r\n]+ ;
+WS            : [ \t]+ -> skip ;
+
+// OPAQUE_EXPR: everything between structural delimiters, balancing ()
+// Implemented via lexer mode or custom action in the generated parser.
+// Captures: function calls with nested parens, arithmetic, CASE expressions.
+OPAQUE_EXPR   : ( ~[,{}\r\n()] | '(' (~[)]* ')') )+ ;
+
+REST_OF_LINE  : ~[\r\n]+ ;
+
+fragment A:[Aa]; fragment R:[Rr]; fragment G:[Gg]; fragment E:[Ee];
+fragment F:[Ff]; fragment I:[Ii]; fragment T:[Tt]; fragment N:[Nn];
+fragment D:[Dd]; fragment O:[Oo]; fragment V:[Vv]; fragment L:[Ll];
+fragment C:[Cc]; fragment S:[Ss]; fragment J:[Jj]; fragment H:[Hh];
+fragment K:[Kk]; fragment U:[Uu]; fragment W:[Ww]; fragment M:[Mm];
+fragment P:[Pp]; fragment Y:[Yy]; fragment X:[Xx]; fragment B:[Bb];
 ```
 
-`FILTER` lines are individually parsed by the FilterLang parser after Jinja rendering.
-`DERIVE`, `GROUP_BY`, `AGGREGATE`, `ORDER_BY`, `SELECT` lines are opaque text — the
-compiler extracts `expr AS alias` pairs via regex to build the output schema, but does
-not parse the expressions themselves.
+### Schema Propagation Through Transforms
 
-### Schema Propagation
-
-The compiler tracks output schema at each node boundary:
+The PQL compiler tracks the active schema after each transform:
 
 ```
-source: full DataSource schema (static cols + attribute registry)
+from orders:
+  schema = full DataSource schema
+  (static cols: observed_timestamp, user_id, amount, country)
+  (attribute registry: status=Int64/95%, env=String/99%, response_time_ms=Float64/99%)
 
-filtered: same schema as source  (FILTER never changes schema)
+filter status = 200 AND env = prod:
+  schema = unchanged (filter narrows rows, never columns)
 
-enriched: source schema plus:
-  day            Date    (toStartOfDay return type, known function)
-  tier           String  (CASE WHEN → String branches)
-  env            String  (explicit ::String cast, promoted from attribute)
+derive { day = ..., tier = ... }:
+  schema = prior + {day: Date, tier: String}
+  (toStartOfDay → Date, multiIf with string branches → String)
 
-aggregated: NEW schema — only GROUP_BY cols + AGGREGATE cols:
-  day            Date       (carried from GROUP_BY)
-  country        String     (carried from GROUP_BY)
-  tier           String     (carried from GROUP_BY)
-  revenue        Float64    (sum(amount), Float64 input)
-  order_count    Int64      (count() → always Int64)
-  unique_users   Int64      (uniqExact → always Int64)
-  p95_latency    Float64    (quantile → Float64)
-  [attributes registry is gone — cannot reference 'status' or 'env' after aggregation]
+group { day, country, tier } ( aggregate { revenue = sum(amount), ... } ):
+  schema RESETS to aggregate output only:
+  {day: Date, country: String, tier: String,
+   revenue: Float64, order_count: Int64, unique_users: Int64, p95_latency: Float64}
+  [observed_timestamp, user_id, amount, all attributes → out of scope]
 
-joined: aggregated schema + dim_country columns
+join side:left dim_country (country = dim_country.code):
+  schema = aggregate schema + dim_country columns
 
-result: projected subset (SELECT > clause)
+filter revenue > 1000:
+  schema = unchanged (post-join filter, revenue is in scope)
+  (FilterLang resolves 'revenue' against current schema → direct column, Float64)
 ```
 
-**Schema reset after AGGREGATE** is enforced: referencing `observed_timestamp` in a
-downstream FILTER after an AGGREGATE node is a compile-time error — the compiler knows
-that column is no longer in scope.
+**Schema reset after `group`** is enforced at compile time. Referencing `observed_timestamp`
+in a `filter` after a `group` is an error — the compiler reports it before any SQL is generated.
 
-### Type Inference for DERIVE / GROUP_BY / AGGREGATE
+### SQL Compilation Strategy: Collapse vs CTE
 
-The compiler infers output column types without a full ClickHouse expression parser:
+The compiler merges transforms into the smallest number of SQL clauses,
+falling back to CTEs when merging would be incorrect.
+
+**Collapse rules** (merge into one SELECT without CTE):
+```
+from + filter                    → SELECT * FROM t WHERE ...
+from + filter + sort + take      → SELECT * FROM t WHERE ... ORDER BY ... LIMIT n
+from + filter + select           → SELECT cols FROM t WHERE ...
+from + filter + derive + group   → SELECT derived, aggs FROM t WHERE ... GROUP BY ...
+  (only when derive exprs are referenced in GROUP BY or aggregate, not post-group)
+```
+
+**CTE required when**:
+```
+filter after group               → post-aggregation WHERE (can't merge into base WHERE)
+derive then filter on derived col → derived col isn't available in base WHERE
+join after group                 → must join on aggregated result, not base table
+any transform after join         → join result needs its own scope
+```
+
+**Example: simple pipeline — no CTE needed**
+
+```
+from orders
+filter country = US
+sort { -amount }
+take 10
+```
+```sql
+SELECT * FROM orders WHERE country = 'US' ORDER BY amount DESC LIMIT 10
+```
+
+**Example: derive then group — single CTE**
+
+```
+from orders
+filter status = 200
+derive { day = toStartOfDay(observed_timestamp) }
+group { day, country } (
+  aggregate { revenue = sum(amount), orders = count() }
+)
+sort { -day }
+```
+```sql
+WITH __derive AS (
+  SELECT *, toStartOfDay(observed_timestamp) AS day
+  FROM orders
+  WHERE attributes.status::Int64 = 200
+)
+SELECT day, country, sum(amount) AS revenue, count() AS orders
+FROM __derive
+GROUP BY day, country
+ORDER BY day DESC
+```
+
+**Example: filter after group — two CTEs**
+
+```
+from orders
+group { country } (
+  aggregate { revenue = sum(amount), orders = count() }
+)
+filter revenue > 10000
+sort { -revenue }
+take 5
+```
+```sql
+WITH __agg AS (
+  SELECT country, sum(amount) AS revenue, count() AS orders
+  FROM orders
+  GROUP BY country
+)
+SELECT * FROM __agg
+WHERE revenue > 10000
+ORDER BY revenue DESC
+LIMIT 5
+```
+
+### Type Inference for `derive` and `aggregate`
+
+Expressions in `derive` and `aggregate` are opaque — but the compiler pattern-matches
+known ClickHouse functions to propagate types into the output schema:
 
 | Expression pattern | Inferred output type |
-|-------------------|----------------------|
+|-------------------|---------------------|
 | `count()`, `count(col)` | Int64 |
 | `sum(col)` | same as col |
 | `avg(col)` | Float64 |
 | `min(col)`, `max(col)` | same as col |
 | `uniq*(col)`, `uniqExact(col)` | Int64 |
-| `quantile*(col)`, `median(col)` | Float64 |
+| `quantile*(n)(col)`, `median(col)` | Float64 |
 | `any(col)` | same as col |
 | `groupArray(col)` | Array(type of col) |
 | `topK(n)(col)` | Array(type of col) |
@@ -477,34 +782,60 @@ The compiler infers output column types without a full ClickHouse expression par
 | `upper(col)`, `lower(col)`, `toString(col)` | String |
 | `toInt64(col)`, `toInt32(col)` | Int64 |
 | `toFloat64(col)` | Float64 |
-| `CASE WHEN ... THEN 'str'` | String |
-| `CASE WHEN ... THEN 42` | Int64 |
-| bare column reference | lookup in input schema |
-| arithmetic `+`, `-`, `*`, `/` | type promotion rules |
+| `multiIf(…, 'str', …)` | String |
+| `multiIf(…, n, …)` | Int64 |
+| bare column reference | lookup in current schema |
+| arithmetic `+`, `-`, `*`, `/` | type promotion |
 | everything else | Dynamic |
 
 ### JOIN Type Safety
 
+The compiler resolves types on both sides of a join condition and flags mismatches:
+
 ```
-NODE joined
-FROM aggregated
-JOIN_ONE dim_country ON country = dim_country.code
+join side:left dim_country (country = dim_country.code)
 
 Compiler:
-  aggregated.country     → String (from GROUP_BY, static column origin)
-  dim_country.code       → String (from dim_country DataSource schema)
-  → Types match → safe JOIN, no warning
+  left.country       → String  (from static column)
+  dim_country.code   → String  (from dim_country DataSource schema)
+  → Match: String = String → safe
 
-Different case:
-JOIN_ONE sessions ON user_id = sessions.uid
+join side:left sessions (user_id = sessions.uid)
 
 Compiler:
-  user_id  → String (static column)
-  sessions.uid → Int64 (from sessions schema)
+  left.user_id       → String  (static column)
+  sessions.uid       → Int64   (from sessions schema)
   → MISMATCH
-  → ERROR: "Join key type mismatch: user_id (String) vs sessions.uid (Int64)"
-  → Suggested fix: ON user_id = sessions.uid::String
-  → Auto-fix available via --auto-cast flag
+  → Error: "Join key type mismatch: user_id (String) vs sessions.uid (Int64)"
+  → Suggestion: (user_id = sessions.uid::String)
+  → Auto-fix: --auto-cast generates CAST(sessions.uid AS String)
+```
+
+### ClickHouse-Specific Extensions
+
+**`from table FINAL`** — for ReplacingMergeTree (reads latest version of each row):
+```
+from orders final
+filter status = 200
+```
+→ `SELECT * FROM orders FINAL WHERE ...`
+
+**`array_join col`** — ClickHouse ARRAY JOIN (unnests array into rows):
+```
+from orders
+array_join tags
+filter tags = priority
+group { tags } ( aggregate { count = count() } )
+```
+→ `SELECT tags, count() AS count FROM orders ARRAY JOIN tags WHERE tags = 'priority' GROUP BY tags`
+
+**`window { ... }`** — ClickHouse window functions (opaque, passed through):
+```
+from orders
+window {
+  running_total = sum(amount) OVER (PARTITION BY country ORDER BY observed_timestamp)
+}
+select { country, amount, running_total }
 ```
 
 ---
@@ -513,73 +844,88 @@ Compiler:
 
 ```
 pkg/grammars/filtergrammar/
-  FilterLang.g4              ← grammar specification (this RFC)
+  FilterLang.g4              ← FilterLang grammar
   FilterLangParser.go        ← ANTLR4 generated
   FilterLangLexer.go         ← ANTLR4 generated
   FilterLangVisitor.go       ← ANTLR4 generated
 
+pkg/grammars/pqlgrammar/
+  PQL.g4                     ← PQL pipeline grammar (this RFC)
+  PQLParser.go               ← ANTLR4 generated
+  PQLLexer.go                ← ANTLR4 generated
+  PQLVisitor.go              ← ANTLR4 generated
+
 pkg/filtercompiler/
-  compiler.go                ← AST → ClickHouse SQL using schema registry
-  coerce.go                  ← type coercion matrix implementation
+  compiler.go                ← FilterLang AST → ClickHouse WHERE SQL
+  coerce.go                  ← type coercion matrix
   resolver.go                ← path → FieldResolution (static/attribute/unknown)
-  clickhouse_compat.go       ← detect CH version → new JSON vs JSONExtract* fallback
+  clickhouse_compat.go       ← CH version detection → new JSON vs JSONExtract* fallback
+
+pkg/pqlcompiler/
+  compiler.go                ← PQL pipeline → ClickHouse SQL (CTE builder)
+  schema.go                  ← schema propagation through transforms
+  typeinfer.go               ← expression pattern → output FieldDataType
+  join.go                    ← JOIN type safety checker
 
 pkg/ingestion/
-  typeinfer.go               ← JSON value → FieldDataType
+  typeinfer.go               ← JSON value → FieldDataType (ingestion-side)
   ingester.go                ← row splitting + CH insert + registry upsert
+
+pkg/parser/pqlparser/
+  pqlparser.go               ← entry point: parse PQL body → PQL AST
 
 scripts/
   generate-filter-grammar.sh ← antlr4-go invocation for FilterLang.g4
+  generate-pql-grammar.sh    ← antlr4-go invocation for PQL.g4
 ```
 
 **Modified files**:
 ```
-pkg/grammars/pipesgrammar/PipeLang.g4          ← add new node directive keywords
-pkg/grammars/pipesgrammar/PipeLangLexer.g4     ← add new lexer tokens
-pkg/parser/pipeparser/converter.go             ← handle queryBlock in visitor
-pkg/types/datasourcetypes/datastoretypes.go    ← fill Schema, add ColumnDef, AttrDef
-pkg/metadatastore/store.go                     ← add GetSchema, ResolveField, UpsertAttributes
+pkg/parser/pipeparser/pipeparser.go   ← detect PQL vs legacy body, dispatch accordingly
+pkg/modules/pipes/implpipes/module.go ← call pqlcompiler instead of executor.BuildCTE for PQL pipes
+pkg/types/datasourcetypes/            ← fill Schema, add ColumnDef, AttrDef
+pkg/metadatastore/store.go            ← add GetSchema, ResolveField, UpsertAttributes
 ```
 
 ---
 
 ## ClickHouse Version Compatibility
 
-The new ClickHouse JSON type dot-notation (`attributes.env::String`) is production-ready
-in ClickHouse 25.3+. For earlier versions we fall back to `JSONExtractString(attributes, 'env')`.
+New JSON type dot-notation (`attributes.env::String`) is production-ready in ClickHouse 25.3+.
+For older versions: `JSONExtractString(attributes, 'env')`. Both work with `JSON(max_dynamic_paths=0)`.
 
-The compiler detects the ClickHouse version at startup and chooses a generation strategy:
-
-| CH version | Attribute access pattern |
-|------------|-------------------------|
+| CH version | Attribute access in generated SQL |
+|------------|---------------------------------|
 | ≥ 25.3 | `attributes.field::Type` |
 | 24.x | `JSONExtractString(attributes, 'field')` etc. |
 | < 24.0 | same as 24.x |
 
-Both strategies work with `JSON(max_dynamic_paths=0)` storage — only the query syntax differs.
+The compiler detects version at startup (`SELECT version()`) and sets a flag once.
 
 ---
 
 ## Open Questions
 
-1. **FILTER multi-line**: should multi-line filter expressions be joined with implicit AND
-   (each indented line = one condition) or treated as one continuous expression with
-   explicit AND/OR? Implicit AND is simpler for common cases; explicit is more expressive.
-   Current design: explicit — the entire FILTER block is one FilterLang expression.
+1. **Filter multi-line continuation**: indented lines after `filter` are continuation of
+   the same FilterLang expression, joined without any implicit operator. Users write explicit
+   `AND` / `OR` across lines. Alternative: implicit AND per line (simpler). Current design:
+   explicit — full FilterLang expression spanning lines.
 
-2. **SQL node FROM declaration**: should SQL nodes be required or encouraged to declare
-   `FROM node_name` at the top for explicit dependency tracking? Currently SQL nodes
-   reference other nodes in their SQL body (opaque to the parser). Making dependencies
-   explicit would improve lineage but is a breaking change.
+2. **`group { key = expr }` vs `derive` then `group { key }`**: PRQL allows computed keys
+   directly in the `group {}` list (`group { day = date.trunc 'day' ts }`). We allow the
+   same syntax (`group { day = toStartOfDay(observed_timestamp) }`). This means `derive`
+   is optional for keys — but then schema propagation must handle key expressions too.
+   Simpler: always `derive` first, then `group` with bare column names. But that's more verbose.
 
-3. **ORDER_BY direction shorthand**: `-field` for DESC (PostgREST convention) vs
-   `field DESC` (SQL convention). The plan uses `-field`; should we support both?
+3. **Multiple `filter` transforms**: the design allows `filter` at any position in the
+   pipeline (before and after `group`, before and after `join`). The compiler decides
+   WHERE vs post-aggregation WHERE vs HAVING based on which schema the filtered columns
+   belong to. This is the right behavior but must be tested carefully.
 
-4. **SELECT projection and `SELECT *`**: without a `SELECT >` block, the compiler emits
-   `SELECT *`. In FILTER and DERIVE nodes this pulls the full `attributes` JSON column.
-   Column pruning optimization (trace which columns are actually used downstream and
-   rewrite upstream SELECTs) should be planned for performance at scale.
+4. **`take n..m` range syntax**: PRQL's `take 10..20` means rows 10–20 (0-indexed OFFSET 10
+   LIMIT 10). Natural but non-obvious. Alternative: keep separate `take` and `skip` always.
+   Current design: both `take n..m` and `take n` + `skip m` are supported.
 
-5. **ClickHouse version enforcement**: should the platform require ≥ 25.3 for all new
-   DataSources (to use new JSON type) and maintain legacy compatibility only for existing
-   DataSources created on older versions? Clean break vs graceful degradation.
+5. **ClickHouse version enforcement**: require ≥ 25.3 for all new DataSources (cleaner SQL
+   generation) or maintain fallback indefinitely? Proposal: compile-time warning when
+   connecting to < 25.3, fallback always available, deprecate fallback in a future major version.

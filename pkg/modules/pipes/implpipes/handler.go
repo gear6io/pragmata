@@ -79,24 +79,24 @@ func (h *handler) DeletePipe(w http.ResponseWriter, r *http.Request) {
 
 // --- Execute handler ---
 
-func (h *handler) ExecutePipe(w http.ResponseWriter, r *http.Request) {
-	name := pipes.PipeName(r)
+// func (h *handler) ExecutePipe(w http.ResponseWriter, r *http.Request) {
+// 	name := pipes.PipeName(r)
 
-	// Collect URL query params as the template substitution map.
-	params := make(map[string]string, len(r.URL.Query()))
-	for k, vs := range r.URL.Query() {
-		if len(vs) > 0 {
-			params[k] = vs[0]
-		}
-	}
+// 	// Collect URL query params as the template substitution map.
+// 	params := make(map[string]string, len(r.URL.Query()))
+// 	for k, vs := range r.URL.Query() {
+// 		if len(vs) > 0 {
+// 			params[k] = vs[0]
+// 		}
+// 	}
 
-	result, err := h.module.ExecutePipe(r.Context(), name, params)
-	if err != nil {
-		writeError(w, http.StatusBadRequest, err.Error())
-		return
-	}
-	writeJSON(w, http.StatusOK, result)
-}
+// 	result, err := h.module.ExecutePipe(r.Context(), name, params)
+// 	if err != nil {
+// 		writeError(w, http.StatusBadRequest, err.Error())
+// 		return
+// 	}
+// 	writeJSON(w, http.StatusOK, result)
+// }
 
 // --- helpers ---
 

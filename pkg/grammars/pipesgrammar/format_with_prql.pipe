@@ -1,0 +1,35 @@
+# --- METADATA ---
+type: endpoint            # endpoint | table | view | incremental | snapshot
+name: daily_active_users
+description: |
+  DAU rollup for the dashboard API.
+tags: [analytics, dashboard]
+owner: data-team@company.com
+destination: enriched_events # destination table name, required for non-endpoint pipes
+schedule: every 24 hours # cron expression or natural language, optional
+
+# --- INPUTS ---
+sources:
+  - raw_events: events # aliasing events as raw_events
+  - users # no aliasing
+params:
+  country: { type: string, default: "US" }
+  days_back: { type: int64, default: 30 }
+
+pipeline:
+  @filtered: # @name: block is a node.
+    from raw_events
+    filter country == $country
+    filter timestamp > @now - ($days_back | as_days)
+
+  @enriched:
+    from @filtered
+    join users (==user_id)
+    select { user_id, country, plan_tier, timestamp }
+
+  @result:
+    from @enriched
+    group { day = timestamp | as_date } (
+      aggregate { dau = count_distinct user_id }
+    )
+    sort day
