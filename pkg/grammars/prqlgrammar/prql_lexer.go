@@ -1,6 +1,6 @@
-// Code generated from PQLLexer.g4 by ANTLR 4.13.2. DO NOT EDIT.
+// Code generated from PRQLLexer.g4 by ANTLR 4.13.2. DO NOT EDIT.
 
-package pqlgrammar
+package prqlgrammar
 
 import (
 	"fmt"
@@ -14,14 +14,14 @@ var _ = fmt.Printf
 var _ = sync.Once{}
 var _ = unicode.IsLetter
 
-type PQLLexer struct {
+type PRQLLexer struct {
 	*antlr.BaseLexer
 	channelNames []string
 	modeNames    []string
 	// TODO: EOF string
 }
 
-var PQLLexerLexerStaticData struct {
+var PRQLLexerLexerStaticData struct {
 	once                   sync.Once
 	serializedATN          []int32
 	ChannelNames           []string
@@ -34,8 +34,8 @@ var PQLLexerLexerStaticData struct {
 	decisionToDFA          []*antlr.DFA
 }
 
-func pqllexerLexerInit() {
-	staticData := &PQLLexerLexerStaticData
+func prqllexerLexerInit() {
+	staticData := &PRQLLexerLexerStaticData
 	staticData.ChannelNames = []string{
 		"DEFAULT_TOKEN_CHANNEL", "HIDDEN",
 	}
@@ -397,89 +397,89 @@ func pqllexerLexerInit() {
 	}
 }
 
-// PQLLexerInit initializes any static state used to implement PQLLexer. By default the
+// PRQLLexerInit initializes any static state used to implement PRQLLexer. By default the
 // static state used to implement the lexer is lazily initialized during the first call to
-// NewPQLLexer(). You can call this function if you wish to initialize the static state ahead
+// NewPRQLLexer(). You can call this function if you wish to initialize the static state ahead
 // of time.
-func PQLLexerInit() {
-	staticData := &PQLLexerLexerStaticData
-	staticData.once.Do(pqllexerLexerInit)
+func PRQLLexerInit() {
+	staticData := &PRQLLexerLexerStaticData
+	staticData.once.Do(prqllexerLexerInit)
 }
 
-// NewPQLLexer produces a new lexer instance for the optional input antlr.CharStream.
-func NewPQLLexer(input antlr.CharStream) *PQLLexer {
-	PQLLexerInit()
-	l := new(PQLLexer)
+// NewPRQLLexer produces a new lexer instance for the optional input antlr.CharStream.
+func NewPRQLLexer(input antlr.CharStream) *PRQLLexer {
+	PRQLLexerInit()
+	l := new(PRQLLexer)
 	l.BaseLexer = antlr.NewBaseLexer(input)
-	staticData := &PQLLexerLexerStaticData
+	staticData := &PRQLLexerLexerStaticData
 	l.Interpreter = antlr.NewLexerATNSimulator(l, staticData.atn, staticData.decisionToDFA, staticData.PredictionContextCache)
 	l.channelNames = staticData.ChannelNames
 	l.modeNames = staticData.ModeNames
 	l.RuleNames = staticData.RuleNames
 	l.LiteralNames = staticData.LiteralNames
 	l.SymbolicNames = staticData.SymbolicNames
-	l.GrammarFileName = "PQLLexer.g4"
+	l.GrammarFileName = "PRQLLexer.g4"
 	// TODO: l.EOF = antlr.TokenEOF
 
 	return l
 }
 
-// PQLLexer tokens.
+// PRQLLexer tokens.
 const (
-	PQLLexerCOMMENT       = 1
-	PQLLexerWS            = 2
-	PQLLexerKW_FROM       = 3
-	PQLLexerKW_FILTER     = 4
-	PQLLexerKW_DERIVE     = 5
-	PQLLexerKW_SELECT     = 6
-	PQLLexerKW_GROUP      = 7
-	PQLLexerKW_AGGREGATE  = 8
-	PQLLexerKW_JOIN       = 9
-	PQLLexerKW_SORT       = 10
-	PQLLexerKW_TAKE       = 11
-	PQLLexerKW_SKIP       = 12
-	PQLLexerKW_WINDOW     = 13
-	PQLLexerKW_ARRAY_JOIN = 14
-	PQLLexerKW_SIDE       = 15
-	PQLLexerKW_INNER      = 16
-	PQLLexerKW_LEFT       = 17
-	PQLLexerKW_RIGHT      = 18
-	PQLLexerKW_FULL       = 19
-	PQLLexerKW_AS         = 20
-	PQLLexerKW_FINAL      = 21
-	PQLLexerLBRACE        = 22
-	PQLLexerRBRACE        = 23
-	PQLLexerLPAREN        = 24
-	PQLLexerRPAREN        = 25
-	PQLLexerCOMMA         = 26
-	PQLLexerCOLON         = 27
-	PQLLexerDOT           = 28
-	PQLLexerRANGE         = 29
-	PQLLexerMINUS         = 30
-	PQLLexerPLUS          = 31
-	PQLLexerSTAR          = 32
-	PQLLexerSLASH         = 33
-	PQLLexerPERCENT       = 34
-	PQLLexerPIPE          = 35
-	PQLLexerCAST_OP       = 36
-	PQLLexerEQ            = 37
-	PQLLexerNEQ           = 38
-	PQLLexerLTE           = 39
-	PQLLexerGTE           = 40
-	PQLLexerLT            = 41
-	PQLLexerGT            = 42
-	PQLLexerFLOAT         = 43
-	PQLLexerINTEGER       = 44
-	PQLLexerSTRING        = 45
-	PQLLexerIDENT         = 46
-	PQLLexerNEWLINE       = 47
-	PQLLexerFILTER_LINE   = 48
+	PRQLLexerCOMMENT       = 1
+	PRQLLexerWS            = 2
+	PRQLLexerKW_FROM       = 3
+	PRQLLexerKW_FILTER     = 4
+	PRQLLexerKW_DERIVE     = 5
+	PRQLLexerKW_SELECT     = 6
+	PRQLLexerKW_GROUP      = 7
+	PRQLLexerKW_AGGREGATE  = 8
+	PRQLLexerKW_JOIN       = 9
+	PRQLLexerKW_SORT       = 10
+	PRQLLexerKW_TAKE       = 11
+	PRQLLexerKW_SKIP       = 12
+	PRQLLexerKW_WINDOW     = 13
+	PRQLLexerKW_ARRAY_JOIN = 14
+	PRQLLexerKW_SIDE       = 15
+	PRQLLexerKW_INNER      = 16
+	PRQLLexerKW_LEFT       = 17
+	PRQLLexerKW_RIGHT      = 18
+	PRQLLexerKW_FULL       = 19
+	PRQLLexerKW_AS         = 20
+	PRQLLexerKW_FINAL      = 21
+	PRQLLexerLBRACE        = 22
+	PRQLLexerRBRACE        = 23
+	PRQLLexerLPAREN        = 24
+	PRQLLexerRPAREN        = 25
+	PRQLLexerCOMMA         = 26
+	PRQLLexerCOLON         = 27
+	PRQLLexerDOT           = 28
+	PRQLLexerRANGE         = 29
+	PRQLLexerMINUS         = 30
+	PRQLLexerPLUS          = 31
+	PRQLLexerSTAR          = 32
+	PRQLLexerSLASH         = 33
+	PRQLLexerPERCENT       = 34
+	PRQLLexerPIPE          = 35
+	PRQLLexerCAST_OP       = 36
+	PRQLLexerEQ            = 37
+	PRQLLexerNEQ           = 38
+	PRQLLexerLTE           = 39
+	PRQLLexerGTE           = 40
+	PRQLLexerLT            = 41
+	PRQLLexerGT            = 42
+	PRQLLexerFLOAT         = 43
+	PRQLLexerINTEGER       = 44
+	PRQLLexerSTRING        = 45
+	PRQLLexerIDENT         = 46
+	PRQLLexerNEWLINE       = 47
+	PRQLLexerFILTER_LINE   = 48
 )
 
-// PQLLexerFILTER_BODY_MODE is the PQLLexer mode.
-const PQLLexerFILTER_BODY_MODE = 1
+// PRQLLexerFILTER_BODY_MODE is the PRQLLexer mode.
+const PRQLLexerFILTER_BODY_MODE = 1
 
-func (l *PQLLexer) Sempred(localctx antlr.RuleContext, ruleIndex, predIndex int) bool {
+func (l *PRQLLexer) Sempred(localctx antlr.RuleContext, ruleIndex, predIndex int) bool {
 	switch ruleIndex {
 	case 47:
 		return l.FILTER_KW_FROM_Sempred(localctx, predIndex)
@@ -519,7 +519,7 @@ func (l *PQLLexer) Sempred(localctx antlr.RuleContext, ruleIndex, predIndex int)
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_FROM_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_FROM_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 0:
 		return p.GetCharPositionInLine() == 0
@@ -529,7 +529,7 @@ func (p *PQLLexer) FILTER_KW_FROM_Sempred(localctx antlr.RuleContext, predIndex 
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_FILTER_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_FILTER_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 1:
 		return p.GetCharPositionInLine() == 0
@@ -539,7 +539,7 @@ func (p *PQLLexer) FILTER_KW_FILTER_Sempred(localctx antlr.RuleContext, predInde
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_DERIVE_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_DERIVE_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 2:
 		return p.GetCharPositionInLine() == 0
@@ -549,7 +549,7 @@ func (p *PQLLexer) FILTER_KW_DERIVE_Sempred(localctx antlr.RuleContext, predInde
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_SELECT_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_SELECT_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 3:
 		return p.GetCharPositionInLine() == 0
@@ -559,7 +559,7 @@ func (p *PQLLexer) FILTER_KW_SELECT_Sempred(localctx antlr.RuleContext, predInde
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_GROUP_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_GROUP_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 4:
 		return p.GetCharPositionInLine() == 0
@@ -569,7 +569,7 @@ func (p *PQLLexer) FILTER_KW_GROUP_Sempred(localctx antlr.RuleContext, predIndex
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_JOIN_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_JOIN_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 5:
 		return p.GetCharPositionInLine() == 0
@@ -579,7 +579,7 @@ func (p *PQLLexer) FILTER_KW_JOIN_Sempred(localctx antlr.RuleContext, predIndex 
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_ARRAY_JOIN_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_ARRAY_JOIN_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 6:
 		return p.GetCharPositionInLine() == 0
@@ -589,7 +589,7 @@ func (p *PQLLexer) FILTER_KW_ARRAY_JOIN_Sempred(localctx antlr.RuleContext, pred
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_SORT_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_SORT_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 7:
 		return p.GetCharPositionInLine() == 0
@@ -599,7 +599,7 @@ func (p *PQLLexer) FILTER_KW_SORT_Sempred(localctx antlr.RuleContext, predIndex 
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_TAKE_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_TAKE_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 8:
 		return p.GetCharPositionInLine() == 0
@@ -609,7 +609,7 @@ func (p *PQLLexer) FILTER_KW_TAKE_Sempred(localctx antlr.RuleContext, predIndex 
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_SKIP_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_SKIP_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 9:
 		return p.GetCharPositionInLine() == 0
@@ -619,7 +619,7 @@ func (p *PQLLexer) FILTER_KW_SKIP_Sempred(localctx antlr.RuleContext, predIndex 
 	}
 }
 
-func (p *PQLLexer) FILTER_KW_WINDOW_Sempred(localctx antlr.RuleContext, predIndex int) bool {
+func (p *PRQLLexer) FILTER_KW_WINDOW_Sempred(localctx antlr.RuleContext, predIndex int) bool {
 	switch predIndex {
 	case 10:
 		return p.GetCharPositionInLine() == 0

@@ -48,7 +48,10 @@ func FromContent(pipeName, content string) (string, error) {
 	sb.WriteString(");\n\n")
 
 	// SQL body — copyTarget is empty for the new format (destination is the model name).
-	sql := buildSQL(pipe.Nodes, "")
+	sql, err := buildSQL(pipe.Nodes, "")
+	if err != nil {
+		return "", err
+	}
 	sb.WriteString(sql)
 	if !strings.HasSuffix(sql, "\n") {
 		sb.WriteByte('\n')
@@ -97,36 +100,45 @@ func tagsArray(tags []string) string {
 	return "[" + strings.Join(q, ", ") + "]"
 }
 
-// buildSQL assembles the SQL body from nodes.
+// buildSQL compiles each node's PQL source to SQL, then assembles the body.
 // All-but-last nodes become CTEs; the last node's SQL is the final SELECT.
 // copyTarget, when non-empty, prepends INSERT INTO <target>.
-func buildSQL(nodes []pipetypes.Node, copyTarget string) string {
-	var sb strings.Builder
+func buildSQL(nodes []pipetypes.Node, copyTarget string) (string, error) {
+	sqls := make([]string, len(nodes))
+	for i, node := range nodes {
+		sb, err := PrepareSQLMesh(node.SQL)
+		if err != nil {
+			return "", fmt.Errorf("node %q: %w", node.Name, err)
+		}
+		sqls[i] = sb.String()
+	}
+
+	var out strings.Builder
 
 	if copyTarget != "" {
-		fmt.Fprintf(&sb, "INSERT INTO %s\n", copyTarget)
+		fmt.Fprintf(&out, "INSERT INTO %s\n", copyTarget)
 	}
 
-	if len(nodes) == 1 {
-		sb.WriteString(strings.TrimSpace(nodes[0].SQL))
-		return sb.String()
+	if len(sqls) == 1 {
+		out.WriteString(strings.TrimSpace(sqls[0]))
+		return out.String(), nil
 	}
 
-	sb.WriteString("WITH\n")
+	out.WriteString("WITH\n")
 	for i, node := range nodes[:len(nodes)-1] {
-		fmt.Fprintf(&sb, "  %s AS (\n", node.Name)
-		for _, line := range strings.Split(strings.TrimSpace(node.SQL), "\n") {
-			fmt.Fprintf(&sb, "    %s\n", line)
+		fmt.Fprintf(&out, "  %s AS (\n", node.Name)
+		for _, line := range strings.Split(strings.TrimSpace(sqls[i]), "\n") {
+			fmt.Fprintf(&out, "    %s\n", line)
 		}
-		sb.WriteString("  )")
+		out.WriteString("  )")
 		if i < len(nodes)-2 {
-			sb.WriteByte(',')
+			out.WriteByte(',')
 		}
-		sb.WriteByte('\n')
+		out.WriteByte('\n')
 	}
-	sb.WriteByte('\n')
-	sb.WriteString(strings.TrimSpace(nodes[len(nodes)-1].SQL))
-	return sb.String()
+	out.WriteByte('\n')
+	out.WriteString(strings.TrimSpace(sqls[len(sqls)-1]))
+	return out.String(), nil
 }
 
 // dedent removes the common leading whitespace from all non-empty lines.
@@ -152,11 +164,6 @@ func dedent(s string) string {
 		}
 	}
 	return strings.Join(out, "\n")
-}
-
-// errListener is kept for parity; SQLMesh grammar errors surface via pipeparser.
-type errListener struct {
-	msg string
 }
 
 func init() {
