@@ -12,16 +12,16 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-GRAMMAR_DIR="$REPO_ROOT/pkg/grammars/pqlgrammar"
+GRAMMAR_DIR="$REPO_ROOT/pkg/grammars/prqlgrammar"
 
-echo "Generating PQL Go parser in $GRAMMAR_DIR ..."
+echo "Generating PRQL Go parser in $GRAMMAR_DIR ..."
 
-rm -f "$GRAMMAR_DIR"/pql_lexer.go \
-      "$GRAMMAR_DIR"/pql_parser.go \
-      "$GRAMMAR_DIR"/pql_visitor.go \
-      "$GRAMMAR_DIR"/pql_base_visitor.go \
-      "$GRAMMAR_DIR"/pql_listener.go \
-      "$GRAMMAR_DIR"/pql_base_listener.go \
+rm -f "$GRAMMAR_DIR"/prql_lexer.go \
+      "$GRAMMAR_DIR"/prql_parser.go \
+      "$GRAMMAR_DIR"/prql_visitor.go \
+      "$GRAMMAR_DIR"/prql_base_visitor.go \
+      "$GRAMMAR_DIR"/prql_listener.go \
+      "$GRAMMAR_DIR"/prql_base_listener.go \
       "$GRAMMAR_DIR"/doc.go
 
 (
@@ -29,14 +29,14 @@ rm -f "$GRAMMAR_DIR"/pql_lexer.go \
 
   antlr \
     -Dlanguage=Go \
-    -package pqlgrammar \
-    PQLLexer.g4
+    -package prqlgrammar \
+    PRQLLexer.g4
 
   antlr \
     -visitor \
     -Dlanguage=Go \
-    -package pqlgrammar \
-    PQL.g4
+    -package prqlgrammar \
+    PRQL.g4
 )
 
 echo "Done. Generated files in $GRAMMAR_DIR"

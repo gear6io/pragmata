@@ -1,38 +1,38 @@
-// Code generated from PQL.g4 by ANTLR 4.13.2. DO NOT EDIT.
+// Code generated from PRQL.g4 by ANTLR 4.13.2. DO NOT EDIT.
 
-package pqlgrammar // PQL
+package prqlgrammar // PRQL
 import "github.com/antlr4-go/antlr/v4"
 
-// PQLListener is a complete listener for a parse tree produced by PQL.
-type PQLListener interface {
+// PRQLListener is a complete listener for a parse tree produced by PRQL.
+type PRQLListener interface {
 	antlr.ParseTreeListener
 
-	// EnterPipeline is called when entering the pipeline production.
-	EnterPipeline(c *PipelineContext)
+	// EnterQuery is called when entering the query production.
+	EnterQuery(c *QueryContext)
 
-	// EnterTransform is called when entering the transform production.
-	EnterTransform(c *TransformContext)
+	// EnterClause is called when entering the clause production.
+	EnterClause(c *ClauseContext)
 
-	// EnterFromTransform is called when entering the fromTransform production.
-	EnterFromTransform(c *FromTransformContext)
+	// EnterFromClause is called when entering the fromClause production.
+	EnterFromClause(c *FromClauseContext)
 
-	// EnterFilterTransform is called when entering the filterTransform production.
-	EnterFilterTransform(c *FilterTransformContext)
+	// EnterFilterClause is called when entering the filterClause production.
+	EnterFilterClause(c *FilterClauseContext)
 
 	// EnterFilterBody is called when entering the filterBody production.
 	EnterFilterBody(c *FilterBodyContext)
 
-	// EnterDeriveTransform is called when entering the deriveTransform production.
-	EnterDeriveTransform(c *DeriveTransformContext)
+	// EnterDeriveClause is called when entering the deriveClause production.
+	EnterDeriveClause(c *DeriveClauseContext)
 
-	// EnterSelectTransform is called when entering the selectTransform production.
-	EnterSelectTransform(c *SelectTransformContext)
+	// EnterSelectClause is called when entering the selectClause production.
+	EnterSelectClause(c *SelectClauseContext)
 
-	// EnterGroupTransform is called when entering the groupTransform production.
-	EnterGroupTransform(c *GroupTransformContext)
+	// EnterGroupClause is called when entering the groupClause production.
+	EnterGroupClause(c *GroupClauseContext)
 
-	// EnterJoinTransform is called when entering the joinTransform production.
-	EnterJoinTransform(c *JoinTransformContext)
+	// EnterJoinClause is called when entering the joinClause production.
+	EnterJoinClause(c *JoinClauseContext)
 
 	// EnterJoinSide is called when entering the joinSide production.
 	EnterJoinSide(c *JoinSideContext)
@@ -52,20 +52,20 @@ type PQLListener interface {
 	// EnterJoinCondInner is called when entering the joinCondInner production.
 	EnterJoinCondInner(c *JoinCondInnerContext)
 
-	// EnterArrayJoinTransform is called when entering the arrayJoinTransform production.
-	EnterArrayJoinTransform(c *ArrayJoinTransformContext)
+	// EnterArrayJoinClause is called when entering the arrayJoinClause production.
+	EnterArrayJoinClause(c *ArrayJoinClauseContext)
 
-	// EnterSortTransform is called when entering the sortTransform production.
-	EnterSortTransform(c *SortTransformContext)
+	// EnterSortClause is called when entering the sortClause production.
+	EnterSortClause(c *SortClauseContext)
 
-	// EnterTakeTransform is called when entering the takeTransform production.
-	EnterTakeTransform(c *TakeTransformContext)
+	// EnterTakeClause is called when entering the takeClause production.
+	EnterTakeClause(c *TakeClauseContext)
 
-	// EnterSkipTransform is called when entering the skipTransform production.
-	EnterSkipTransform(c *SkipTransformContext)
+	// EnterSkipClause is called when entering the skipClause production.
+	EnterSkipClause(c *SkipClauseContext)
 
-	// EnterWindowTransform is called when entering the windowTransform production.
-	EnterWindowTransform(c *WindowTransformContext)
+	// EnterWindowClause is called when entering the windowClause production.
+	EnterWindowClause(c *WindowClauseContext)
 
 	// EnterAssignmentList is called when entering the assignmentList production.
 	EnterAssignmentList(c *AssignmentListContext)
@@ -112,32 +112,32 @@ type PQLListener interface {
 	// EnterOpaqueInner is called when entering the opaqueInner production.
 	EnterOpaqueInner(c *OpaqueInnerContext)
 
-	// ExitPipeline is called when exiting the pipeline production.
-	ExitPipeline(c *PipelineContext)
+	// ExitQuery is called when exiting the query production.
+	ExitQuery(c *QueryContext)
 
-	// ExitTransform is called when exiting the transform production.
-	ExitTransform(c *TransformContext)
+	// ExitClause is called when exiting the clause production.
+	ExitClause(c *ClauseContext)
 
-	// ExitFromTransform is called when exiting the fromTransform production.
-	ExitFromTransform(c *FromTransformContext)
+	// ExitFromClause is called when exiting the fromClause production.
+	ExitFromClause(c *FromClauseContext)
 
-	// ExitFilterTransform is called when exiting the filterTransform production.
-	ExitFilterTransform(c *FilterTransformContext)
+	// ExitFilterClause is called when exiting the filterClause production.
+	ExitFilterClause(c *FilterClauseContext)
 
 	// ExitFilterBody is called when exiting the filterBody production.
 	ExitFilterBody(c *FilterBodyContext)
 
-	// ExitDeriveTransform is called when exiting the deriveTransform production.
-	ExitDeriveTransform(c *DeriveTransformContext)
+	// ExitDeriveClause is called when exiting the deriveClause production.
+	ExitDeriveClause(c *DeriveClauseContext)
 
-	// ExitSelectTransform is called when exiting the selectTransform production.
-	ExitSelectTransform(c *SelectTransformContext)
+	// ExitSelectClause is called when exiting the selectClause production.
+	ExitSelectClause(c *SelectClauseContext)
 
-	// ExitGroupTransform is called when exiting the groupTransform production.
-	ExitGroupTransform(c *GroupTransformContext)
+	// ExitGroupClause is called when exiting the groupClause production.
+	ExitGroupClause(c *GroupClauseContext)
 
-	// ExitJoinTransform is called when exiting the joinTransform production.
-	ExitJoinTransform(c *JoinTransformContext)
+	// ExitJoinClause is called when exiting the joinClause production.
+	ExitJoinClause(c *JoinClauseContext)
 
 	// ExitJoinSide is called when exiting the joinSide production.
 	ExitJoinSide(c *JoinSideContext)
@@ -157,20 +157,20 @@ type PQLListener interface {
 	// ExitJoinCondInner is called when exiting the joinCondInner production.
 	ExitJoinCondInner(c *JoinCondInnerContext)
 
-	// ExitArrayJoinTransform is called when exiting the arrayJoinTransform production.
-	ExitArrayJoinTransform(c *ArrayJoinTransformContext)
+	// ExitArrayJoinClause is called when exiting the arrayJoinClause production.
+	ExitArrayJoinClause(c *ArrayJoinClauseContext)
 
-	// ExitSortTransform is called when exiting the sortTransform production.
-	ExitSortTransform(c *SortTransformContext)
+	// ExitSortClause is called when exiting the sortClause production.
+	ExitSortClause(c *SortClauseContext)
 
-	// ExitTakeTransform is called when exiting the takeTransform production.
-	ExitTakeTransform(c *TakeTransformContext)
+	// ExitTakeClause is called when exiting the takeClause production.
+	ExitTakeClause(c *TakeClauseContext)
 
-	// ExitSkipTransform is called when exiting the skipTransform production.
-	ExitSkipTransform(c *SkipTransformContext)
+	// ExitSkipClause is called when exiting the skipClause production.
+	ExitSkipClause(c *SkipClauseContext)
 
-	// ExitWindowTransform is called when exiting the windowTransform production.
-	ExitWindowTransform(c *WindowTransformContext)
+	// ExitWindowClause is called when exiting the windowClause production.
+	ExitWindowClause(c *WindowClauseContext)
 
 	// ExitAssignmentList is called when exiting the assignmentList production.
 	ExitAssignmentList(c *AssignmentListContext)

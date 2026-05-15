@@ -1,4 +1,4 @@
-lexer grammar PQLLexer;
+lexer grammar PRQLLexer;
 
 // ── Whitespace & comments ──────────────────────────────────────────────────────
 
