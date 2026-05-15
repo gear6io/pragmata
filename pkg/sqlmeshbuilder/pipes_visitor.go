@@ -7,6 +7,7 @@ import (
 	sqlmesh "github.com/gear6io/pragmata/pkg/grammars/sqlmeshgrammar"
 	"github.com/gear6io/pragmata/pkg/parser/pipeparser"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/huandu/go-sqlbuilder"
 )
 
 // tok returns the grammar-defined string literal for a SQLMesh token type.
@@ -104,66 +105,38 @@ func tagsArray(tags []string) string {
 // All-but-last nodes become CTEs; the last node's SQL is the final SELECT.
 // copyTarget, when non-empty, prepends INSERT INTO <target>.
 func buildSQL(nodes []pipetypes.Node, copyTarget string) (string, error) {
-	sqls := make([]string, len(nodes))
-	for i, node := range nodes {
-		sb, err := PrepareSQLMesh(node.SQL)
+	if len(nodes) == 0 {
+		return "", fmt.Errorf("no nodes provided")
+	}
+
+	outBuilder := sqlbuilder.NewInsertBuilder()
+	if copyTarget != "" {
+		outBuilder.InsertInto(copyTarget)
+	}
+
+	lastNode := nodes[len(nodes)-1]
+	lastSB, err := QueryBuilder(lastNode.SQL)
+	if err != nil {
+		return "", fmt.Errorf("node %q: %w", lastNode.Name, err)
+	}
+
+	for _, node := range nodes[:len(nodes)-1] {
+		sb, err := QueryBuilder(node.SQL)
 		if err != nil {
 			return "", fmt.Errorf("node %q: %w", node.Name, err)
 		}
-		sqls[i] = sb.String()
+		lastSB.With(sqlbuilder.With(sqlbuilder.CTEQuery(node.Name).As(sb)))
 	}
 
-	var out strings.Builder
-
+	compiled, _ := lastSB.BuildWithFlavor(sqlbuilder.ClickHouse)
 	if copyTarget != "" {
-		fmt.Fprintf(&out, "INSERT INTO %s\n", copyTarget)
+		outBuilder.SQL(compiled)
+
+		finalSQL, _ := outBuilder.BuildWithFlavor(sqlbuilder.ClickHouse)
+		return finalSQL, nil
 	}
 
-	if len(sqls) == 1 {
-		out.WriteString(strings.TrimSpace(sqls[0]))
-		return out.String(), nil
-	}
-
-	out.WriteString("WITH\n")
-	for i, node := range nodes[:len(nodes)-1] {
-		fmt.Fprintf(&out, "  %s AS (\n", node.Name)
-		for _, line := range strings.Split(strings.TrimSpace(sqls[i]), "\n") {
-			fmt.Fprintf(&out, "    %s\n", line)
-		}
-		out.WriteString("  )")
-		if i < len(nodes)-2 {
-			out.WriteByte(',')
-		}
-		out.WriteByte('\n')
-	}
-	out.WriteByte('\n')
-	out.WriteString(strings.TrimSpace(sqls[len(sqls)-1]))
-	return out.String(), nil
-}
-
-// dedent removes the common leading whitespace from all non-empty lines.
-func dedent(s string) string {
-	lines := strings.Split(s, "\n")
-	minIndent := -1
-	for _, line := range lines {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		n := len(line) - len(strings.TrimLeft(line, " \t"))
-		if minIndent < 0 || n < minIndent {
-			minIndent = n
-		}
-	}
-	if minIndent <= 0 {
-		return s
-	}
-	out := make([]string, len(lines))
-	for i, line := range lines {
-		if len(line) >= minIndent {
-			out[i] = line[minIndent:]
-		}
-	}
-	return strings.Join(out, "\n")
+	return compiled, nil
 }
 
 func init() {

@@ -34,7 +34,7 @@ import (
 // pre-populated with the compiled query. The caller may further compose the
 // builder (extra WHERE conditions, etc.) before calling Build().
 // pqlSrc must be the body of a single pipeline node (no @name: header).
-func PrepareSQLMesh(pqlSrc string) (*sqlbuilder.SelectBuilder, error) {
+func QueryBuilder(pqlSrc string) (*sqlbuilder.SelectBuilder, error) {
 	if !strings.HasSuffix(pqlSrc, "\n") {
 		pqlSrc += "\n"
 	}
