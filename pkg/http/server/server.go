@@ -1,4 +1,4 @@
-// Package server wires gin routes to the pipes Handler.
+// Package server wires gorilla/mux routes to the pipes Handler.
 package server
 
 import (
@@ -7,48 +7,115 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
+	"github.com/swaggest/openapi-go/openapi3"
 
+	"github.com/gear6io/pragmata/pkg/http/handler"
+	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
+	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
+
+// Provider groups all module handlers the HTTP server routes to.
+// Add a new field here when a second module lands — keeps New() signature stable.
+type Provider struct {
+	Pipes pipes.Handler
+}
+
+// bearerScheme is the single declared security scheme applied to all v0 routes.
+var bearerScheme = []handler.OpenAPISecurityScheme{{Name: "BearerAuth"}}
 
 // Server is the HTTP API server.
 type Server struct {
-	router  *gin.Engine
-	handler pipes.Handler
-	store   sqlstore.SQLStore
-	addr    string
+	router   *mux.Router
+	provider *Provider
+	store    sqlstore.SQLStore
+	addr     string
+	openapi  *handler.OpenAPICollector
 }
 
-// New builds a gin router with all pipe routes and auth middleware wired up.
-// addr is baked in at construction so Start satisfies factory.Service.
-func New(handler pipes.Handler, store sqlstore.SQLStore, addr string) *Server {
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.New()
-	r.Use(gin.Recovery())
+// New builds a mux router with all routes, bearer auth, and OpenAPI collection wired up.
+func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
+	reflector := openapi3.NewReflector()
+	reflector.Spec.WithInfo(*(&openapi3.Info{}).
+		WithTitle("Pragmata API").
+		WithVersion("v0"))
+	reflector.SpecSchema().SetHTTPBearerTokenSecurity("BearerAuth", "", "API bearer token")
 
-	s := &Server{router: r, handler: handler, store: store, addr: addr}
+	oac := handler.NewOpenAPICollector(reflector)
 
-	v0 := r.Group("/v0")
-	v0.Use(s.bearerAuth())
+	r := mux.NewRouter()
+	r.Use(recoveryMiddleware)
 
-	// Pipe CRUD
-	v0.POST("/pipes", s.wrap(handler.CreatePipe))
-	v0.GET("/pipes", s.wrap(handler.ListPipes))
+	s := &Server{router: r, provider: p, store: store, addr: addr, openapi: oac}
 
-	// Named-pipe routes: inject pipe name into request context.
-	named := v0.Group("/pipes/:name")
-	named.Use(s.injectPipeName())
-	named.GET("/meta", s.wrap(handler.GetPipe)) // GET /v0/pipes/:name/meta → metadata
-	named.PUT("", s.wrap(handler.UpdatePipe))
-	named.DELETE("", s.wrap(handler.DeletePipe))
+	v0 := r.PathPrefix("/v0").Subrouter()
+	v0.Use(s.bearerAuth)
+	v0.Use(s.injectPipeName) // no-op on routes without {name}
+
+	h := p.Pipes
+
+	v0.Handle("/pipes", handler.New(h.CreatePipe, handler.OpenAPIDef{
+		ID:                "createPipe",
+		Tags:              []string{"pipes"},
+		Summary:           "Create a pipe",
+		Request:           new(pipetypes.Pipe),
+		Response:          new(pipetypes.Pipe),
+		SuccessStatusCode: http.StatusCreated,
+		ErrorStatusCodes:  []int{http.StatusBadRequest, http.StatusInternalServerError},
+		SecuritySchemes:   bearerScheme,
+	})).Methods("POST")
+
+	v0.Handle("/pipes", handler.New(h.ListPipes, handler.OpenAPIDef{
+		ID:              "listPipes",
+		Tags:            []string{"pipes"},
+		Summary:         "List all pipes",
+		Response:        []*pipetypes.Pipe{}, // slice schema: Data is an array of Pipe
+		ErrorStatusCodes: []int{http.StatusInternalServerError},
+		SecuritySchemes: bearerScheme,
+	})).Methods("GET")
+
+	v0.Handle("/pipes/{name}/meta", handler.New(h.GetPipe, handler.OpenAPIDef{
+		ID:               "getPipe",
+		Tags:             []string{"pipes"},
+		Summary:          "Get pipe metadata",
+		Response:         new(pipetypes.Pipe),
+		ErrorStatusCodes: []int{http.StatusNotFound},
+		SecuritySchemes:  bearerScheme,
+	})).Methods("GET")
+
+	v0.Handle("/pipes/{name}", handler.New(h.UpdatePipe, handler.OpenAPIDef{
+		ID:               "updatePipe",
+		Tags:             []string{"pipes"},
+		Summary:          "Update a pipe",
+		Request:          new(pipetypes.Pipe),
+		Response:         new(pipetypes.Pipe),
+		ErrorStatusCodes: []int{http.StatusBadRequest, http.StatusNotFound, http.StatusInternalServerError},
+		SecuritySchemes:  bearerScheme,
+	})).Methods("PUT")
+
+	v0.Handle("/pipes/{name}", handler.New(h.DeletePipe, handler.OpenAPIDef{
+		ID:                "deletePipe",
+		Tags:              []string{"pipes"},
+		Summary:           "Delete a pipe",
+		SuccessStatusCode: http.StatusNoContent,
+		ErrorStatusCodes:  []int{http.StatusNotFound, http.StatusInternalServerError},
+		SecuritySchemes:   bearerScheme,
+	})).Methods("DELETE")
+
+	// Walk all registered routes once to populate the OpenAPI collector.
+	if err := r.Walk(oac.Walker); err != nil {
+		panic("openapi: walk routes: " + err.Error())
+	}
+
+	// Serve the spec at runtime without auth.
+	r.Handle("/openapi.yaml", http.HandlerFunc(s.serveOpenAPIYAML))
 
 	return s
 }
 
 // Start listens on the configured addr until ctx is cancelled.
-// Implements factory.Service.
 func (s *Server) Start(ctx context.Context) error {
 	srv := &http.Server{Addr: s.addr, Handler: s.router}
 	errCh := make(chan error, 1)
@@ -65,61 +132,71 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 }
 
-// Stop is a no-op: Start already handles graceful shutdown via ctx cancellation.
-// Implements factory.Service.
-func (s *Server) Stop(_ context.Context) error {
-	return nil
-}
+// Stop is a no-op: Start handles graceful shutdown via ctx cancellation.
+func (s *Server) Stop(_ context.Context) error { return nil }
 
 // Handler returns the underlying http.Handler for testing.
-func (s *Server) Handler() http.Handler {
-	return s.router
-}
+func (s *Server) Handler() http.Handler { return s.router }
+
+// OpenAPISpec returns the accumulated spec as YAML bytes. Used by generate command.
+func (s *Server) OpenAPISpec() ([]byte, error) { return s.openapi.MarshalYAML() }
 
 // Addr formats host:port from config values.
 func Addr(host string, port int) string {
 	return fmt.Sprintf("%s:%d", host, port)
 }
 
-// wrap converts a standard http.HandlerFunc to a gin.HandlerFunc.
-func (s *Server) wrap(h http.HandlerFunc) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		h(c.Writer, c.Request)
+func (s *Server) serveOpenAPIYAML(w http.ResponseWriter, _ *http.Request) {
+	data, err := s.openapi.MarshalYAML()
+	if err != nil {
+		render.Error(w, http.StatusInternalServerError, err.Error())
+		return
 	}
+	w.Header().Set("Content-Type", "application/x-yaml")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
 }
 
-// injectPipeName reads the :name param from gin context and stores it in the
-// request context so standard-library handlers can retrieve it via pipes.PipeName.
-func (s *Server) injectPipeName() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		r := pipes.WithPipeName(c.Request, c.Param("name"))
-		c.Request = r
-		c.Next()
-	}
-}
-
-// bearerAuth validates the Bearer token from the Authorization header or ?token= param.
-func (s *Server) bearerAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := tokenFromRequest(c.Request)
+func (s *Server) bearerAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := tokenFromRequest(r)
 		if token == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+			render.Error(w, http.StatusUnauthorized, "missing token")
 			return
 		}
-		_, err := s.store.GetTokenByValue(c.Request.Context(), token)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		if _, err := s.store.GetTokenByValue(r.Context(), token); err != nil {
+			render.Error(w, http.StatusUnauthorized, "invalid token")
 			return
 		}
-		c.Next()
-	}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// injectPipeName reads the {name} path variable and stores it in the request context
+// so stdlib handlers can retrieve it via pipes.PipeName. No-op on routes without {name}.
+func (s *Server) injectPipeName(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if name := mux.Vars(r)["name"]; name != "" {
+			r = pipes.WithPipeName(r, name)
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func recoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				render.Error(w, http.StatusInternalServerError, "internal server error")
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }
 
 func tokenFromRequest(r *http.Request) string {
-	// Authorization: Bearer <token>
 	if auth := r.Header.Get("Authorization"); strings.HasPrefix(auth, "Bearer ") {
 		return strings.TrimPrefix(auth, "Bearer ")
 	}
-	// ?token=<token>
 	return r.URL.Query().Get("token")
 }

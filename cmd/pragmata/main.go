@@ -30,6 +30,7 @@ func main() {
 	}
 	root.PersistentFlags().StringVarP(&configPath, "config", "c", "config.yaml", "path to config.yaml")
 	root.AddCommand(serveCmd())
+	root.AddCommand(generateCmd())
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
 	}
@@ -90,7 +91,7 @@ func serve(ctx context.Context) error {
 
 	// HTTP server
 	addr := httpserver.Addr(cfg.Server.Host, cfg.Server.Port)
-	srv := httpserver.New(h, store, addr)
+	srv := httpserver.New(&httpserver.Provider{Pipes: h}, store, addr)
 	log.Printf("pragmata listening on %s", addr)
 
 	// Graceful shutdown on SIGINT/SIGTERM

@@ -1,0 +1,214 @@
+openapi: 3.0.3
+info:
+  title: Pragmata API
+  version: v0
+paths:
+  /v0/pipes:
+    get:
+      description: ""
+      operationId: listPipes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PipetypesPipe'
+                type: array
+          description: OK
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: List all pipes
+      tags:
+      - pipes
+    post:
+      description: ""
+      operationId: createPipe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PipetypesPipe'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipetypesPipe'
+          description: Created
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Create a pipe
+      tags:
+      - pipes
+  /v0/pipes/{name}:
+    delete:
+      description: ""
+      operationId: deletePipe
+      parameters:
+      - in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Delete a pipe
+      tags:
+      - pipes
+    put:
+      description: ""
+      operationId: updatePipe
+      parameters:
+      - in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PipetypesPipe'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipetypesPipe'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Bad Request
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Not Found
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Update a pipe
+      tags:
+      - pipes
+  /v0/pipes/{name}/meta:
+    get:
+      description: ""
+      operationId: getPipe
+      parameters:
+      - in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipetypesPipe'
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RenderErrorResponse'
+          description: Not Found
+      security:
+      - BearerAuth: []
+      summary: Get pipe metadata
+      tags:
+      - pipes
+components:
+  schemas:
+    PipetypesPipe:
+      properties:
+        content:
+          type: string
+        copySchedule:
+          type: string
+        createdAt:
+          format: date-time
+          type: string
+        createdBy:
+          type: string
+        datasource:
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        tags:
+          $ref: '#/components/schemas/PipetypesTags'
+        targetDatasource:
+          type: string
+        type:
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+        updatedBy:
+          type: string
+      required:
+      - id
+      type: object
+    PipetypesTags:
+      items:
+        type: string
+      type: array
+    RenderErrorResponse:
+      properties:
+        error:
+          type: string
+        status:
+          type: string
+      type: object
+  securitySchemes:
+    BearerAuth:
+      description: API bearer token
+      scheme: bearer
+      type: http

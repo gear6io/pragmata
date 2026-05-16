@@ -7,3 +7,4 @@
 .venv
 .vscode
 pragmata.db
+frontend/node_modules/

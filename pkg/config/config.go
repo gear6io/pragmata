@@ -48,6 +48,9 @@ func Load(path string) (*Config, error) {
 	return cfg, nil
 }
 
+// Defaults returns the default configuration without reading any file.
+func Defaults() *Config { return defaults() }
+
 func defaults() *Config {
 	return &Config{
 		Server:     ServerConfig{Host: "0.0.0.0", Port: 7181},
