@@ -72,10 +72,11 @@ export default function PipeFormPage({ mode }: Props) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: existing, isLoading } = useGetPipe(
+  const { data: existingResp, isLoading } = useGetPipe(
     { name: name! },
     { query: { enabled: mode === 'edit' && !!name } },
   );
+  const existing = existingResp?.data;
 
   const [formName, setFormName] = useState('');
   const [formType, setFormType] = useState<string>(PIPE_TYPES[0]);
@@ -121,9 +122,9 @@ export default function PipeFormPage({ mode }: Props) {
       createPipe(
         { data: payload },
         {
-          onSuccess: (created) => {
+          onSuccess: (resp) => {
             invalidateListPipes(queryClient);
-            navigate(`/pipes/${created.name}`);
+            navigate(`/pipes/${resp.data?.name ?? name}`);
           },
         },
       );
@@ -131,10 +132,10 @@ export default function PipeFormPage({ mode }: Props) {
       updatePipe(
         { pathParams: { name: name! }, data: payload },
         {
-          onSuccess: (updated) => {
+          onSuccess: (resp) => {
             invalidateListPipes(queryClient);
             invalidateGetPipe(queryClient, { name: name! });
-            navigate(`/pipes/${updated.name}`);
+            navigate(`/pipes/${resp.data?.name ?? name}`);
           },
         },
       );

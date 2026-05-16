@@ -72,6 +72,25 @@ export interface RenderErrorResponseDTO {
   status?: string;
 }
 
+export interface RenderSuccessResponsePipeDTO {
+  data?: PipetypesPipeDTO;
+  /**
+   * @type string
+   */
+  status?: string;
+}
+
+export interface RenderSuccessResponsePipeListDTO {
+  /**
+   * @type array
+   */
+  data?: PipetypesPipeDTO[];
+  /**
+   * @type string
+   */
+  status?: string;
+}
+
 export type DeletePipePathParameters = {
   name: string;
 };

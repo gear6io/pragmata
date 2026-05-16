@@ -45,7 +45,8 @@ function Field({ label, value }: { label: string; value?: string | null }) {
 export default function PipeDetailPage() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
-  const { data: pipe, isLoading, error } = useGetPipe({ name: name! });
+  const { data: resp, isLoading, error } = useGetPipe({ name: name! });
+  const pipe = resp?.data;
   const { mutate: deletePipe, isPending: isDeleting } = useDeletePipe();
 
   function handleDelete() {

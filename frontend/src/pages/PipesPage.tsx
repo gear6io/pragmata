@@ -44,7 +44,7 @@ export default function PipesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {data.length === 0 && (
+              {(data.data ?? []).length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-8 text-center text-gray-400">
                     No pipes yet.{' '}
@@ -54,7 +54,7 @@ export default function PipesPage() {
                   </td>
                 </tr>
               )}
-              {data.map((pipe) => (
+              {(data.data ?? []).map((pipe) => (
                 <tr key={pipe.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-3 font-medium text-indigo-700">
                     <Link to={`/pipes/${pipe.name}`} className="hover:underline">

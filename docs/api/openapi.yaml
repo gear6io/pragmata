@@ -12,9 +12,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/PipetypesPipe'
-                type: array
+                $ref: '#/components/schemas/RenderSuccessResponsePipeList'
           description: OK
         "500":
           content:
@@ -40,7 +38,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PipetypesPipe'
+                $ref: '#/components/schemas/RenderSuccessResponsePipe'
           description: Created
         "400":
           content:
@@ -108,7 +106,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PipetypesPipe'
+                $ref: '#/components/schemas/RenderSuccessResponsePipe'
           description: OK
         "400":
           content:
@@ -148,7 +146,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PipetypesPipe'
+                $ref: '#/components/schemas/RenderSuccessResponsePipe'
           description: OK
         "404":
           content:
@@ -204,6 +202,22 @@ components:
       properties:
         error:
           type: string
+        status:
+          type: string
+      type: object
+    RenderSuccessResponsePipe:
+      properties:
+        data:
+          $ref: '#/components/schemas/PipetypesPipe'
+        status:
+          type: string
+      type: object
+    RenderSuccessResponsePipeList:
+      properties:
+        data:
+          items:
+            $ref: '#/components/schemas/PipetypesPipe'
+          type: array
         status:
           type: string
       type: object

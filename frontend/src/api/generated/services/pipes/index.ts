@@ -27,6 +27,8 @@ import type {
   GetPipePathParameters,
   PipetypesPipeDTO,
   RenderErrorResponseDTO,
+  RenderSuccessResponsePipeDTO,
+  RenderSuccessResponsePipeListDTO,
   UpdatePipePathParameters,
 } from "../pragmataAPI.schemas";
 
@@ -37,7 +39,7 @@ import type { ErrorType, BodyType } from "../../../generatedAPIInstance";
  * @summary List all pipes
  */
 export const listPipes = (signal?: AbortSignal) => {
-  return GeneratedAPIInstance<PipetypesPipeDTO[]>({
+  return GeneratedAPIInstance<RenderSuccessResponsePipeListDTO>({
     url: `/v0/pipes`,
     method: "GET",
     signal,
@@ -176,7 +178,7 @@ export const createPipe = (
   pipetypesPipeDTO: BodyType<PipetypesPipeDTO>,
   signal?: AbortSignal,
 ) => {
-  return GeneratedAPIInstance<PipetypesPipeDTO>({
+  return GeneratedAPIInstance<RenderSuccessResponsePipeDTO>({
     url: `/v0/pipes`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -340,7 +342,7 @@ export const updatePipe = (
   { name }: UpdatePipePathParameters,
   pipetypesPipeDTO: BodyType<PipetypesPipeDTO>,
 ) => {
-  return GeneratedAPIInstance<PipetypesPipeDTO>({
+  return GeneratedAPIInstance<RenderSuccessResponsePipeDTO>({
     url: `/v0/pipes/${name}`,
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -427,7 +429,7 @@ export const getPipe = (
   { name }: GetPipePathParameters,
   signal?: AbortSignal,
 ) => {
-  return GeneratedAPIInstance<PipetypesPipeDTO>({
+  return GeneratedAPIInstance<RenderSuccessResponsePipeDTO>({
     url: `/v0/pipes/${name}/meta`,
     method: "GET",
     signal,
