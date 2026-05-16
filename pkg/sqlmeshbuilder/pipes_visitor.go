@@ -20,14 +20,14 @@ func tok(tokenType int) string {
 const dialect = "clickhouse"
 
 // FromContent parses raw .pipe file content and returns a SQLMesh .sql string.
-func FromContent(pipeName, content string) (string, error) {
-	pipe, err := pipeparser.Parse(pipeName, content)
+func FromPipe(pipe *pipetypes.Pipe) (string, error) {
+	pipe, err := pipeparser.Parse(pipe.Name, pipe.Content)
 	if err != nil {
 		return "", err
 	}
 
 	kind := kindForType(pipe.Type)
-	modelName := coalesce(pipe.Destination, pipeName)
+	modelName := coalesce(pipe.Destination, pipe.Name)
 
 	var sb strings.Builder
 

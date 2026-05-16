@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gear6io/pragmata/pkg/config"
-	"github.com/gear6io/pragmata/pkg/executor/clickhouseexecutor"
 	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes/implpipes"
 	"github.com/gear6io/pragmata/pkg/orchestration/goroutineorchestration"
@@ -69,13 +68,6 @@ func serve(ctx context.Context) error {
 		return fmt.Errorf("migrate: %w", err)
 	}
 
-	// ClickHouse executor
-	exec, err := clickhouseexecutor.New(cfg.ClickHouse)
-	if err != nil {
-		return fmt.Errorf("clickhouse: %w", err)
-	}
-	defer exec.Close()
-
 	// SQLMesh runner (Phase B stubs)
 	runner := sqlmesh.New(cfg.SQLMesh.ProjectDir, cfg.SQLMesh.BinaryPath)
 
@@ -93,7 +85,7 @@ func serve(ctx context.Context) error {
 	defer func() { _ = sched.Stop(context.Background()) }()
 
 	// Module + handler
-	mod := implpipes.NewModule(store, orchest, exec, sched)
+	mod := implpipes.NewModule(store, orchest, sched)
 	h := implpipes.NewHandler(mod)
 
 	// HTTP server
