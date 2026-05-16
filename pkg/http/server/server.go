@@ -43,6 +43,7 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 	reflector.Spec.WithInfo(*(&openapi3.Info{}).
 		WithTitle("Pragmata API").
 		WithVersion("v0"))
+	reflector.Spec.SetHTTPBearerTokenSecurity("BearerAuth", "", "API bearer token")
 
 	oac := handler.NewOpenAPICollector(reflector)
 
@@ -68,12 +69,12 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 	})).Methods("POST")
 
 	v0.Handle("/pipes", handler.New(h.ListPipes, handler.OpenAPIDef{
-		ID:              "listPipes",
-		Tags:            []string{"pipes"},
-		Summary:         "List all pipes",
-		Response:        []*pipetypes.Pipe{}, // slice schema: Data is an array of Pipe
+		ID:               "listPipes",
+		Tags:             []string{"pipes"},
+		Summary:          "List all pipes",
+		Response:         []*pipetypes.Pipe{},
 		ErrorStatusCodes: []int{http.StatusInternalServerError},
-		SecuritySchemes: bearerScheme,
+		SecuritySchemes:  bearerScheme,
 	})).Methods("GET")
 
 	v0.Handle("/pipes/{name}/meta", handler.New(h.GetPipe, handler.OpenAPIDef{

@@ -23,12 +23,14 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  CreatePipe201,
   DeletePipePathParameters,
+  GetPipe200,
   GetPipePathParameters,
+  ListPipes200,
   PipetypesPipeDTO,
   RenderErrorResponseDTO,
-  RenderSuccessResponsePipeDTO,
-  RenderSuccessResponsePipeListDTO,
+  UpdatePipe200,
   UpdatePipePathParameters,
 } from "../pragmataAPI.schemas";
 
@@ -39,7 +41,7 @@ import type { ErrorType, BodyType } from "../../../generatedAPIInstance";
  * @summary List all pipes
  */
 export const listPipes = (signal?: AbortSignal) => {
-  return GeneratedAPIInstance<RenderSuccessResponsePipeListDTO>({
+  return GeneratedAPIInstance<ListPipes200>({
     url: `/v0/pipes`,
     method: "GET",
     signal,
@@ -178,7 +180,7 @@ export const createPipe = (
   pipetypesPipeDTO: BodyType<PipetypesPipeDTO>,
   signal?: AbortSignal,
 ) => {
-  return GeneratedAPIInstance<RenderSuccessResponsePipeDTO>({
+  return GeneratedAPIInstance<CreatePipe201>({
     url: `/v0/pipes`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -342,7 +344,7 @@ export const updatePipe = (
   { name }: UpdatePipePathParameters,
   pipetypesPipeDTO: BodyType<PipetypesPipeDTO>,
 ) => {
-  return GeneratedAPIInstance<RenderSuccessResponsePipeDTO>({
+  return GeneratedAPIInstance<UpdatePipe200>({
     url: `/v0/pipes/${name}`,
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -429,7 +431,7 @@ export const getPipe = (
   { name }: GetPipePathParameters,
   signal?: AbortSignal,
 ) => {
-  return GeneratedAPIInstance<RenderSuccessResponsePipeDTO>({
+  return GeneratedAPIInstance<GetPipe200>({
     url: `/v0/pipes/${name}/meta`,
     method: "GET",
     signal,

@@ -12,7 +12,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RenderSuccessResponsePipeList'
+                properties:
+                  data:
+                    items:
+                      $ref: '#/components/schemas/PipetypesPipe'
+                    nullable: true
+                    type: array
+                  status:
+                    type: string
+                type: object
           description: OK
         "500":
           content:
@@ -38,7 +46,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RenderSuccessResponsePipe'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PipetypesPipe'
+                  status:
+                    type: string
+                type: object
           description: Created
         "400":
           content:
@@ -106,7 +119,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RenderSuccessResponsePipe'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PipetypesPipe'
+                  status:
+                    type: string
+                type: object
           description: OK
         "400":
           content:
@@ -146,7 +164,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RenderSuccessResponsePipe'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PipetypesPipe'
+                  status:
+                    type: string
+                type: object
           description: OK
         "404":
           content:
@@ -202,22 +225,6 @@ components:
       properties:
         error:
           type: string
-        status:
-          type: string
-      type: object
-    RenderSuccessResponsePipe:
-      properties:
-        data:
-          $ref: '#/components/schemas/PipetypesPipe'
-        status:
-          type: string
-      type: object
-    RenderSuccessResponsePipeList:
-      properties:
-        data:
-          items:
-            $ref: '#/components/schemas/PipetypesPipe'
-          type: array
         status:
           type: string
       type: object

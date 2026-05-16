@@ -70,7 +70,10 @@ func (h *handler) ServeOpenAPI(oc openapigo.OperationContext) {
 		successCode = http.StatusOK
 	}
 	if h.def.Response != nil {
-		oc.AddRespStructure(h.def.Response, openapigo.WithHTTPStatus(successCode))
+		oc.AddRespStructure(
+			render.SuccessResponse{Status: "success", Data: h.def.Response},
+			openapigo.WithHTTPStatus(successCode),
+		)
 	} else {
 		oc.AddRespStructure(nil, openapigo.WithHTTPStatus(successCode))
 	}

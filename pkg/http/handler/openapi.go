@@ -18,7 +18,22 @@ type OpenAPICollector struct {
 }
 
 // NewOpenAPICollector creates an OpenAPICollector backed by the given reflector.
+// It installs an InterceptDefName hook so that render.SuccessResponse (whose Data
+// field is interface{}) is inlined at each call site rather than extracted into a
+// shared named schema — the same approach SigNoz uses.
 func NewOpenAPICollector(reflector *openapi3.Reflector) *OpenAPICollector {
+	reflector.InterceptDefName(func(t reflect.Type, defaultDefName string) string {
+		if defaultDefName != "RenderSuccessResponse" {
+			return defaultDefName
+		}
+		dataField, ok := t.FieldByName("Data")
+		if !ok {
+			return defaultDefName
+		}
+		// interface{} has no name → swaggest inlines the schema instead of
+		// extracting it to components/schemas (defName == "" triggers inline path).
+		return dataField.Type.Name()
+	})
 	return &OpenAPICollector{
 		collector: openapi.NewCollector(reflector),
 		reflector: reflector,
