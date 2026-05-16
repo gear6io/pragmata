@@ -72,12 +72,47 @@ export interface RenderErrorResponseDTO {
   status?: string;
 }
 
+export type ListPipes200 = {
+  /**
+   * @type array
+   * @nullable true
+   */
+  data?: PipetypesPipeDTO[] | null;
+  /**
+   * @type string
+   */
+  status?: string;
+};
+
+export type CreatePipe201 = {
+  data?: PipetypesPipeDTO;
+  /**
+   * @type string
+   */
+  status?: string;
+};
+
 export type DeletePipePathParameters = {
   name: string;
 };
 export type UpdatePipePathParameters = {
   name: string;
 };
+export type UpdatePipe200 = {
+  data?: PipetypesPipeDTO;
+  /**
+   * @type string
+   */
+  status?: string;
+};
+
 export type GetPipePathParameters = {
   name: string;
+};
+export type GetPipe200 = {
+  data?: PipetypesPipeDTO;
+  /**
+   * @type string
+   */
+  status?: string;
 };

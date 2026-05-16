@@ -12,9 +12,15 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/PipetypesPipe'
-                type: array
+                properties:
+                  data:
+                    items:
+                      $ref: '#/components/schemas/PipetypesPipe'
+                    nullable: true
+                    type: array
+                  status:
+                    type: string
+                type: object
           description: OK
         "500":
           content:
@@ -40,7 +46,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PipetypesPipe'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PipetypesPipe'
+                  status:
+                    type: string
+                type: object
           description: Created
         "400":
           content:
@@ -108,7 +119,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PipetypesPipe'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PipetypesPipe'
+                  status:
+                    type: string
+                type: object
           description: OK
         "400":
           content:
@@ -148,7 +164,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PipetypesPipe'
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PipetypesPipe'
+                  status:
+                    type: string
+                type: object
           description: OK
         "404":
           content:

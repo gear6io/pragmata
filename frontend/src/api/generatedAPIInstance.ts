@@ -19,10 +19,16 @@ instance.interceptors.request.use((config) => {
 });
 
 // Required by orval: the named export used as the mutator.
+// The backend wraps all success responses as {status, data}; unwrap here.
 export const GeneratedAPIInstance = <T>(
 	config: AxiosRequestConfig,
 ): Promise<T> => {
-	return instance(config).then(({ data }) => data);
+	return instance(config).then(({ data: body }) => {
+		if (body && typeof body === 'object' && 'status' in body && 'data' in body) {
+			return body.data as T;
+		}
+		return body as T;
+	});
 };
 
 // Required by orval for typed error and body shapes.

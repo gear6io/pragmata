@@ -4,12 +4,14 @@ package server
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/swaggest/openapi-go/openapi3"
 
+	frontend "github.com/gear6io/pragmata/frontend"
 	"github.com/gear6io/pragmata/pkg/http/handler"
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
@@ -35,13 +37,13 @@ type Server struct {
 	openapi  *handler.OpenAPICollector
 }
 
-// New builds a mux router with all routes, bearer auth, and OpenAPI collection wired up.
+// New builds a mux router with all routes and OpenAPI collection wired up.
 func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 	reflector := openapi3.NewReflector()
 	reflector.Spec.WithInfo(*(&openapi3.Info{}).
 		WithTitle("Pragmata API").
 		WithVersion("v0"))
-	reflector.SpecSchema().SetHTTPBearerTokenSecurity("BearerAuth", "", "API bearer token")
+	reflector.Spec.SetHTTPBearerTokenSecurity("BearerAuth", "", "API bearer token")
 
 	oac := handler.NewOpenAPICollector(reflector)
 
@@ -51,7 +53,6 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 	s := &Server{router: r, provider: p, store: store, addr: addr, openapi: oac}
 
 	v0 := r.PathPrefix("/v0").Subrouter()
-	v0.Use(s.bearerAuth)
 	v0.Use(s.injectPipeName) // no-op on routes without {name}
 
 	h := p.Pipes
@@ -68,12 +69,12 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 	})).Methods("POST")
 
 	v0.Handle("/pipes", handler.New(h.ListPipes, handler.OpenAPIDef{
-		ID:              "listPipes",
-		Tags:            []string{"pipes"},
-		Summary:         "List all pipes",
-		Response:        []*pipetypes.Pipe{}, // slice schema: Data is an array of Pipe
+		ID:               "listPipes",
+		Tags:             []string{"pipes"},
+		Summary:          "List all pipes",
+		Response:         []*pipetypes.Pipe{},
 		ErrorStatusCodes: []int{http.StatusInternalServerError},
-		SecuritySchemes: bearerScheme,
+		SecuritySchemes:  bearerScheme,
 	})).Methods("GET")
 
 	v0.Handle("/pipes/{name}/meta", handler.New(h.GetPipe, handler.OpenAPIDef{
@@ -111,6 +112,26 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 
 	// Serve the spec at runtime without auth.
 	r.Handle("/openapi.yaml", http.HandlerFunc(s.serveOpenAPIYAML))
+
+	// Serve the embedded SPA for all non-API paths.
+	staticFS, err := fs.Sub(frontend.FS, "dist")
+	if err != nil {
+		panic("frontend: sub dist: " + err.Error())
+	}
+	fileServer := http.FileServer(http.FS(staticFS))
+	r.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := strings.TrimPrefix(r.URL.Path, "/")
+		if path != "" {
+			if f, err := staticFS.Open(path); err == nil {
+				f.Close()
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+		}
+		// SPA fallback: serve index.html for all client-side routes.
+		r.URL.Path = "/"
+		fileServer.ServeHTTP(w, r)
+	})
 
 	return s
 }
@@ -157,21 +178,6 @@ func (s *Server) serveOpenAPIYAML(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write(data)
 }
 
-func (s *Server) bearerAuth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := tokenFromRequest(r)
-		if token == "" {
-			render.Error(w, http.StatusUnauthorized, "missing token")
-			return
-		}
-		if _, err := s.store.GetTokenByValue(r.Context(), token); err != nil {
-			render.Error(w, http.StatusUnauthorized, "invalid token")
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 // injectPipeName reads the {name} path variable and stores it in the request context
 // so stdlib handlers can retrieve it via pipes.PipeName. No-op on routes without {name}.
 func (s *Server) injectPipeName(next http.Handler) http.Handler {
@@ -194,9 +200,3 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func tokenFromRequest(r *http.Request) string {
-	if auth := r.Header.Get("Authorization"); strings.HasPrefix(auth, "Bearer ") {
-		return strings.TrimPrefix(auth, "Bearer ")
-	}
-	return r.URL.Query().Get("token")
-}

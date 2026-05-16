@@ -8,16 +8,14 @@ import (
 )
 
 // SuccessResponse is the standard JSON envelope for successful responses.
-// Data is any so that swaggest can reflect on the concrete runtime value
-// when building OpenAPI schemas — the same approach SigNoz uses.
 type SuccessResponse struct {
-	Status string `json:"status"` // always "success"
+	Status string `json:"status"`
 	Data   any    `json:"data"`
 }
 
 // ErrorResponse is the standard JSON envelope for error responses.
 type ErrorResponse struct {
-	Status string `json:"status"` // always "error"
+	Status string `json:"status"`
 	Error  string `json:"error"`
 }
 
