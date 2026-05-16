@@ -1,0 +1,16 @@
+{
+  "name": "@pragmata/frontend",
+  "private": true,
+  "scripts": {
+    "generate:api": "orval --config ./orval.config.ts && sh scripts/post-types-generation.sh"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "axios": "^1.7.0"
+  },
+  "devDependencies": {
+    "orval": "^7.18.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}

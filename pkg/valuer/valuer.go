@@ -6,9 +6,14 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
-
-	ginbinding "github.com/gin-gonic/gin/binding"
 )
+
+// BindUnmarshaler allows a value to be decoded from a URL/form param string.
+// Mirrors the interface formerly provided by gin/binding, defined locally to
+// avoid the gin dependency now that the server uses gorilla/mux.
+type BindUnmarshaler interface {
+	UnmarshalParam(param string) error
+}
 
 type Valuer interface {
 	// IsZero returns true if the value is considered empty or zero
@@ -38,6 +43,5 @@ type Valuer interface {
 	// Implement encoding.TextUnmarshaler to allow the value to be marshalled unto a string
 	encoding.TextMarshaler
 
-	// Implement Gin's BindUnmarshaler interface
-	ginbinding.BindUnmarshaler
+	BindUnmarshaler
 }
