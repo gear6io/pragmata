@@ -24,6 +24,7 @@ func (m *initialSchema) Up(ctx context.Context, db *bun.DB) error {
 	if _, err := db.NewCreateTable().
 		Model(&struct {
 			bun.BaseModel    `bun:"table:pipes"`
+			ID               string    `bun:"id,pk,type:text"`
 			Name             string    `bun:"name,pk,type:text"`
 			Type             string    `bun:"type,notnull,type:text"`
 			Description      string    `bun:"description,type:text,default:''"`
@@ -32,6 +33,8 @@ func (m *initialSchema) Up(ctx context.Context, db *bun.DB) error {
 			Datasource       string    `bun:"datasource,type:text,default:''"`
 			TargetDatasource string    `bun:"target_datasource,type:text,default:''"`
 			CopySchedule     string    `bun:"copy_schedule,type:text,default:''"`
+			CreatedBy        string    `bun:"created_by,type:text,default:''"`
+			UpdatedBy        string    `bun:"updated_by,type:text,default:''"`
 			CreatedAt        time.Time `bun:"created_at,notnull,default:current_timestamp"`
 			UpdatedAt        time.Time `bun:"updated_at,notnull,default:current_timestamp"`
 		}{}).

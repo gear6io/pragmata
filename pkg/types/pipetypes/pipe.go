@@ -165,20 +165,20 @@ type Pipe struct {
 	types.UserAuditable
 	types.TimeAuditable
 
-	Name             string   `bun:"name,pk"                                       json:"name"`
-	Type             PipeType `bun:"type,notnull"                                  json:"type"`
-	Description      string   `bun:"description"                                   json:"description,omitempty"`
-	Tags             Tags     `bun:"tags"                                          json:"tags,omitempty"`
-	Content          string   `bun:"content,notnull"                                 json:"content"`
-	Datasource       string   `bun:"datasource"                                    json:"datasource,omitempty"`
-	TargetDatasource string   `bun:"target_datasource"                             json:"targetDatasource,omitempty"`
-	CopySchedule     string   `bun:"copy_schedule"                                 json:"copySchedule,omitempty"`
+	Name             string   `bun:"name,pk" json:"name"`
+	Type             PipeType `bun:"type,notnull" json:"type"`
+	Description      string   `bun:"description" json:"description,omitempty"`
+	Tags             Tags     `bun:"tags" json:"tags,omitempty"`
+	Content          string   `bun:"content,notnull" json:"content"`
+	Datasource       string   `bun:"datasource" json:"datasource,omitempty"`
+	TargetDatasource string   `bun:"target_datasource" json:"targetDatasource,omitempty"`
+	CopySchedule     string   `bun:"copy_schedule" json:"copySchedule,omitempty"`
 
 	// Virtual / computed fields
-	Nodes       Nodes     `json:"-"`
-	Owner       string    `json:"-"`
-	Destination string    `json:"-"`
-	Schedule    string    `json:"-"`
-	Sources     Sources   `json:"-"`
-	Params      ParamDefs `json:"-"`
+	Nodes       Nodes     `bun:"-" json:"-"`
+	Owner       string    `bun:"-" json:"-"`
+	Destination string    `bun:"-" json:"-"`
+	Schedule    string    `bun:"-" json:"-"`
+	Sources     Sources   `bun:"-" json:"-"`
+	Params      ParamDefs `bun:"-" json:"-"`
 }
