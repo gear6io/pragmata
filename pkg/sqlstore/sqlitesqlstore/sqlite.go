@@ -66,7 +66,7 @@ func (s *Store) ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error) {
 func (s *Store) UpdatePipe(ctx context.Context, pipe *pipetypes.Pipe) error {
 	pipe.UpdatedAt = time.Now()
 	res, err := s.bundb.NewUpdate().Model(pipe).
-		Column("type", "description", "tags", "nodes", "datasource", "target_datasource", "copy_schedule", "updated_at").
+		Column("type", "description", "tags", "content", "datasource", "target_datasource", "copy_schedule", "updated_at").
 		WherePK().
 		Exec(ctx)
 	if err != nil {

@@ -40,8 +40,7 @@ func New(handler pipes.Handler, store sqlstore.SQLStore, addr string) *Server {
 	// Named-pipe routes: inject pipe name into request context.
 	named := v0.Group("/pipes/:name")
 	named.Use(s.injectPipeName())
-	named.GET("", s.wrap(handler.ExecutePipe))    // GET /v0/pipes/:name   → execute
-	named.GET("/meta", s.wrap(handler.GetPipe))   // GET /v0/pipes/:name/meta → metadata
+	named.GET("/meta", s.wrap(handler.GetPipe)) // GET /v0/pipes/:name/meta → metadata
 	named.PUT("", s.wrap(handler.UpdatePipe))
 	named.DELETE("", s.wrap(handler.DeletePipe))
 

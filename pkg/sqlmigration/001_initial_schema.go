@@ -28,7 +28,7 @@ func (m *initialSchema) Up(ctx context.Context, db *bun.DB) error {
 			Type             string    `bun:"type,notnull,type:text"`
 			Description      string    `bun:"description,type:text,default:''"`
 			Tags             string    `bun:"tags,notnull,type:text,default:'[]'"`
-			Nodes            string    `bun:"nodes,notnull,type:text,default:'[]'"`
+			Content          string    `bun:"content,notnull,type:text,default:'[]'"`
 			Datasource       string    `bun:"datasource,type:text,default:''"`
 			TargetDatasource string    `bun:"target_datasource,type:text,default:''"`
 			CopySchedule     string    `bun:"copy_schedule,type:text,default:''"`

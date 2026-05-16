@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gear6io/pragmata/pkg/executor"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/orchestration"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
@@ -14,7 +13,6 @@ import (
 type module struct {
 	store   sqlstore.SQLStore
 	orchest orchestration.Orchestrator
-	exec    executor.Executor
 	sched   pipes.Scheduler
 }
 
@@ -22,13 +20,11 @@ type module struct {
 func NewModule(
 	store sqlstore.SQLStore,
 	orchest orchestration.Orchestrator,
-	exec executor.Executor,
 	sched pipes.Scheduler,
 ) pipes.Module {
 	return &module{
 		store:   store,
 		orchest: orchest,
-		exec:    exec,
 		sched:   sched,
 	}
 }
