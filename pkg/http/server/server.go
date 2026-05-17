@@ -15,14 +15,16 @@ import (
 	"github.com/gear6io/pragmata/pkg/http/handler"
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
+	"github.com/gear6io/pragmata/pkg/modules/suggestions"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/types/suggestiontypes"
 )
 
 // Provider groups all module handlers the HTTP server routes to.
-// Add a new field here when a second module lands — keeps New() signature stable.
 type Provider struct {
-	Pipes pipes.Handler
+	Pipes       pipes.Handler
+	Suggestions suggestions.Handler
 }
 
 // bearerScheme is the single declared security scheme applied to all v0 routes.
@@ -104,6 +106,18 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 		ErrorStatusCodes:  []int{http.StatusNotFound, http.StatusInternalServerError},
 		SecuritySchemes:   bearerScheme,
 	})).Methods("DELETE")
+
+	sg := p.Suggestions
+	v0.Handle("/suggestions", handler.New(sg.GetSuggestions, handler.OpenAPIDef{
+		ID:                "getSuggestions",
+		Tags:              []string{"suggestions"},
+		Summary:           "Get autocomplete suggestions",
+		Request:           new(suggestiontypes.SuggestionRequest),
+		Response:          new(suggestiontypes.SuggestionResponse),
+		SuccessStatusCode: http.StatusOK,
+		ErrorStatusCodes:  []int{http.StatusBadRequest, http.StatusInternalServerError},
+		SecuritySchemes:   bearerScheme,
+	})).Methods("POST")
 
 	// Walk all registered routes once to populate the OpenAPI collector.
 	if err := r.Walk(oac.Walker); err != nil {

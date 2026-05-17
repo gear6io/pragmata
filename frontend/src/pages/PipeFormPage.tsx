@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import { autocompletion } from '@codemirror/autocomplete';
+import { pipeLangCompletions } from '../editor/pipeLangCompletions';
 import {
   useCreatePipe,
   useGetPipe,
@@ -28,6 +30,8 @@ function CodeEditor({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  // Always-current doc text ref for the completion source callback.
+  const docRef = useRef(value);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -37,7 +41,14 @@ function CodeEditor({
         extensions: [
           EditorView.lineWrapping,
           EditorView.updateListener.of((update) => {
-            if (update.docChanged) onChange(update.state.doc.toString());
+            if (update.docChanged) {
+              const text = update.state.doc.toString();
+              docRef.current = text;
+              onChange(text);
+            }
+          }),
+          autocompletion({
+            override: [pipeLangCompletions(() => docRef.current)],
           }),
         ],
       }),
