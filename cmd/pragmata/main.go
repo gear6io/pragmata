@@ -12,7 +12,10 @@ import (
 
 	"github.com/gear6io/pragmata/pkg/config"
 	httpserver "github.com/gear6io/pragmata/pkg/http/server"
+	"github.com/gear6io/pragmata/pkg/datastore"
 	"github.com/gear6io/pragmata/pkg/modules/pipes/implpipes"
+	"github.com/gear6io/pragmata/pkg/modules/sources/implsources"
+	"github.com/gear6io/pragmata/pkg/modules/suggestions/implsuggestions"
 	"github.com/gear6io/pragmata/pkg/orchestration/goroutineorchestration"
 	"github.com/gear6io/pragmata/pkg/scheduler/cronscheduler"
 	"github.com/gear6io/pragmata/pkg/sqlmesh"
@@ -85,13 +88,25 @@ func serve(ctx context.Context) error {
 	}
 	defer func() { _ = sched.Stop(context.Background()) }()
 
-	// Module + handler
+	// Pipes module + handler
 	mod := implpipes.NewModule(store, orchest, sched)
 	h := implpipes.NewHandler(mod)
 
+	// Suggestions module + handler
+	suggestMod := implsuggestions.NewModule(store)
+	suggestH := implsuggestions.NewHandler(suggestMod)
+
+	// DataStore (ClickHouse) + sources module + handler
+	ds, err := datastore.New(cfg.ClickHouse)
+	if err != nil {
+		return fmt.Errorf("open datastore: %w", err)
+	}
+	sourceMod := implsources.NewModule(ds)
+	sourceH := implsources.NewHandler(sourceMod)
+
 	// HTTP server
 	addr := httpserver.Addr(cfg.Server.Host, cfg.Server.Port)
-	srv := httpserver.New(&httpserver.Provider{Pipes: h}, store, addr)
+	srv := httpserver.New(&httpserver.Provider{Pipes: h, Suggestions: suggestH, Sources: sourceH}, store, addr)
 	log.Printf("pragmata listening on %s", addr)
 
 	// Graceful shutdown on SIGINT/SIGTERM

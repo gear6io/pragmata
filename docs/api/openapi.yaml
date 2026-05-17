@@ -40,7 +40,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PipetypesPipe'
+              $ref: '#/components/schemas/PipetypesPostablePipe'
       responses:
         "201":
           content:
@@ -113,7 +113,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PipetypesPipe'
+              $ref: '#/components/schemas/PipetypesPostablePipe'
       responses:
         "200":
           content:
@@ -216,6 +216,11 @@ components:
           type: string
       required:
       - id
+      type: object
+    PipetypesPostablePipe:
+      properties:
+        content:
+          type: string
       type: object
     PipetypesTags:
       items:
