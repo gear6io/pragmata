@@ -6,6 +6,7 @@ import (
 
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
+	"github.com/gear6io/pragmata/pkg/parser/pipeparser"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
@@ -19,11 +20,17 @@ func NewHandler(mod pipes.Module) pipes.Handler {
 }
 
 func (h *handler) CreatePipe(w http.ResponseWriter, r *http.Request) {
-	var pipe pipetypes.Pipe
-	if !decodeJSON(w, r, &pipe) {
+	var body pipetypes.PostablePipe
+	if !decodeJSON(w, r, &body) {
 		return
 	}
-	created, err := h.module.CreatePipe(r.Context(), &pipe)
+	pipe, err := pipeparser.Parse("", body.Content)
+	if err != nil {
+		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
+		return
+	}
+	pipe.Content = body.Content
+	created, err := h.module.CreatePipe(r.Context(), pipe)
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -55,11 +62,17 @@ func (h *handler) GetPipe(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
 	name := pipes.PipeName(r)
-	var pipe pipetypes.Pipe
-	if !decodeJSON(w, r, &pipe) {
+	var body pipetypes.PostablePipe
+	if !decodeJSON(w, r, &body) {
 		return
 	}
-	updated, err := h.module.UpdatePipe(r.Context(), name, &pipe)
+	pipe, err := pipeparser.Parse(name, body.Content)
+	if err != nil {
+		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
+		return
+	}
+	pipe.Content = body.Content
+	updated, err := h.module.UpdatePipe(r.Context(), name, pipe)
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return

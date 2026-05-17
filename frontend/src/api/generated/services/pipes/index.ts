@@ -28,7 +28,7 @@ import type {
   GetPipe200,
   GetPipePathParameters,
   ListPipes200,
-  PipetypesPipeDTO,
+  PipetypesPostablePipeDTO,
   RenderErrorResponseDTO,
   UpdatePipe200,
   UpdatePipePathParameters,
@@ -177,14 +177,14 @@ export const invalidateListPipes = async (
  * @summary Create a pipe
  */
 export const createPipe = (
-  pipetypesPipeDTO: BodyType<PipetypesPipeDTO>,
+  pipetypesPostablePipeDTO: BodyType<PipetypesPostablePipeDTO>,
   signal?: AbortSignal,
 ) => {
   return GeneratedAPIInstance<CreatePipe201>({
     url: `/v0/pipes`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    data: pipetypesPipeDTO,
+    data: pipetypesPostablePipeDTO,
     signal,
   });
 };
@@ -196,13 +196,13 @@ export const getCreatePipeMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof createPipe>>,
     TError,
-    { data: BodyType<PipetypesPipeDTO> },
+    { data: BodyType<PipetypesPostablePipeDTO> },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createPipe>>,
   TError,
-  { data: BodyType<PipetypesPipeDTO> },
+  { data: BodyType<PipetypesPostablePipeDTO> },
   TContext
 > => {
   const mutationKey = ["createPipe"];
@@ -216,7 +216,7 @@ export const getCreatePipeMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createPipe>>,
-    { data: BodyType<PipetypesPipeDTO> }
+    { data: BodyType<PipetypesPostablePipeDTO> }
   > = (props) => {
     const { data } = props ?? {};
 
@@ -229,7 +229,7 @@ export const getCreatePipeMutationOptions = <
 export type CreatePipeMutationResult = NonNullable<
   Awaited<ReturnType<typeof createPipe>>
 >;
-export type CreatePipeMutationBody = BodyType<PipetypesPipeDTO>;
+export type CreatePipeMutationBody = BodyType<PipetypesPostablePipeDTO>;
 export type CreatePipeMutationError = ErrorType<RenderErrorResponseDTO>;
 
 /**
@@ -243,7 +243,7 @@ export const useCreatePipe = <
     mutation?: UseMutationOptions<
       Awaited<ReturnType<typeof createPipe>>,
       TError,
-      { data: BodyType<PipetypesPipeDTO> },
+      { data: BodyType<PipetypesPostablePipeDTO> },
       TContext
     >;
   },
@@ -251,7 +251,7 @@ export const useCreatePipe = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof createPipe>>,
   TError,
-  { data: BodyType<PipetypesPipeDTO> },
+  { data: BodyType<PipetypesPostablePipeDTO> },
   TContext
 > => {
   const mutationOptions = getCreatePipeMutationOptions(options);
@@ -342,13 +342,13 @@ export const useDeletePipe = <
  */
 export const updatePipe = (
   { name }: UpdatePipePathParameters,
-  pipetypesPipeDTO: BodyType<PipetypesPipeDTO>,
+  pipetypesPostablePipeDTO: BodyType<PipetypesPostablePipeDTO>,
 ) => {
   return GeneratedAPIInstance<UpdatePipe200>({
     url: `/v0/pipes/${name}`,
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    data: pipetypesPipeDTO,
+    data: pipetypesPostablePipeDTO,
   });
 };
 
@@ -359,13 +359,19 @@ export const getUpdatePipeMutationOptions = <
   mutation?: UseMutationOptions<
     Awaited<ReturnType<typeof updatePipe>>,
     TError,
-    { pathParams: UpdatePipePathParameters; data: BodyType<PipetypesPipeDTO> },
+    {
+      pathParams: UpdatePipePathParameters;
+      data: BodyType<PipetypesPostablePipeDTO>;
+    },
     TContext
   >;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updatePipe>>,
   TError,
-  { pathParams: UpdatePipePathParameters; data: BodyType<PipetypesPipeDTO> },
+  {
+    pathParams: UpdatePipePathParameters;
+    data: BodyType<PipetypesPostablePipeDTO>;
+  },
   TContext
 > => {
   const mutationKey = ["updatePipe"];
@@ -379,7 +385,10 @@ export const getUpdatePipeMutationOptions = <
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updatePipe>>,
-    { pathParams: UpdatePipePathParameters; data: BodyType<PipetypesPipeDTO> }
+    {
+      pathParams: UpdatePipePathParameters;
+      data: BodyType<PipetypesPostablePipeDTO>;
+    }
   > = (props) => {
     const { pathParams, data } = props ?? {};
 
@@ -392,7 +401,7 @@ export const getUpdatePipeMutationOptions = <
 export type UpdatePipeMutationResult = NonNullable<
   Awaited<ReturnType<typeof updatePipe>>
 >;
-export type UpdatePipeMutationBody = BodyType<PipetypesPipeDTO>;
+export type UpdatePipeMutationBody = BodyType<PipetypesPostablePipeDTO>;
 export type UpdatePipeMutationError = ErrorType<RenderErrorResponseDTO>;
 
 /**
@@ -408,7 +417,7 @@ export const useUpdatePipe = <
       TError,
       {
         pathParams: UpdatePipePathParameters;
-        data: BodyType<PipetypesPipeDTO>;
+        data: BodyType<PipetypesPostablePipeDTO>;
       },
       TContext
     >;
@@ -417,7 +426,10 @@ export const useUpdatePipe = <
 ): UseMutationResult<
   Awaited<ReturnType<typeof updatePipe>>,
   TError,
-  { pathParams: UpdatePipePathParameters; data: BodyType<PipetypesPipeDTO> },
+  {
+    pathParams: UpdatePipePathParameters;
+    data: BodyType<PipetypesPostablePipeDTO>;
+  },
   TContext
 > => {
   const mutationOptions = getUpdatePipeMutationOptions(options);

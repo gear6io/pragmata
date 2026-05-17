@@ -59,6 +59,13 @@ export interface PipetypesPipeDTO {
   updatedBy?: string;
 }
 
+export interface PipetypesPostablePipeDTO {
+  /**
+   * @type string
+   */
+  content?: string;
+}
+
 export type PipetypesTagsDTO = string[];
 
 export interface RenderErrorResponseDTO {
