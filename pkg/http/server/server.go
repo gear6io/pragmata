@@ -15,9 +15,11 @@ import (
 	"github.com/gear6io/pragmata/pkg/http/handler"
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
+	"github.com/gear6io/pragmata/pkg/modules/sources"
 	"github.com/gear6io/pragmata/pkg/modules/suggestions"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
 	"github.com/gear6io/pragmata/pkg/types/suggestiontypes"
 )
 
@@ -25,6 +27,7 @@ import (
 type Provider struct {
 	Pipes       pipes.Handler
 	Suggestions suggestions.Handler
+	Sources     sources.Handler
 }
 
 // bearerScheme is the single declared security scheme applied to all v0 routes.
@@ -55,7 +58,8 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 	s := &Server{router: r, provider: p, store: store, addr: addr, openapi: oac}
 
 	v0 := r.PathPrefix("/v0").Subrouter()
-	v0.Use(s.injectPipeName) // no-op on routes without {name}
+	v0.Use(s.injectPipeName)   // no-op on routes without pipe {name}
+	v0.Use(s.injectSourceName) // no-op on routes without source {name}
 
 	h := p.Pipes
 
@@ -118,6 +122,36 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 		ErrorStatusCodes:  []int{http.StatusBadRequest, http.StatusInternalServerError},
 		SecuritySchemes:   bearerScheme,
 	})).Methods("POST")
+
+	src := p.Sources
+	v0.Handle("/sources", handler.New(src.CreateSource, handler.OpenAPIDef{
+		ID:                "createSource",
+		Tags:              []string{"sources"},
+		Summary:           "Create a source",
+		Request:           new(sourcetypes.Source),
+		Response:          new(sourcetypes.Source),
+		SuccessStatusCode: http.StatusCreated,
+		ErrorStatusCodes:  []int{http.StatusBadRequest, http.StatusInternalServerError},
+		SecuritySchemes:   bearerScheme,
+	})).Methods("POST")
+
+	v0.Handle("/sources", handler.New(src.ListSources, handler.OpenAPIDef{
+		ID:               "listSources",
+		Tags:             []string{"sources"},
+		Summary:          "List all sources",
+		Response:         []sourcetypes.Source{},
+		ErrorStatusCodes: []int{http.StatusInternalServerError},
+		SecuritySchemes:  bearerScheme,
+	})).Methods("GET")
+
+	v0.Handle("/sources/{name}", handler.New(src.GetSource, handler.OpenAPIDef{
+		ID:               "getSource",
+		Tags:             []string{"sources"},
+		Summary:          "Get source with fields",
+		Response:         new(sourcetypes.Source),
+		ErrorStatusCodes: []int{http.StatusNotFound, http.StatusInternalServerError},
+		SecuritySchemes:  bearerScheme,
+	})).Methods("GET")
 
 	// Walk all registered routes once to populate the OpenAPI collector.
 	if err := r.Walk(oac.Walker); err != nil {
@@ -198,6 +232,17 @@ func (s *Server) injectPipeName(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if name := mux.Vars(r)["name"]; name != "" {
 			r = pipes.WithPipeName(r, name)
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// injectSourceName reads the {name} path variable and stores it in the request context
+// so stdlib handlers can retrieve it via sources.SourceName. No-op on routes without {name}.
+func (s *Server) injectSourceName(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if name := mux.Vars(r)["name"]; name != "" {
+			r = sources.WithSourceName(r, name)
 		}
 		next.ServeHTTP(w, r)
 	})

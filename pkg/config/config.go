@@ -20,11 +20,7 @@ type ServerConfig struct {
 }
 
 type ClickHouseConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Database string `yaml:"database"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
+	URL string `yaml:"url"`
 }
 
 type SQLMeshConfig struct {
@@ -54,7 +50,7 @@ func Defaults() *Config { return defaults() }
 func defaults() *Config {
 	return &Config{
 		Server:     ServerConfig{Host: "0.0.0.0", Port: 7181},
-		ClickHouse: ClickHouseConfig{Host: "localhost", Port: 9000, Database: "default"},
+		ClickHouse: ClickHouseConfig{URL: "clickhouse://localhost:9000"},
 		SQLMesh:    SQLMeshConfig{BinaryPath: "sqlmesh", ProjectDir: ".pragmata/sqlmesh"},
 		Database:   DatabaseConfig{Path: "./pragmata.db"},
 	}
