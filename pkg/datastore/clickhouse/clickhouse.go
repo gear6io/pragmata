@@ -3,10 +3,10 @@ package clickhouse
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	driver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	"github.com/huandu/go-sqlbuilder"
 
 	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
@@ -43,32 +43,35 @@ func (s *Store) CreateSource(ctx context.Context, src *sourcetypes.Source) error
 		engine = "MergeTree()"
 	}
 
-	var colDefs []string
+	ctb := sqlbuilder.NewCreateTableBuilder()
+	ctb.IfNotExists()
+	ctb.CreateTable(src.Name)
 	for _, f := range src.Fields {
 		chType, err := f.Type.ClickHouseType()
 		if err != nil {
 			return fmt.Errorf("field %q: %w", f.Name, err)
 		}
-		colDefs = append(colDefs, fmt.Sprintf("%s %s", f.Name, chType))
+		ctb.Define(f.Name, chType)
 	}
+	ctb.Option("ENGINE = " + engine)
 
-	query := fmt.Sprintf(
-		"CREATE TABLE %s.%s (%s) ENGINE = %s",
-		sourceDatabase, src.Name, strings.Join(colDefs, ", "), engine,
-	)
-	if err := s.conn.Exec(ctx, query); err != nil {
+	query, args := ctb.BuildWithFlavor(sqlbuilder.ClickHouse)
+	if err := s.conn.Exec(ctx, query, args...); err != nil {
 		return fmt.Errorf("create source %q: %w", src.Name, err)
 	}
 	src.Database = sourceDatabase
 	return nil
 }
 
-// ListSources returns all tables in the pragmata_source database.
+// ListSources returns all sources in the pragmata_source database.
 func (s *Store) ListSources(ctx context.Context) ([]sourcetypes.Source, error) {
-	rows, err := s.conn.Query(ctx,
-		"SELECT name, engine FROM system.tables WHERE database = ?",
-		sourceDatabase,
-	)
+	sb := sqlbuilder.NewSelectBuilder()
+	sb.Select("name", "engine")
+	sb.From("system.tables")
+	sb.Where(sb.Equal("database", sourceDatabase))
+	query, args := sb.Build()
+
+	rows, err := s.conn.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("list sources: %w", err)
 	}
@@ -88,10 +91,13 @@ func (s *Store) ListSources(ctx context.Context) ([]sourcetypes.Source, error) {
 
 // GetSource returns a single table with its field list.
 func (s *Store) GetSource(ctx context.Context, name string) (*sourcetypes.Source, error) {
-	rows, err := s.conn.Query(ctx,
-		"SELECT name, engine FROM system.tables WHERE database = ? AND name = ?",
-		sourceDatabase, name,
-	)
+	sb := sqlbuilder.NewSelectBuilder()
+	sb.Select("name", "engine")
+	sb.From("system.tables")
+	sb.Where(sb.Equal("database", sourceDatabase), sb.Equal("name", name))
+	query, args := sb.Build()
+
+	rows, err := s.conn.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("get source %q: %w", name, err)
 	}
@@ -107,10 +113,14 @@ func (s *Store) GetSource(ctx context.Context, name string) (*sourcetypes.Source
 	src.Database = sourceDatabase
 	rows.Close()
 
-	fieldRows, err := s.conn.Query(ctx,
-		"SELECT name, type FROM system.columns WHERE database = ? AND table = ?",
-		sourceDatabase, name,
-	)
+
+	fsb := sqlbuilder.NewSelectBuilder()
+	fsb.Select("name", "type")
+	fsb.From("system.columns")
+	fsb.Where(fsb.Equal("database", sourceDatabase), fsb.Equal("table", name))
+	fieldQuery, fieldArgs := fsb.Build()
+
+	fieldRows, err := s.conn.Query(ctx, fieldQuery, fieldArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("get source fields %q: %w", name, err)
 	}

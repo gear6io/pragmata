@@ -1,0 +1,101 @@
+# Sources
+
+A source is a named ClickHouse table registered in the internal `pragmata_source` database. Creating a source provisions the table directly in ClickHouse — it is real and queryable immediately.
+
+## When to create a source
+
+- You want to start ingesting a new type of events and need a table to land them in.
+- A pipe produces intermediate output that a downstream pipe needs to consume.
+- You want schema-awareness and autocomplete in the pipe editor for a particular table.
+
+## Source object
+
+| Field    | Type      | Required | Notes                                              |
+| -------- | --------- | -------- | -------------------------------------------------- |
+| `name`   | `string`  | yes      | Table name; must be unique across all sources      |
+| `engine` | `string`  | no       | ClickHouse table engine. Defaults to `MergeTree()` |
+| `fields` | `Field[]` | yes      | At least one field required                        |
+
+### Field object
+
+| Field  | Type     | Required |                                      |
+| ------ | -------- | -------- | ------------------------------------ |
+| `name` | `string` | yes      |                                      |
+| `type` | `string` | yes      | One of the supported types below |
+
+## Supported field types
+
+| Type         | ClickHouse DDL  |
+| ------------ | --------------- |
+| `string`     | `String`        |
+| `int64`      | `Int64`         |
+| `float64`    | `Float64`       |
+| `bool`       | `Bool`          |
+| `datetime64` | `DateTime64(3)` |
+| `date`       | `Date`          |
+
+## API
+
+All endpoints are under `/v0/sources` and require a Bearer token.
+
+### POST /v0/sources
+
+Create a source. Issues `CREATE TABLE IF NOT EXISTS` in ClickHouse.
+
+**Request body**
+
+```json
+{
+  "name": "page_views",
+  "engine": "MergeTree()",
+  "fields": [
+    { "name": "timestamp", "type": "datetime64" },
+    { "name": "user_id",   "type": "string" },
+    { "name": "page",      "type": "string" },
+    { "name": "country",   "type": "string" }
+  ]
+}
+```
+
+**Response** — `201 Created` with the created source object.
+
+Notes:
+- `engine` defaults to `MergeTree()` if omitted.
+- An empty or missing `fields` array is rejected.
+- Re-posting the same `name` does not error — `IF NOT EXISTS` makes it idempotent.
+
+### GET /v0/sources
+
+List all sources. Returns name and engine for each; `fields` is not populated.
+
+**Response** — `200 OK` with an array of source objects.
+
+### GET /v0/sources/{name}
+
+Get a single source with its full field list.
+
+**Response** — `200 OK` with the source object and `fields` populated; `404` if not found.
+
+## Relationship to pipes
+
+Sources appear in pipes in two roles:
+
+**Input** — set `datasource` on a pipe to read from a source by name.
+
+**Output** — set `targetDatasource` on a pipe to write results into a source.
+
+Within pipe SQL, sources are referenced by the alias you define in the pipe's `sources` block:
+
+```yaml
+sources:
+  - raw: page_views
+```
+
+`raw` then becomes the table name inside that pipe's SQL nodes.
+
+Raw ClickHouse tables in other databases can be referenced in pipes by their fully-qualified name (e.g. `default.events`) without registering a source.
+
+## Limits
+
+- Sources cannot be updated or deleted via the API.
+- Source names must be unique — all sources share the `pragmata_source` database.
