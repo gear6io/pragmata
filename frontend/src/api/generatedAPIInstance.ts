@@ -3,8 +3,7 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 // Bundler replaces this at build time. Override in your env config.
 declare const __API_BASE_URL__: string | undefined;
 const API_BASE_URL: string =
-	(typeof __API_BASE_URL__ !== 'undefined' && __API_BASE_URL__) ||
-	'http://localhost:7181';
+	(typeof __API_BASE_URL__ !== 'undefined' && __API_BASE_URL__) || '';
 
 const instance = axios.create({ baseURL: API_BASE_URL });
 

@@ -19,6 +19,7 @@ directive
     | OWNER         REST_OF_LINE    # ownerDir
     | DESTINATION   REST_OF_LINE    # destinationDir
     | SCHEDULE      REST_OF_LINE    # scheduleDir
+    | UNIQUE_KEY    REST_OF_LINE    # uniqueKeyDir
     | SOURCES       BLOCK_LINE*     # sourcesDir
     | PARAMS        BLOCK_LINE*     # paramsDir
     | PIPELINE      pipelineBlock   # pipelineDir
