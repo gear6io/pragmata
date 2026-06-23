@@ -42,8 +42,8 @@ function detectContext(ctx: CompletionContext): DetectedContext | null {
     } else if (/^pipeline\s*:/.test(trimmed)) {
       inPipeline = true;
       inSources = false;
-    } else if (/^\S/.test(trimmed) && !trimmed.startsWith('#')) {
-      // Any other top-level key resets context.
+    } else if (/^\S/.test(line) && !trimmed.startsWith('#')) {
+      // Only top-level keys (column 0) reset context; indented SQL lines must not.
       inSources = false;
       inPipeline = false;
     }
@@ -94,8 +94,8 @@ function extractFromAlias(text: string): string | undefined {
  */
 export function pipeLangCompletions(getPipeContent: () => string): CompletionSource {
   return async (ctx: CompletionContext): Promise<CompletionResult | null> => {
-    // Require an explicit trigger (Ctrl+Space) or an alphanumeric character.
-    if (!ctx.explicit && !ctx.matchBefore(/\w/)) return null;
+    // Require an explicit trigger, a word char, or cursor right after "from " in pipeline context.
+    if (!ctx.explicit && !ctx.matchBefore(/\w/) && !ctx.matchBefore(/\bfrom\s+/i)) return null;
 
     const context = detectContext(ctx);
     if (!context) return null;
