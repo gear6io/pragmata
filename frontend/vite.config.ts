@@ -9,4 +9,9 @@ export default defineConfig({
     __API_BASE_URL__: JSON.stringify(process.env.VITE_API_URL ?? ''),
   },
   build: { outDir: 'dist' },
+  server: {
+    proxy: {
+      '/api': 'http://localhost:7181',
+    },
+  },
 });

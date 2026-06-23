@@ -30,6 +30,12 @@ type Provider struct {
 	Sources     sources.Handler
 }
 
+// NewProvider is the required constructor — positional args mean the compiler
+// catches any new handler that isn't wired into both serve and generate.
+func NewProvider(pipes pipes.Handler, suggestions suggestions.Handler, sources sources.Handler) *Provider {
+	return &Provider{Pipes: pipes, Suggestions: suggestions, Sources: sources}
+}
+
 // bearerScheme is the single declared security scheme applied to all v0 routes.
 var bearerScheme = []handler.OpenAPISecurityScheme{{Name: "BearerAuth"}}
 
@@ -57,7 +63,7 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 
 	s := &Server{router: r, provider: p, store: store, addr: addr, openapi: oac}
 
-	v0 := r.PathPrefix("/v0").Subrouter()
+	v0 := r.PathPrefix("/api/v0").Subrouter()
 	v0.Use(s.injectPipeName)   // no-op on routes without pipe {name}
 	v0.Use(s.injectSourceName) // no-op on routes without source {name}
 
@@ -258,4 +264,3 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-

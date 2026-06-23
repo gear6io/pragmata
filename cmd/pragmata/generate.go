@@ -9,6 +9,8 @@ import (
 	"github.com/gear6io/pragmata/pkg/config"
 	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
+	"github.com/gear6io/pragmata/pkg/modules/sources"
+	"github.com/gear6io/pragmata/pkg/modules/suggestions"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 )
 
@@ -39,7 +41,11 @@ func runGenerateOpenAPI() error {
 	}
 
 	srv := httpserver.New(
-		&httpserver.Provider{Pipes: struct{ pipes.Handler }{}},
+		httpserver.NewProvider(
+			struct{ pipes.Handler }{},
+			struct{ suggestions.Handler }{},
+			struct{ sources.Handler }{},
+		),
 		struct{ sqlstore.SQLStore }{},
 		httpserver.Addr(cfg.Server.Host, cfg.Server.Port),
 	)

@@ -25,6 +25,7 @@ TAGS        : 'tags'        COLON -> pushMode(VALUE_MODE) ;
 OWNER       : 'owner'       COLON -> pushMode(VALUE_MODE) ;
 DESTINATION : 'destination' COLON -> pushMode(VALUE_MODE) ;
 SCHEDULE    : 'schedule'    COLON -> pushMode(VALUE_MODE) ;
+UNIQUE_KEY  : 'unique_key'  COLON -> pushMode(VALUE_MODE) ;
 
 // Description has two forms.  DESCRIPTION_ML must be declared first so that
 // ANTLR's maximal-munch rule picks it when '|' follows the colon.

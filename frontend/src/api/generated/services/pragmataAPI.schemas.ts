@@ -68,6 +68,17 @@ export interface PipetypesPostablePipeDTO {
 
 export type PipetypesTagsDTO = string[];
 
+export interface QuerybuildertypesFieldDTO {
+  /**
+   * @type string
+   */
+  name?: string;
+  /**
+   * @type string
+   */
+  type?: string;
+}
+
 export interface RenderErrorResponseDTO {
   /**
    * @type string
@@ -77,6 +88,75 @@ export interface RenderErrorResponseDTO {
    * @type string
    */
   status?: string;
+}
+
+export interface SourcetypesSourceDTO {
+  /**
+   * @type string
+   */
+  engine?: string;
+  /**
+   * @type array
+   */
+  fields?: QuerybuildertypesFieldDTO[];
+  /**
+   * @type string
+   */
+  name?: string;
+}
+
+export interface SuggestiontypesSuggestionDTO {
+  /**
+   * @type string
+   */
+  detail?: string;
+  /**
+   * @type string
+   */
+  kind?: string;
+  /**
+   * @type string
+   */
+  label?: string;
+  /**
+   * @type string
+   */
+  value?: string;
+}
+
+export interface SuggestiontypesSuggestionRequestDTO {
+  /**
+   * @type string
+   */
+  contextType?: string;
+  /**
+   * @type string
+   */
+  matchingType?: string;
+  /**
+   * @type string
+   */
+  nodeRef?: string;
+  /**
+   * @type string
+   */
+  pipeContent?: string;
+  /**
+   * @type string
+   */
+  searchText?: string;
+}
+
+export interface SuggestiontypesSuggestionResponseDTO {
+  /**
+   * @type boolean
+   */
+  complete?: boolean;
+  /**
+   * @type array
+   * @nullable true
+   */
+  suggestions?: SuggestiontypesSuggestionDTO[] | null;
 }
 
 export type ListPipes200 = {
@@ -118,6 +198,45 @@ export type GetPipePathParameters = {
 };
 export type GetPipe200 = {
   data?: PipetypesPipeDTO;
+  /**
+   * @type string
+   */
+  status?: string;
+};
+
+export type ListSources200 = {
+  /**
+   * @type array
+   * @nullable true
+   */
+  data?: SourcetypesSourceDTO[] | null;
+  /**
+   * @type string
+   */
+  status?: string;
+};
+
+export type CreateSource201 = {
+  data?: SourcetypesSourceDTO;
+  /**
+   * @type string
+   */
+  status?: string;
+};
+
+export type GetSourcePathParameters = {
+  name: string;
+};
+export type GetSource200 = {
+  data?: SourcetypesSourceDTO;
+  /**
+   * @type string
+   */
+  status?: string;
+};
+
+export type GetSuggestions200 = {
+  data?: SuggestiontypesSuggestionResponseDTO;
   /**
    * @type string
    */
