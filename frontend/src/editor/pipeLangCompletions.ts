@@ -1,5 +1,6 @@
 import { CompletionContext, CompletionResult, CompletionSource } from '@codemirror/autocomplete';
-import { getSuggestions } from '../api/suggestions';
+import { getSuggestions } from '../api/generated/services/suggestions';
+import type { SuggestiontypesSuggestionResponseDTO } from '../api/generated/services/pragmataAPI.schemas';
 
 interface DetectedContext {
   type: 'source' | 'field';
@@ -53,6 +54,13 @@ function detectContext(ctx: CompletionContext): DetectedContext | null {
   }
 
   if (inPipeline) {
+    // ponytail: source branch added here; columns branch goes here next
+    // lines[last] is current line text up to the cursor — anchor to it so
+    // `from` anywhere else in the doc can't trigger source completions.
+    const currentLine = lines[lines.length - 1];
+    if (/^\s*from\s+\w*$/i.test(currentLine)) {
+      return { type: 'source', searchText: word, from };
+    }
     // Extract the FROM clause alias closest before the cursor.
     const nodeRef = extractFromAlias(textBefore);
     return { type: 'field', searchText: word, nodeRef, from };
@@ -92,7 +100,8 @@ export function pipeLangCompletions(getPipeContent: () => string): CompletionSou
     const context = detectContext(ctx);
     if (!context) return null;
 
-    let resp;
+    // ponytail: GeneratedAPIInstance unwraps {status,data} at runtime; cast to inner type
+    let resp: SuggestiontypesSuggestionResponseDTO;
     try {
       resp = await getSuggestions({
         contextType: context.type,
@@ -100,21 +109,21 @@ export function pipeLangCompletions(getPipeContent: () => string): CompletionSou
         searchText: context.searchText,
         nodeRef: context.nodeRef,
         pipeContent: context.type === 'field' ? getPipeContent() : undefined,
-      });
+      }) as unknown as SuggestiontypesSuggestionResponseDTO;
     } catch {
       return null;
     }
 
-    if (!resp.suggestions.length) return null;
+    if (!resp.suggestions?.length) return null;
 
     return {
       from: context.from,
-      options: resp.suggestions.map((s) => ({
+      options: resp.suggestions.flatMap((s) => s.label ? [{
         label: s.label,
         detail: s.detail,
         // CodeMirror completion types map to icons in the default theme.
         type: s.kind === 'field' ? 'variable' : 'keyword',
-      })),
+      }] : []),
       // Allow the list to update as the user keeps typing.
       validFor: /^\w*$/,
     };

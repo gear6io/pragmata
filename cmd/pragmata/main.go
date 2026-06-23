@@ -106,7 +106,7 @@ func serve(ctx context.Context) error {
 
 	// HTTP server
 	addr := httpserver.Addr(cfg.Server.Host, cfg.Server.Port)
-	srv := httpserver.New(&httpserver.Provider{Pipes: h, Suggestions: suggestH, Sources: sourceH}, store, addr)
+	srv := httpserver.New(httpserver.NewProvider(h, suggestH, sourceH), store, addr)
 	log.Printf("pragmata listening on %s", addr)
 
 	// Graceful shutdown on SIGINT/SIGTERM

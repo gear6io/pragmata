@@ -42,14 +42,14 @@ import type { ErrorType, BodyType } from "../../../generatedAPIInstance";
  */
 export const listPipes = (signal?: AbortSignal) => {
   return GeneratedAPIInstance<ListPipes200>({
-    url: `/v0/pipes`,
+    url: `/api/v0/pipes`,
     method: "GET",
     signal,
   });
 };
 
 export const getListPipesQueryKey = () => {
-  return [`/v0/pipes`] as const;
+  return [`/api/v0/pipes`] as const;
 };
 
 export const getListPipesQueryOptions = <
@@ -181,7 +181,7 @@ export const createPipe = (
   signal?: AbortSignal,
 ) => {
   return GeneratedAPIInstance<CreatePipe201>({
-    url: `/v0/pipes`,
+    url: `/api/v0/pipes`,
     method: "POST",
     headers: { "Content-Type": "application/json" },
     data: pipetypesPostablePipeDTO,
@@ -263,7 +263,7 @@ export const useCreatePipe = <
  */
 export const deletePipe = ({ name }: DeletePipePathParameters) => {
   return GeneratedAPIInstance<void>({
-    url: `/v0/pipes/${name}`,
+    url: `/api/v0/pipes/${name}`,
     method: "DELETE",
   });
 };
@@ -345,7 +345,7 @@ export const updatePipe = (
   pipetypesPostablePipeDTO: BodyType<PipetypesPostablePipeDTO>,
 ) => {
   return GeneratedAPIInstance<UpdatePipe200>({
-    url: `/v0/pipes/${name}`,
+    url: `/api/v0/pipes/${name}`,
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     data: pipetypesPostablePipeDTO,
@@ -444,14 +444,14 @@ export const getPipe = (
   signal?: AbortSignal,
 ) => {
   return GeneratedAPIInstance<GetPipe200>({
-    url: `/v0/pipes/${name}/meta`,
+    url: `/api/v0/pipes/${name}/meta`,
     method: "GET",
     signal,
   });
 };
 
 export const getGetPipeQueryKey = ({ name }: GetPipePathParameters) => {
-  return [`/v0/pipes/${name}/meta`] as const;
+  return [`/api/v0/pipes/${name}/meta`] as const;
 };
 
 export const getGetPipeQueryOptions = <
