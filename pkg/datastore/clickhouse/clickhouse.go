@@ -3,6 +3,7 @@ package clickhouse
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	driver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
@@ -32,28 +33,39 @@ func New(url string) (*Store, error) {
 	return &Store{conn: conn}, nil
 }
 
-// CreateSource issues a CREATE TABLE in the pragmata_source database.
-func (s *Store) CreateSource(ctx context.Context, src *sourcetypes.Source) error {
+func (s *Store) createTableStmt(src *sourcetypes.Source) (*sqlbuilder.CreateTableBuilder, error) {
 	if len(src.Fields) == 0 {
-		return fmt.Errorf("source must have at least one field")
+		return nil, fmt.Errorf("source must have at least one field")
 	}
 
 	engine := src.Engine
-	if engine == "" {
-		engine = "MergeTree()"
+	if engine == sourcetypes.EngineUndefined {
+		engine = sourcetypes.EngineMergeTree
 	}
 
 	ctb := sqlbuilder.NewCreateTableBuilder()
 	ctb.IfNotExists()
-	ctb.CreateTable(src.Name)
+	ctb.CreateTable(sourceDatabase + "." + src.Name)
+	orderBy := make([]string, 0, len(src.Fields))
 	for _, f := range src.Fields {
 		chType, err := f.Type.ClickHouseType()
 		if err != nil {
-			return fmt.Errorf("field %q: %w", f.Name, err)
+			return nil, fmt.Errorf("field %q: %w", f.Name, err)
 		}
 		ctb.Define(f.Name, chType)
+		orderBy = append(orderBy, f.Name)
 	}
-	ctb.Option("ENGINE = " + engine)
+	ctb.Define("__attrs__", "JSON")
+	ctb.Option("ENGINE = "+string(engine.String()), "ORDER BY ("+strings.Join(orderBy, ",")+")")
+	return ctb, nil
+}
+
+// CreateSource issues a CREATE TABLE in the pragmata_source database.
+func (s *Store) CreateSource(ctx context.Context, src *sourcetypes.Source) error {
+	ctb, err := s.createTableStmt(src)
+	if err != nil {
+		return err
+	}
 
 	query, args := ctb.BuildWithFlavor(sqlbuilder.ClickHouse)
 	if err := s.conn.Exec(ctx, query, args...); err != nil {
@@ -112,7 +124,6 @@ func (s *Store) GetSource(ctx context.Context, name string) (*sourcetypes.Source
 	}
 	src.Database = sourceDatabase
 	rows.Close()
-
 
 	fsb := sqlbuilder.NewSelectBuilder()
 	fsb.Select("name", "type")
