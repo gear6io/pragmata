@@ -11,39 +11,39 @@ func (v *BasePipeLangVisitor) VisitPipeFile(ctx *PipeFileContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitType(ctx *TypeContext) interface{} {
+func (v *BasePipeLangVisitor) VisitTypeDir(ctx *TypeDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitName(ctx *NameContext) interface{} {
+func (v *BasePipeLangVisitor) VisitNameDir(ctx *NameDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitDescription(ctx *DescriptionContext) interface{} {
+func (v *BasePipeLangVisitor) VisitDescriptionDir(ctx *DescriptionDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitDescriptionML(ctx *DescriptionMLContext) interface{} {
+func (v *BasePipeLangVisitor) VisitDescriptionMLDir(ctx *DescriptionMLDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitTags(ctx *TagsContext) interface{} {
+func (v *BasePipeLangVisitor) VisitTagsDir(ctx *TagsDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitOwner(ctx *OwnerContext) interface{} {
+func (v *BasePipeLangVisitor) VisitOwnerDir(ctx *OwnerDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitDestination(ctx *DestinationContext) interface{} {
+func (v *BasePipeLangVisitor) VisitDestinationDir(ctx *DestinationDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitSchedule(ctx *ScheduleContext) interface{} {
+func (v *BasePipeLangVisitor) VisitScheduleDir(ctx *ScheduleDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitUniqueKey(ctx *UniqueKeyContext) interface{} {
+func (v *BasePipeLangVisitor) VisitUniqueKeyDir(ctx *UniqueKeyDirContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
@@ -59,10 +59,18 @@ func (v *BasePipeLangVisitor) VisitPipelineClause(ctx *PipelineClauseContext) in
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitPipelineBlock(ctx *PipelineBlockContext) interface{} {
+func (v *BasePipeLangVisitor) VisitAliasedSource(ctx *AliasedSourceContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitPipelineNode(ctx *PipelineNodeContext) interface{} {
+func (v *BasePipeLangVisitor) VisitSimpleSource(ctx *SimpleSourceContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BasePipeLangVisitor) VisitParam(ctx *ParamContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BasePipeLangVisitor) VisitParamValue(ctx *ParamValueContext) interface{} {
 	return v.VisitChildren(ctx)
 }

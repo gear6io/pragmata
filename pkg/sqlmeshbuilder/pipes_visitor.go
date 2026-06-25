@@ -6,6 +6,7 @@ import (
 
 	sqlmesh "github.com/gear6io/pragmata/pkg/grammars/sqlmeshgrammar"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
+	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -115,13 +116,13 @@ func buildSQL(nodes []pipetypes.Node, copyTarget string) (string, error) {
 	}
 
 	lastNode := nodes[len(nodes)-1]
-	lastSB, err := QueryBuilder(lastNode.SQL)
+	lastSB, err := prqlvisitor.Visit(lastNode.SQL)
 	if err != nil {
 		return "", fmt.Errorf("node %q: %w", lastNode.Name, err)
 	}
 
 	for _, node := range nodes[:len(nodes)-1] {
-		sb, err := QueryBuilder(node.SQL)
+		sb, err := prqlvisitor.Visit(node.SQL)
 		if err != nil {
 			return "", fmt.Errorf("node %q: %w", node.Name, err)
 		}
