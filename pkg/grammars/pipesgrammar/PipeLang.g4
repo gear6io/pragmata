@@ -9,15 +9,15 @@ pipeFile : directive* EOF ;
 // ── Directives ─────────────────────────────────────────────────────────────────
 
 directive
-    : TYPE          VALUE            # typeDir
-    | NAME          VALUE            # nameDir
-    | DESCRIPTION   VALUE            # descriptionDir
-    | DESCRIPTION_ML SECTION_LINE*   # descriptionMLDir
-    | TAGS          VALUE            # tagsDir
-    | OWNER         VALUE            # ownerDir
-    | DESTINATION   VALUE            # destinationDir
-    | SCHEDULE      VALUE            # scheduleDir
-    | UNIQUE_KEY    VALUE            # uniqueKeyDir
+    : TYPE          VALUE            # type
+    | NAME          VALUE            # name
+    | DESCRIPTION   VALUE            # description
+    | DESCRIPTION_ML SECTION_LINE*   # descriptionML
+    | TAGS          VALUE            # tags
+    | OWNER         VALUE            # owner
+    | DESTINATION   VALUE            # destination
+    | SCHEDULE      VALUE            # schedule
+    | UNIQUE_KEY    VALUE            # uniqueKey
     | SOURCES       source*          # sourcesClause
     | PARAMS        param*           # paramsClause
     | PIPELINE      SECTION_LINE*    # pipelineClause

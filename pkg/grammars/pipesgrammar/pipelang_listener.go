@@ -10,32 +10,32 @@ type PipeLangListener interface {
 	// EnterPipeFile is called when entering the pipeFile production.
 	EnterPipeFile(c *PipeFileContext)
 
-	// EnterTypeDir is called when entering the typeDir production.
-	EnterTypeDir(c *TypeDirContext)
+	// EnterType is called when entering the type production.
+	EnterType(c *TypeContext)
 
-	// EnterNameDir is called when entering the nameDir production.
-	EnterNameDir(c *NameDirContext)
+	// EnterName is called when entering the name production.
+	EnterName(c *NameContext)
 
-	// EnterDescriptionDir is called when entering the descriptionDir production.
-	EnterDescriptionDir(c *DescriptionDirContext)
+	// EnterDescription is called when entering the description production.
+	EnterDescription(c *DescriptionContext)
 
-	// EnterDescriptionMLDir is called when entering the descriptionMLDir production.
-	EnterDescriptionMLDir(c *DescriptionMLDirContext)
+	// EnterDescriptionML is called when entering the descriptionML production.
+	EnterDescriptionML(c *DescriptionMLContext)
 
-	// EnterTagsDir is called when entering the tagsDir production.
-	EnterTagsDir(c *TagsDirContext)
+	// EnterTags is called when entering the tags production.
+	EnterTags(c *TagsContext)
 
-	// EnterOwnerDir is called when entering the ownerDir production.
-	EnterOwnerDir(c *OwnerDirContext)
+	// EnterOwner is called when entering the owner production.
+	EnterOwner(c *OwnerContext)
 
-	// EnterDestinationDir is called when entering the destinationDir production.
-	EnterDestinationDir(c *DestinationDirContext)
+	// EnterDestination is called when entering the destination production.
+	EnterDestination(c *DestinationContext)
 
-	// EnterScheduleDir is called when entering the scheduleDir production.
-	EnterScheduleDir(c *ScheduleDirContext)
+	// EnterSchedule is called when entering the schedule production.
+	EnterSchedule(c *ScheduleContext)
 
-	// EnterUniqueKeyDir is called when entering the uniqueKeyDir production.
-	EnterUniqueKeyDir(c *UniqueKeyDirContext)
+	// EnterUniqueKey is called when entering the uniqueKey production.
+	EnterUniqueKey(c *UniqueKeyContext)
 
 	// EnterSourcesClause is called when entering the sourcesClause production.
 	EnterSourcesClause(c *SourcesClauseContext)
@@ -61,32 +61,32 @@ type PipeLangListener interface {
 	// ExitPipeFile is called when exiting the pipeFile production.
 	ExitPipeFile(c *PipeFileContext)
 
-	// ExitTypeDir is called when exiting the typeDir production.
-	ExitTypeDir(c *TypeDirContext)
+	// ExitType is called when exiting the type production.
+	ExitType(c *TypeContext)
 
-	// ExitNameDir is called when exiting the nameDir production.
-	ExitNameDir(c *NameDirContext)
+	// ExitName is called when exiting the name production.
+	ExitName(c *NameContext)
 
-	// ExitDescriptionDir is called when exiting the descriptionDir production.
-	ExitDescriptionDir(c *DescriptionDirContext)
+	// ExitDescription is called when exiting the description production.
+	ExitDescription(c *DescriptionContext)
 
-	// ExitDescriptionMLDir is called when exiting the descriptionMLDir production.
-	ExitDescriptionMLDir(c *DescriptionMLDirContext)
+	// ExitDescriptionML is called when exiting the descriptionML production.
+	ExitDescriptionML(c *DescriptionMLContext)
 
-	// ExitTagsDir is called when exiting the tagsDir production.
-	ExitTagsDir(c *TagsDirContext)
+	// ExitTags is called when exiting the tags production.
+	ExitTags(c *TagsContext)
 
-	// ExitOwnerDir is called when exiting the ownerDir production.
-	ExitOwnerDir(c *OwnerDirContext)
+	// ExitOwner is called when exiting the owner production.
+	ExitOwner(c *OwnerContext)
 
-	// ExitDestinationDir is called when exiting the destinationDir production.
-	ExitDestinationDir(c *DestinationDirContext)
+	// ExitDestination is called when exiting the destination production.
+	ExitDestination(c *DestinationContext)
 
-	// ExitScheduleDir is called when exiting the scheduleDir production.
-	ExitScheduleDir(c *ScheduleDirContext)
+	// ExitSchedule is called when exiting the schedule production.
+	ExitSchedule(c *ScheduleContext)
 
-	// ExitUniqueKeyDir is called when exiting the uniqueKeyDir production.
-	ExitUniqueKeyDir(c *UniqueKeyDirContext)
+	// ExitUniqueKey is called when exiting the uniqueKey production.
+	ExitUniqueKey(c *UniqueKeyContext)
 
 	// ExitSourcesClause is called when exiting the sourcesClause production.
 	ExitSourcesClause(c *SourcesClauseContext)

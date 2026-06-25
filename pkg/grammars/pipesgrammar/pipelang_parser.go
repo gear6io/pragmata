@@ -388,12 +388,12 @@ func (s *DirectiveContext) ToStringTree(ruleNames []string, recog antlr.Recogniz
 	return antlr.TreesStringTree(s, ruleNames, recog)
 }
 
-type NameDirContext struct {
+type OwnerContext struct {
 	DirectiveContext
 }
 
-func NewNameDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *NameDirContext {
-	var p = new(NameDirContext)
+func NewOwnerContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *OwnerContext {
+	var p = new(OwnerContext)
 
 	InitEmptyDirectiveContext(&p.DirectiveContext)
 	p.parser = parser
@@ -402,34 +402,34 @@ func NewNameDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *NameDi
 	return p
 }
 
-func (s *NameDirContext) GetRuleContext() antlr.RuleContext {
+func (s *OwnerContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *NameDirContext) NAME() antlr.TerminalNode {
-	return s.GetToken(PipeLangNAME, 0)
+func (s *OwnerContext) OWNER() antlr.TerminalNode {
+	return s.GetToken(PipeLangOWNER, 0)
 }
 
-func (s *NameDirContext) VALUE() antlr.TerminalNode {
+func (s *OwnerContext) VALUE() antlr.TerminalNode {
 	return s.GetToken(PipeLangVALUE, 0)
 }
 
-func (s *NameDirContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *OwnerContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterNameDir(s)
+		listenerT.EnterOwner(s)
 	}
 }
 
-func (s *NameDirContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *OwnerContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitNameDir(s)
+		listenerT.ExitOwner(s)
 	}
 }
 
-func (s *NameDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *OwnerContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitNameDir(s)
+		return t.VisitOwner(s)
 
 	default:
 		return t.VisitChildren(s)
@@ -488,12 +488,12 @@ func (s *PipelineClauseContext) Accept(visitor antlr.ParseTreeVisitor) interface
 	}
 }
 
-type UniqueKeyDirContext struct {
+type ScheduleContext struct {
 	DirectiveContext
 }
 
-func NewUniqueKeyDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *UniqueKeyDirContext {
-	var p = new(UniqueKeyDirContext)
+func NewScheduleContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *ScheduleContext {
+	var p = new(ScheduleContext)
 
 	InitEmptyDirectiveContext(&p.DirectiveContext)
 	p.parser = parser
@@ -502,130 +502,34 @@ func NewUniqueKeyDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *U
 	return p
 }
 
-func (s *UniqueKeyDirContext) GetRuleContext() antlr.RuleContext {
+func (s *ScheduleContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *UniqueKeyDirContext) UNIQUE_KEY() antlr.TerminalNode {
-	return s.GetToken(PipeLangUNIQUE_KEY, 0)
+func (s *ScheduleContext) SCHEDULE() antlr.TerminalNode {
+	return s.GetToken(PipeLangSCHEDULE, 0)
 }
 
-func (s *UniqueKeyDirContext) VALUE() antlr.TerminalNode {
+func (s *ScheduleContext) VALUE() antlr.TerminalNode {
 	return s.GetToken(PipeLangVALUE, 0)
 }
 
-func (s *UniqueKeyDirContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *ScheduleContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterUniqueKeyDir(s)
+		listenerT.EnterSchedule(s)
 	}
 }
 
-func (s *UniqueKeyDirContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *ScheduleContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitUniqueKeyDir(s)
+		listenerT.ExitSchedule(s)
 	}
 }
 
-func (s *UniqueKeyDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *ScheduleContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitUniqueKeyDir(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-type TypeDirContext struct {
-	DirectiveContext
-}
-
-func NewTypeDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *TypeDirContext {
-	var p = new(TypeDirContext)
-
-	InitEmptyDirectiveContext(&p.DirectiveContext)
-	p.parser = parser
-	p.CopyAll(ctx.(*DirectiveContext))
-
-	return p
-}
-
-func (s *TypeDirContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *TypeDirContext) TYPE() antlr.TerminalNode {
-	return s.GetToken(PipeLangTYPE, 0)
-}
-
-func (s *TypeDirContext) VALUE() antlr.TerminalNode {
-	return s.GetToken(PipeLangVALUE, 0)
-}
-
-func (s *TypeDirContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterTypeDir(s)
-	}
-}
-
-func (s *TypeDirContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitTypeDir(s)
-	}
-}
-
-func (s *TypeDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case PipeLangVisitor:
-		return t.VisitTypeDir(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-type DestinationDirContext struct {
-	DirectiveContext
-}
-
-func NewDestinationDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DestinationDirContext {
-	var p = new(DestinationDirContext)
-
-	InitEmptyDirectiveContext(&p.DirectiveContext)
-	p.parser = parser
-	p.CopyAll(ctx.(*DirectiveContext))
-
-	return p
-}
-
-func (s *DestinationDirContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *DestinationDirContext) DESTINATION() antlr.TerminalNode {
-	return s.GetToken(PipeLangDESTINATION, 0)
-}
-
-func (s *DestinationDirContext) VALUE() antlr.TerminalNode {
-	return s.GetToken(PipeLangVALUE, 0)
-}
-
-func (s *DestinationDirContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterDestinationDir(s)
-	}
-}
-
-func (s *DestinationDirContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitDestinationDir(s)
-	}
-}
-
-func (s *DestinationDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case PipeLangVisitor:
-		return t.VisitDestinationDir(s)
+		return t.VisitSchedule(s)
 
 	default:
 		return t.VisitChildren(s)
@@ -717,12 +621,12 @@ func (s *ParamsClauseContext) Accept(visitor antlr.ParseTreeVisitor) interface{}
 	}
 }
 
-type DescriptionMLDirContext struct {
+type UniqueKeyContext struct {
 	DirectiveContext
 }
 
-func NewDescriptionMLDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DescriptionMLDirContext {
-	var p = new(DescriptionMLDirContext)
+func NewUniqueKeyContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *UniqueKeyContext {
+	var p = new(UniqueKeyContext)
 
 	InitEmptyDirectiveContext(&p.DirectiveContext)
 	p.parser = parser
@@ -731,50 +635,46 @@ func NewDescriptionMLDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext
 	return p
 }
 
-func (s *DescriptionMLDirContext) GetRuleContext() antlr.RuleContext {
+func (s *UniqueKeyContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *DescriptionMLDirContext) DESCRIPTION_ML() antlr.TerminalNode {
-	return s.GetToken(PipeLangDESCRIPTION_ML, 0)
+func (s *UniqueKeyContext) UNIQUE_KEY() antlr.TerminalNode {
+	return s.GetToken(PipeLangUNIQUE_KEY, 0)
 }
 
-func (s *DescriptionMLDirContext) AllSECTION_LINE() []antlr.TerminalNode {
-	return s.GetTokens(PipeLangSECTION_LINE)
+func (s *UniqueKeyContext) VALUE() antlr.TerminalNode {
+	return s.GetToken(PipeLangVALUE, 0)
 }
 
-func (s *DescriptionMLDirContext) SECTION_LINE(i int) antlr.TerminalNode {
-	return s.GetToken(PipeLangSECTION_LINE, i)
-}
-
-func (s *DescriptionMLDirContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *UniqueKeyContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterDescriptionMLDir(s)
+		listenerT.EnterUniqueKey(s)
 	}
 }
 
-func (s *DescriptionMLDirContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *UniqueKeyContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitDescriptionMLDir(s)
+		listenerT.ExitUniqueKey(s)
 	}
 }
 
-func (s *DescriptionMLDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *UniqueKeyContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitDescriptionMLDir(s)
+		return t.VisitUniqueKey(s)
 
 	default:
 		return t.VisitChildren(s)
 	}
 }
 
-type DescriptionDirContext struct {
+type NameContext struct {
 	DirectiveContext
 }
 
-func NewDescriptionDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DescriptionDirContext {
-	var p = new(DescriptionDirContext)
+func NewNameContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *NameContext {
+	var p = new(NameContext)
 
 	InitEmptyDirectiveContext(&p.DirectiveContext)
 	p.parser = parser
@@ -783,46 +683,142 @@ func NewDescriptionDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) 
 	return p
 }
 
-func (s *DescriptionDirContext) GetRuleContext() antlr.RuleContext {
+func (s *NameContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *DescriptionDirContext) DESCRIPTION() antlr.TerminalNode {
+func (s *NameContext) NAME() antlr.TerminalNode {
+	return s.GetToken(PipeLangNAME, 0)
+}
+
+func (s *NameContext) VALUE() antlr.TerminalNode {
+	return s.GetToken(PipeLangVALUE, 0)
+}
+
+func (s *NameContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterName(s)
+	}
+}
+
+func (s *NameContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitName(s)
+	}
+}
+
+func (s *NameContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitName(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+type DestinationContext struct {
+	DirectiveContext
+}
+
+func NewDestinationContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DestinationContext {
+	var p = new(DestinationContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *DestinationContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *DestinationContext) DESTINATION() antlr.TerminalNode {
+	return s.GetToken(PipeLangDESTINATION, 0)
+}
+
+func (s *DestinationContext) VALUE() antlr.TerminalNode {
+	return s.GetToken(PipeLangVALUE, 0)
+}
+
+func (s *DestinationContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterDestination(s)
+	}
+}
+
+func (s *DestinationContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitDestination(s)
+	}
+}
+
+func (s *DestinationContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitDestination(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+type DescriptionContext struct {
+	DirectiveContext
+}
+
+func NewDescriptionContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DescriptionContext {
+	var p = new(DescriptionContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *DescriptionContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *DescriptionContext) DESCRIPTION() antlr.TerminalNode {
 	return s.GetToken(PipeLangDESCRIPTION, 0)
 }
 
-func (s *DescriptionDirContext) VALUE() antlr.TerminalNode {
+func (s *DescriptionContext) VALUE() antlr.TerminalNode {
 	return s.GetToken(PipeLangVALUE, 0)
 }
 
-func (s *DescriptionDirContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *DescriptionContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterDescriptionDir(s)
+		listenerT.EnterDescription(s)
 	}
 }
 
-func (s *DescriptionDirContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *DescriptionContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitDescriptionDir(s)
+		listenerT.ExitDescription(s)
 	}
 }
 
-func (s *DescriptionDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *DescriptionContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitDescriptionDir(s)
+		return t.VisitDescription(s)
 
 	default:
 		return t.VisitChildren(s)
 	}
 }
 
-type OwnerDirContext struct {
+type TypeContext struct {
 	DirectiveContext
 }
 
-func NewOwnerDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *OwnerDirContext {
-	var p = new(OwnerDirContext)
+func NewTypeContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *TypeContext {
+	var p = new(TypeContext)
 
 	InitEmptyDirectiveContext(&p.DirectiveContext)
 	p.parser = parser
@@ -831,82 +827,34 @@ func NewOwnerDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *Owner
 	return p
 }
 
-func (s *OwnerDirContext) GetRuleContext() antlr.RuleContext {
+func (s *TypeContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *OwnerDirContext) OWNER() antlr.TerminalNode {
-	return s.GetToken(PipeLangOWNER, 0)
+func (s *TypeContext) TYPE() antlr.TerminalNode {
+	return s.GetToken(PipeLangTYPE, 0)
 }
 
-func (s *OwnerDirContext) VALUE() antlr.TerminalNode {
+func (s *TypeContext) VALUE() antlr.TerminalNode {
 	return s.GetToken(PipeLangVALUE, 0)
 }
 
-func (s *OwnerDirContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *TypeContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterOwnerDir(s)
+		listenerT.EnterType(s)
 	}
 }
 
-func (s *OwnerDirContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *TypeContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitOwnerDir(s)
+		listenerT.ExitType(s)
 	}
 }
 
-func (s *OwnerDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *TypeContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitOwnerDir(s)
-
-	default:
-		return t.VisitChildren(s)
-	}
-}
-
-type ScheduleDirContext struct {
-	DirectiveContext
-}
-
-func NewScheduleDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *ScheduleDirContext {
-	var p = new(ScheduleDirContext)
-
-	InitEmptyDirectiveContext(&p.DirectiveContext)
-	p.parser = parser
-	p.CopyAll(ctx.(*DirectiveContext))
-
-	return p
-}
-
-func (s *ScheduleDirContext) GetRuleContext() antlr.RuleContext {
-	return s
-}
-
-func (s *ScheduleDirContext) SCHEDULE() antlr.TerminalNode {
-	return s.GetToken(PipeLangSCHEDULE, 0)
-}
-
-func (s *ScheduleDirContext) VALUE() antlr.TerminalNode {
-	return s.GetToken(PipeLangVALUE, 0)
-}
-
-func (s *ScheduleDirContext) EnterRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterScheduleDir(s)
-	}
-}
-
-func (s *ScheduleDirContext) ExitRule(listener antlr.ParseTreeListener) {
-	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitScheduleDir(s)
-	}
-}
-
-func (s *ScheduleDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
-	switch t := visitor.(type) {
-	case PipeLangVisitor:
-		return t.VisitScheduleDir(s)
+		return t.VisitType(s)
 
 	default:
 		return t.VisitChildren(s)
@@ -998,12 +946,12 @@ func (s *SourcesClauseContext) Accept(visitor antlr.ParseTreeVisitor) interface{
 	}
 }
 
-type TagsDirContext struct {
+type DescriptionMLContext struct {
 	DirectiveContext
 }
 
-func NewTagsDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *TagsDirContext {
-	var p = new(TagsDirContext)
+func NewDescriptionMLContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *DescriptionMLContext {
+	var p = new(DescriptionMLContext)
 
 	InitEmptyDirectiveContext(&p.DirectiveContext)
 	p.parser = parser
@@ -1012,34 +960,86 @@ func NewTagsDirContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *TagsDi
 	return p
 }
 
-func (s *TagsDirContext) GetRuleContext() antlr.RuleContext {
+func (s *DescriptionMLContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
 
-func (s *TagsDirContext) TAGS() antlr.TerminalNode {
+func (s *DescriptionMLContext) DESCRIPTION_ML() antlr.TerminalNode {
+	return s.GetToken(PipeLangDESCRIPTION_ML, 0)
+}
+
+func (s *DescriptionMLContext) AllSECTION_LINE() []antlr.TerminalNode {
+	return s.GetTokens(PipeLangSECTION_LINE)
+}
+
+func (s *DescriptionMLContext) SECTION_LINE(i int) antlr.TerminalNode {
+	return s.GetToken(PipeLangSECTION_LINE, i)
+}
+
+func (s *DescriptionMLContext) EnterRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.EnterDescriptionML(s)
+	}
+}
+
+func (s *DescriptionMLContext) ExitRule(listener antlr.ParseTreeListener) {
+	if listenerT, ok := listener.(PipeLangListener); ok {
+		listenerT.ExitDescriptionML(s)
+	}
+}
+
+func (s *DescriptionMLContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+	switch t := visitor.(type) {
+	case PipeLangVisitor:
+		return t.VisitDescriptionML(s)
+
+	default:
+		return t.VisitChildren(s)
+	}
+}
+
+type TagsContext struct {
+	DirectiveContext
+}
+
+func NewTagsContext(parser antlr.Parser, ctx antlr.ParserRuleContext) *TagsContext {
+	var p = new(TagsContext)
+
+	InitEmptyDirectiveContext(&p.DirectiveContext)
+	p.parser = parser
+	p.CopyAll(ctx.(*DirectiveContext))
+
+	return p
+}
+
+func (s *TagsContext) GetRuleContext() antlr.RuleContext {
+	return s
+}
+
+func (s *TagsContext) TAGS() antlr.TerminalNode {
 	return s.GetToken(PipeLangTAGS, 0)
 }
 
-func (s *TagsDirContext) VALUE() antlr.TerminalNode {
+func (s *TagsContext) VALUE() antlr.TerminalNode {
 	return s.GetToken(PipeLangVALUE, 0)
 }
 
-func (s *TagsDirContext) EnterRule(listener antlr.ParseTreeListener) {
+func (s *TagsContext) EnterRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.EnterTagsDir(s)
+		listenerT.EnterTags(s)
 	}
 }
 
-func (s *TagsDirContext) ExitRule(listener antlr.ParseTreeListener) {
+func (s *TagsContext) ExitRule(listener antlr.ParseTreeListener) {
 	if listenerT, ok := listener.(PipeLangListener); ok {
-		listenerT.ExitTagsDir(s)
+		listenerT.ExitTags(s)
 	}
 }
 
-func (s *TagsDirContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
+func (s *TagsContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 	switch t := visitor.(type) {
 	case PipeLangVisitor:
-		return t.VisitTagsDir(s)
+		return t.VisitTags(s)
 
 	default:
 		return t.VisitChildren(s)
@@ -1059,7 +1059,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 
 	switch p.GetTokenStream().LA(1) {
 	case PipeLangTYPE:
-		localctx = NewTypeDirContext(p, localctx)
+		localctx = NewTypeContext(p, localctx)
 		p.EnterOuterAlt(localctx, 1)
 		{
 			p.SetState(18)
@@ -1079,7 +1079,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 		}
 
 	case PipeLangNAME:
-		localctx = NewNameDirContext(p, localctx)
+		localctx = NewNameContext(p, localctx)
 		p.EnterOuterAlt(localctx, 2)
 		{
 			p.SetState(20)
@@ -1099,7 +1099,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 		}
 
 	case PipeLangDESCRIPTION:
-		localctx = NewDescriptionDirContext(p, localctx)
+		localctx = NewDescriptionContext(p, localctx)
 		p.EnterOuterAlt(localctx, 3)
 		{
 			p.SetState(22)
@@ -1119,7 +1119,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 		}
 
 	case PipeLangDESCRIPTION_ML:
-		localctx = NewDescriptionMLDirContext(p, localctx)
+		localctx = NewDescriptionMLContext(p, localctx)
 		p.EnterOuterAlt(localctx, 4)
 		{
 			p.SetState(24)
@@ -1155,7 +1155,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 		}
 
 	case PipeLangTAGS:
-		localctx = NewTagsDirContext(p, localctx)
+		localctx = NewTagsContext(p, localctx)
 		p.EnterOuterAlt(localctx, 5)
 		{
 			p.SetState(31)
@@ -1175,7 +1175,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 		}
 
 	case PipeLangOWNER:
-		localctx = NewOwnerDirContext(p, localctx)
+		localctx = NewOwnerContext(p, localctx)
 		p.EnterOuterAlt(localctx, 6)
 		{
 			p.SetState(33)
@@ -1195,7 +1195,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 		}
 
 	case PipeLangDESTINATION:
-		localctx = NewDestinationDirContext(p, localctx)
+		localctx = NewDestinationContext(p, localctx)
 		p.EnterOuterAlt(localctx, 7)
 		{
 			p.SetState(35)
@@ -1215,7 +1215,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 		}
 
 	case PipeLangSCHEDULE:
-		localctx = NewScheduleDirContext(p, localctx)
+		localctx = NewScheduleContext(p, localctx)
 		p.EnterOuterAlt(localctx, 8)
 		{
 			p.SetState(37)
@@ -1235,7 +1235,7 @@ func (p *PipeLang) Directive() (localctx IDirectiveContext) {
 		}
 
 	case PipeLangUNIQUE_KEY:
-		localctx = NewUniqueKeyDirContext(p, localctx)
+		localctx = NewUniqueKeyContext(p, localctx)
 		p.EnterOuterAlt(localctx, 9)
 		{
 			p.SetState(39)

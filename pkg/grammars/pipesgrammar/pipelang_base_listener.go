@@ -26,59 +26,59 @@ func (s *BasePipeLangListener) EnterPipeFile(ctx *PipeFileContext) {}
 // ExitPipeFile is called when production pipeFile is exited.
 func (s *BasePipeLangListener) ExitPipeFile(ctx *PipeFileContext) {}
 
-// EnterTypeDir is called when production typeDir is entered.
-func (s *BasePipeLangListener) EnterTypeDir(ctx *TypeDirContext) {}
+// EnterType is called when production type is entered.
+func (s *BasePipeLangListener) EnterType(ctx *TypeContext) {}
 
-// ExitTypeDir is called when production typeDir is exited.
-func (s *BasePipeLangListener) ExitTypeDir(ctx *TypeDirContext) {}
+// ExitType is called when production type is exited.
+func (s *BasePipeLangListener) ExitType(ctx *TypeContext) {}
 
-// EnterNameDir is called when production nameDir is entered.
-func (s *BasePipeLangListener) EnterNameDir(ctx *NameDirContext) {}
+// EnterName is called when production name is entered.
+func (s *BasePipeLangListener) EnterName(ctx *NameContext) {}
 
-// ExitNameDir is called when production nameDir is exited.
-func (s *BasePipeLangListener) ExitNameDir(ctx *NameDirContext) {}
+// ExitName is called when production name is exited.
+func (s *BasePipeLangListener) ExitName(ctx *NameContext) {}
 
-// EnterDescriptionDir is called when production descriptionDir is entered.
-func (s *BasePipeLangListener) EnterDescriptionDir(ctx *DescriptionDirContext) {}
+// EnterDescription is called when production description is entered.
+func (s *BasePipeLangListener) EnterDescription(ctx *DescriptionContext) {}
 
-// ExitDescriptionDir is called when production descriptionDir is exited.
-func (s *BasePipeLangListener) ExitDescriptionDir(ctx *DescriptionDirContext) {}
+// ExitDescription is called when production description is exited.
+func (s *BasePipeLangListener) ExitDescription(ctx *DescriptionContext) {}
 
-// EnterDescriptionMLDir is called when production descriptionMLDir is entered.
-func (s *BasePipeLangListener) EnterDescriptionMLDir(ctx *DescriptionMLDirContext) {}
+// EnterDescriptionML is called when production descriptionML is entered.
+func (s *BasePipeLangListener) EnterDescriptionML(ctx *DescriptionMLContext) {}
 
-// ExitDescriptionMLDir is called when production descriptionMLDir is exited.
-func (s *BasePipeLangListener) ExitDescriptionMLDir(ctx *DescriptionMLDirContext) {}
+// ExitDescriptionML is called when production descriptionML is exited.
+func (s *BasePipeLangListener) ExitDescriptionML(ctx *DescriptionMLContext) {}
 
-// EnterTagsDir is called when production tagsDir is entered.
-func (s *BasePipeLangListener) EnterTagsDir(ctx *TagsDirContext) {}
+// EnterTags is called when production tags is entered.
+func (s *BasePipeLangListener) EnterTags(ctx *TagsContext) {}
 
-// ExitTagsDir is called when production tagsDir is exited.
-func (s *BasePipeLangListener) ExitTagsDir(ctx *TagsDirContext) {}
+// ExitTags is called when production tags is exited.
+func (s *BasePipeLangListener) ExitTags(ctx *TagsContext) {}
 
-// EnterOwnerDir is called when production ownerDir is entered.
-func (s *BasePipeLangListener) EnterOwnerDir(ctx *OwnerDirContext) {}
+// EnterOwner is called when production owner is entered.
+func (s *BasePipeLangListener) EnterOwner(ctx *OwnerContext) {}
 
-// ExitOwnerDir is called when production ownerDir is exited.
-func (s *BasePipeLangListener) ExitOwnerDir(ctx *OwnerDirContext) {}
+// ExitOwner is called when production owner is exited.
+func (s *BasePipeLangListener) ExitOwner(ctx *OwnerContext) {}
 
-// EnterDestinationDir is called when production destinationDir is entered.
-func (s *BasePipeLangListener) EnterDestinationDir(ctx *DestinationDirContext) {}
+// EnterDestination is called when production destination is entered.
+func (s *BasePipeLangListener) EnterDestination(ctx *DestinationContext) {}
 
-// ExitDestinationDir is called when production destinationDir is exited.
-func (s *BasePipeLangListener) ExitDestinationDir(ctx *DestinationDirContext) {}
+// ExitDestination is called when production destination is exited.
+func (s *BasePipeLangListener) ExitDestination(ctx *DestinationContext) {}
 
-// EnterScheduleDir is called when production scheduleDir is entered.
-func (s *BasePipeLangListener) EnterScheduleDir(ctx *ScheduleDirContext) {}
+// EnterSchedule is called when production schedule is entered.
+func (s *BasePipeLangListener) EnterSchedule(ctx *ScheduleContext) {}
 
-// ExitScheduleDir is called when production scheduleDir is exited.
-func (s *BasePipeLangListener) ExitScheduleDir(ctx *ScheduleDirContext) {}
+// ExitSchedule is called when production schedule is exited.
+func (s *BasePipeLangListener) ExitSchedule(ctx *ScheduleContext) {}
 
-// EnterUniqueKeyDir is called when production uniqueKeyDir is entered.
-func (s *BasePipeLangListener) EnterUniqueKeyDir(ctx *UniqueKeyDirContext) {}
+// EnterUniqueKey is called when production uniqueKey is entered.
+func (s *BasePipeLangListener) EnterUniqueKey(ctx *UniqueKeyContext) {}
 
-// ExitUniqueKeyDir is called when production uniqueKeyDir is exited.
-func (s *BasePipeLangListener) ExitUniqueKeyDir(ctx *UniqueKeyDirContext) {}
+// ExitUniqueKey is called when production uniqueKey is exited.
+func (s *BasePipeLangListener) ExitUniqueKey(ctx *UniqueKeyContext) {}
 
 // EnterSourcesClause is called when production sourcesClause is entered.
 func (s *BasePipeLangListener) EnterSourcesClause(ctx *SourcesClauseContext) {}

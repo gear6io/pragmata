@@ -92,22 +92,22 @@ func (v *pipeVisitor) VisitPipeFile(ctx *grammar.PipeFileContext) interface{} {
 	return nil
 }
 
-func (v *pipeVisitor) VisitTypeDir(ctx *grammar.TypeDirContext) interface{} {
+func (v *pipeVisitor) VisitType(ctx *grammar.TypeContext) interface{} {
 	v.pipe.Type = mapPipeType(ctx.VALUE().GetText())
 	return nil
 }
 
-func (v *pipeVisitor) VisitNameDir(ctx *grammar.NameDirContext) interface{} {
+func (v *pipeVisitor) VisitName(ctx *grammar.NameContext) interface{} {
 	v.pipe.Name = ctx.VALUE().GetText()
 	return nil
 }
 
-func (v *pipeVisitor) VisitDescriptionDir(ctx *grammar.DescriptionDirContext) interface{} {
+func (v *pipeVisitor) VisitDescription(ctx *grammar.DescriptionContext) interface{} {
 	v.pipe.Description = ctx.VALUE().GetText()
 	return nil
 }
 
-func (v *pipeVisitor) VisitDescriptionMLDir(ctx *grammar.DescriptionMLDirContext) interface{} {
+func (v *pipeVisitor) VisitDescriptionML(ctx *grammar.DescriptionMLContext) interface{} {
 	lines := make([]string, 0, len(ctx.AllSECTION_LINE()))
 	for _, tok := range ctx.AllSECTION_LINE() {
 		if s := strings.TrimSpace(tok.GetText()); s != "" {
@@ -118,7 +118,7 @@ func (v *pipeVisitor) VisitDescriptionMLDir(ctx *grammar.DescriptionMLDirContext
 	return nil
 }
 
-func (v *pipeVisitor) VisitTagsDir(ctx *grammar.TagsDirContext) interface{} {
+func (v *pipeVisitor) VisitTags(ctx *grammar.TagsContext) interface{} {
 	raw := strings.Trim(ctx.VALUE().GetText(), "[] \t")
 	for _, tag := range strings.Split(raw, ",") {
 		if t := strings.TrimSpace(tag); t != "" {
@@ -128,17 +128,17 @@ func (v *pipeVisitor) VisitTagsDir(ctx *grammar.TagsDirContext) interface{} {
 	return nil
 }
 
-func (v *pipeVisitor) VisitOwnerDir(ctx *grammar.OwnerDirContext) interface{} {
+func (v *pipeVisitor) VisitOwner(ctx *grammar.OwnerContext) interface{} {
 	v.pipe.Owner = ctx.VALUE().GetText()
 	return nil
 }
 
-func (v *pipeVisitor) VisitDestinationDir(ctx *grammar.DestinationDirContext) interface{} {
+func (v *pipeVisitor) VisitDestination(ctx *grammar.DestinationContext) interface{} {
 	v.pipe.Destination = ctx.VALUE().GetText()
 	return nil
 }
 
-func (v *pipeVisitor) VisitScheduleDir(ctx *grammar.ScheduleDirContext) interface{} {
+func (v *pipeVisitor) VisitSchedule(ctx *grammar.ScheduleContext) interface{} {
 	v.pipe.Schedule = ctx.VALUE().GetText()
 	return nil
 }
