@@ -66,7 +66,7 @@ func (m *module) fieldSuggestions(ctx context.Context, req suggestiontypes.Sugge
 
 	// 1. Same-pipe node resolution.
 	if req.PipeContent != "" {
-		pipe, err := pipevisitor.Visit("", req.PipeContent)
+		pipe, err := pipevisitor.Visit("", req.PipeContent, pipevisitor.PipeVisitorOpts{})
 		if err == nil {
 			for _, node := range pipe.Nodes {
 				if strings.EqualFold(node.Name, nodeRef) {

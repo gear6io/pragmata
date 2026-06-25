@@ -9,21 +9,42 @@ import (
 
 	"github.com/antlr4-go/antlr/v4"
 	grammar "github.com/gear6io/pragmata/pkg/grammars/pipesgrammar"
+	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
 )
+
+type PipeVisitorOpts struct {
+	FetchSources    func(srcs ...string) ([]sourcetypes.Source, error)
+	SourceValidator prqlvisitor.SourceValidator
+	FieldValidator  prqlvisitor.Validator
+}
+
+func (opts *PipeVisitorOpts) validate() error {
+	if opts.SourceValidator != nil && opts.FetchSources == nil {
+		return fmt.Errorf("FetchSources can not be nil, with SourceValidator")
+	}
+
+	return nil
+}
 
 // pipeVisitor implements grammar.PipeLangVisitor, accumulating a Pipe and any errors.
 type pipeVisitor struct {
 	grammar.BasePipeLangVisitor
 	pipe *pipetypes.Pipe
 	errs []error
+	opts PipeVisitorOpts
 }
 
 // Visit converts raw .pipe file content into a Pipe. name is the initial pipe
 // name (typically derived from the filename); a name: directive in the file
 // overrides it.
-func Visit(name, content string) (*pipetypes.Pipe, error) {
+func Visit(name, content string, opts PipeVisitorOpts) (*pipetypes.Pipe, error) {
+	if err := opts.validate(); err != nil {
+		return nil, err
+	}
+
 	lexer := grammar.NewPipeLangLexer(antlr.NewInputStream(content))
 	lexErr := &errListener{}
 	lexer.RemoveErrorListeners()
@@ -47,6 +68,7 @@ func Visit(name, content string) (*pipetypes.Pipe, error) {
 
 	v := &pipeVisitor{
 		pipe: &pipetypes.Pipe{Name: name, Content: content},
+		opts: opts,
 	}
 	tree.Accept(v)
 
@@ -125,6 +147,39 @@ func (v *pipeVisitor) VisitSourcesClause(ctx *grammar.SourcesClauseContext) inte
 	for _, e := range ctx.AllSource() {
 		e.(antlr.ParseTree).Accept(v)
 	}
+
+	// validations
+	// Check for no two same alias
+	{
+		sourcesSet := map[string]struct{}{}
+		for _, src := range v.pipe.Sources {
+			alias := src.Table
+			if src.Alias != "" {
+				alias = src.Alias
+			}
+			_, found := sourcesSet[alias]
+			if found {
+				return fmt.Errorf("alias collision in sources")
+			}
+			sourcesSet[alias] = struct{}{}
+		}
+	}
+	// Check for valid sources
+	if v.opts.SourceValidator != nil {
+		sources := []string{}
+		for _, src := range v.pipe.Sources {
+			sources = append(sources, src.Table)
+		}
+		validSources, err := v.opts.FetchSources(sources...)
+		if err != nil {
+			return err
+		}
+		for _, src := range v.pipe.Sources {
+			if err := v.opts.SourceValidator(src.Table, validSources); err != nil {
+				v.errs = append(v.errs, err)
+			}
+		}
+	}
 	return nil
 }
 
@@ -171,7 +226,7 @@ func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) in
 		}
 		if strings.HasPrefix(line, "@") {
 			if cur != nil {
-				v.pipe.Nodes = append(v.pipe.Nodes, *cur)
+				v.finalizeNode(cur)
 			}
 			header := strings.TrimPrefix(line, "@")
 			if idx := strings.IndexByte(header, ':'); idx >= 0 {
@@ -191,9 +246,37 @@ func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) in
 		}
 	}
 	if cur != nil {
-		v.pipe.Nodes = append(v.pipe.Nodes, *cur)
+		v.finalizeNode(cur)
 	}
 	return nil
+}
+
+func (v *pipeVisitor) finalizeNode(node *pipetypes.Node) {
+	if v.opts.SourceValidator != nil {
+		_, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{
+			SourceValidator: v.fromValidator(),
+		})
+		if err != nil {
+			v.errs = append(v.errs, fmt.Errorf("node %q: %w", node.Name, err))
+		}
+	}
+	v.pipe.Nodes = append(v.pipe.Nodes, *node)
+}
+
+func (v *pipeVisitor) fromValidator() prqlvisitor.Validator {
+	return func(name string) error {
+		for _, src := range v.pipe.Sources {
+			if src.Alias == name {
+				return nil
+			}
+		}
+		for _, node := range v.pipe.Nodes {
+			if node.Name == name {
+				return nil
+			}
+		}
+		return fmt.Errorf("unknown from target %q: not a declared source or node", name)
+	}
 }
 
 func mapPipeType(s string) pipetypes.PipeType {

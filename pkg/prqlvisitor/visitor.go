@@ -13,17 +13,24 @@ import (
 	sqlbuilder "github.com/huandu/go-sqlbuilder"
 )
 
+// PRQLVisitorOpts configures optional validation hooks for the PRQL visitor.
+type PRQLVisitorOpts struct {
+	SourceValidator Validator
+	FieldValidator  Validator
+}
+
 // prqlVisitor walks the ANTLR parse tree, accumulating a SelectBuilder.
 type prqlVisitor struct {
 	sb      *sqlbuilder.SelectBuilder
 	inGroup bool
 	err     error
+	opts    PRQLVisitorOpts
 }
 
 // Visit parses pqlSrc as a PRQL pipeline and returns a SelectBuilder pre-populated with the
 // compiled ClickHouse query. The caller may further compose the builder before calling Build().
 // pqlSrc must be the body of a single pipeline node (no @name: header).
-func Visit(pqlSrc string) (*sqlbuilder.SelectBuilder, error) {
+func Visit(pqlSrc string, opts PRQLVisitorOpts) (*sqlbuilder.SelectBuilder, error) {
 	if !strings.HasSuffix(pqlSrc, "\n") {
 		pqlSrc += "\n"
 	}
@@ -44,7 +51,7 @@ func Visit(pqlSrc string) (*sqlbuilder.SelectBuilder, error) {
 		return nil, fmt.Errorf("prql: %s", el.msg)
 	}
 
-	v := &prqlVisitor{sb: sqlbuilder.NewSelectBuilder()}
+	v := &prqlVisitor{sb: sqlbuilder.NewSelectBuilder(), opts: opts}
 	v.visitQuery(tree)
 	if v.err != nil {
 		return nil, v.err
@@ -92,7 +99,14 @@ func (v *prqlVisitor) visitClause(ctx prql.IClauseContext) {
 }
 
 func (v *prqlVisitor) visitFromClause(ctx prql.IFromClauseContext) {
-	from := ctx.IDENT().GetText()
+	ident := ctx.IDENT().GetText()
+	if v.opts.SourceValidator != nil {
+		if err := v.opts.SourceValidator(ident); err != nil {
+			v.err = err
+			return
+		}
+	}
+	from := ident
 	if ctx.KW_FINAL() != nil {
 		from += " FINAL"
 	}

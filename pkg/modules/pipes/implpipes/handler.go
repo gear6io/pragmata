@@ -27,7 +27,7 @@ func (h *handler) CreatePipe(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &body) {
 		return
 	}
-	pipe, err := pipevisitor.Visit("", body.Content)
+	pipe, err := pipevisitor.Visit("", body.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
 		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
 		return
@@ -80,7 +80,7 @@ func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &body) {
 		return
 	}
-	pipe, err := pipevisitor.Visit(name, body.Content)
+	pipe, err := pipevisitor.Visit(name, body.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
 		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
 		return
