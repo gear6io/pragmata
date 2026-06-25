@@ -3,6 +3,7 @@
 package pipeparser
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -40,12 +41,11 @@ func Parse(name, content string) (*pipetypes.Pipe, error) {
 	if parseErr.msg != "" {
 		return nil, fmt.Errorf("parse error in %q: %s", name, parseErr.msg)
 	}
-
-	return parsePipe(tree, name)
+	pipe := &pipetypes.Pipe{Name: name, Content: content}
+	return pipe, parsePipe(tree, pipe)
 }
 
-func parsePipe(ctx grammar.IPipeFileContext, name string) (*pipetypes.Pipe, error) {
-	pipe := &pipetypes.Pipe{Name: name}
+func parsePipe(ctx grammar.IPipeFileContext, pipe *pipetypes.Pipe) error {
 	var errs []error
 
 	for _, dir := range ctx.AllDirective() {
@@ -101,9 +101,9 @@ func parsePipe(ctx grammar.IPipeFileContext, name string) (*pipetypes.Pipe, erro
 	}
 
 	if len(errs) > 0 {
-		return nil, errs[0]
+		return errors.Join(errs...)
 	}
-	return pipe, validate(pipe)
+	return validate(pipe)
 }
 
 func parsePipelineBlock(ctx grammar.IPipelineBlockContext) ([]pipetypes.Node, error) {

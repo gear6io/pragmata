@@ -3,11 +3,14 @@ package implpipes
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/parser/pipeparser"
+	"github.com/gear6io/pragmata/pkg/types"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/valuer"
 )
 
 type handler struct {
@@ -29,8 +32,19 @@ func (h *handler) CreatePipe(w http.ResponseWriter, r *http.Request) {
 		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
 		return
 	}
-	pipe.Content = body.Content
-	created, err := h.module.CreatePipe(r.Context(), pipe)
+
+	// create storable flavor
+	storable := pipetypes.StorablePipe{
+		Identifiable: types.Identifiable{
+			ID: valuer.GenerateUUID(),
+		},
+		Pipe: *pipe,
+		TimeAuditable: types.TimeAuditable{
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+	created, err := h.module.CreatePipe(r.Context(), &storable)
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -71,8 +85,14 @@ func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
 		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
 		return
 	}
-	pipe.Content = body.Content
-	updated, err := h.module.UpdatePipe(r.Context(), name, pipe)
+	// create storable flavor
+	storable := &pipetypes.StorablePipe{
+		Pipe: *pipe,
+		TimeAuditable: types.TimeAuditable{
+			UpdatedAt: time.Now(),
+		},
+	}
+	updated, err := h.module.UpdatePipe(r.Context(), storable)
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return

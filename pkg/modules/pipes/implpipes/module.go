@@ -29,26 +29,26 @@ func NewModule(
 	}
 }
 
-func (m *module) CreatePipe(ctx context.Context, pipe *pipetypes.Pipe) (*pipetypes.Pipe, error) {
+func (m *module) CreatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) (*pipetypes.Pipe, error) {
 	if err := m.store.CreatePipe(ctx, pipe); err != nil {
 		return nil, fmt.Errorf("store: %w", err)
 	}
 	switch pipe.Type {
 	case pipetypes.PipeTypeMaterialized:
 		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{
-			Pipe: pipe,
+			Pipe: &pipe.Pipe,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("start materialized pipe: %w", err)
 		}
 	case pipetypes.PipeTypeCopy:
 		if m.sched != nil && pipe.CopySchedule != "" {
-			if err := m.sched.Register(pipe); err != nil {
+			if err := m.sched.Register(&pipe.Pipe); err != nil {
 				return nil, fmt.Errorf("register schedule: %w", err)
 			}
 		}
 	}
-	return pipe, nil
+	return &pipe.Pipe, nil
 }
 
 func (m *module) GetPipe(ctx context.Context, name string) (*pipetypes.Pipe, error) {
@@ -59,25 +59,24 @@ func (m *module) ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error) {
 	return m.store.ListPipes(ctx)
 }
 
-func (m *module) UpdatePipe(ctx context.Context, name string, pipe *pipetypes.Pipe) (*pipetypes.Pipe, error) {
-	pipe.Name = name
+func (m *module) UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) (*pipetypes.Pipe, error) {
 	if err := m.store.UpdatePipe(ctx, pipe); err != nil {
 		return nil, fmt.Errorf("store: %w", err)
 	}
 	if pipe.Type == pipetypes.PipeTypeMaterialized {
-		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{Pipe: pipe})
+		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{Pipe: &pipe.Pipe})
 		if err != nil {
 			return nil, fmt.Errorf("re-sync materialized pipe: %w", err)
 		}
 	}
 	if pipe.Type == pipetypes.PipeTypeCopy && m.sched != nil {
 		if pipe.CopySchedule != "" {
-			_ = m.sched.Register(pipe)
+			_ = m.sched.Register(&pipe.Pipe)
 		} else {
-			m.sched.Unregister(name)
+			m.sched.Unregister(pipe.Name)
 		}
 	}
-	return pipe, nil
+	return &pipe.Pipe, nil
 }
 
 func (m *module) DeletePipe(ctx context.Context, name string) error {

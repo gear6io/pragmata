@@ -160,11 +160,6 @@ func (t *Tags) Scan(src any) error {
 
 // Pipe is the core abstraction — a named chain of SQL nodes with an execution type.
 type Pipe struct {
-	bun.BaseModel `bun:"table:pipes"`
-	types.Identifiable
-	types.UserAuditable
-	types.TimeAuditable
-
 	Name             string   `bun:"name,pk" json:"name"`
 	Type             PipeType `bun:"type,notnull" json:"type"`
 	Description      string   `bun:"description" json:"description,omitempty"`
@@ -181,4 +176,13 @@ type Pipe struct {
 	Schedule    string    `bun:"-" json:"-"`
 	Sources     Sources   `bun:"-" json:"-"`
 	Params      ParamDefs `bun:"-" json:"-"`
+}
+
+type StorablePipe struct {
+	bun.BaseModel `bun:"table:pipes"`
+	types.Identifiable
+	types.UserAuditable
+	types.TimeAuditable
+
+	Pipe
 }
