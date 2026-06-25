@@ -7,7 +7,7 @@ import (
 
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
-	"github.com/gear6io/pragmata/pkg/parser/pipeparser"
+	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/types"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
@@ -27,7 +27,7 @@ func (h *handler) CreatePipe(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &body) {
 		return
 	}
-	pipe, err := pipeparser.Parse("", body.Content)
+	pipe, err := pipevisitor.Visit("", body.Content)
 	if err != nil {
 		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
 		return
@@ -80,7 +80,7 @@ func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &body) {
 		return
 	}
-	pipe, err := pipeparser.Parse(name, body.Content)
+	pipe, err := pipevisitor.Visit(name, body.Content)
 	if err != nil {
 		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
 		return

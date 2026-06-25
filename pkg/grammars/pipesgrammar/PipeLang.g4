@@ -11,18 +11,18 @@ pipeFile
 // ── Directives ─────────────────────────────────────────────────────────────────
 
 directive
-    : TYPE          REST_OF_LINE    # typeDir
-    | NAME          REST_OF_LINE    # nameDir
-    | DESCRIPTION   REST_OF_LINE    # descriptionDir
-    | DESCRIPTION_ML BLOCK_LINE*    # descriptionMLDir
-    | TAGS          REST_OF_LINE    # tagsDir
-    | OWNER         REST_OF_LINE    # ownerDir
-    | DESTINATION   REST_OF_LINE    # destinationDir
-    | SCHEDULE      REST_OF_LINE    # scheduleDir
-    | UNIQUE_KEY    REST_OF_LINE    # uniqueKeyDir
-    | SOURCES       BLOCK_LINE*     # sourcesDir
-    | PARAMS        BLOCK_LINE*     # paramsDir
-    | PIPELINE      pipelineBlock   # pipelineDir
+    : TYPE          REST_OF_LINE    # type
+    | NAME          REST_OF_LINE    # name
+    | DESCRIPTION   REST_OF_LINE    # description
+    | DESCRIPTION_ML BLOCK_LINE*    # descriptionML
+    | TAGS          REST_OF_LINE    # tags
+    | OWNER         REST_OF_LINE    # owner
+    | DESTINATION   REST_OF_LINE    # destination
+    | SCHEDULE      REST_OF_LINE    # schedule
+    | UNIQUE_KEY    REST_OF_LINE    # uniqueKey
+    | SOURCES       BLOCK_LINE*     # sourcesClause
+    | PARAMS        BLOCK_LINE*     # paramsClause
+    | PIPELINE      pipelineBlock   # pipelineClause
     ;
 
 // ── Pipeline block ─────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regenerate pkg/parser/pipeparser/grammar/*.go from the split grammars:
+# Regenerate pkg/grammars/pipesgrammar/*.go from the split grammars:
 #   PipeLangLexer.g4  — lexer grammar (handles SQL_BODY_MODE)
 #   PipeLang.g4       — parser grammar (tokenVocab=PipeLangLexer)
 #

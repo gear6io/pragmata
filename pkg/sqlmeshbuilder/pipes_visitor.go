@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	sqlmesh "github.com/gear6io/pragmata/pkg/grammars/sqlmeshgrammar"
-	"github.com/gear6io/pragmata/pkg/parser/pipeparser"
+	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -21,7 +21,7 @@ const dialect = "clickhouse"
 
 // FromContent parses raw .pipe file content and returns a SQLMesh .sql string.
 func FromPipe(pipe *pipetypes.Pipe) (string, error) {
-	pipe, err := pipeparser.Parse(pipe.Name, pipe.Content)
+	pipe, err := pipevisitor.Visit(pipe.Name, pipe.Content)
 	if err != nil {
 		return "", err
 	}

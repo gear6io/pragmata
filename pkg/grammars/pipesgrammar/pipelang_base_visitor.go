@@ -11,47 +11,51 @@ func (v *BasePipeLangVisitor) VisitPipeFile(ctx *PipeFileContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitTypeDir(ctx *TypeDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitType(ctx *TypeContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitNameDir(ctx *NameDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitName(ctx *NameContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitDescriptionDir(ctx *DescriptionDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitDescription(ctx *DescriptionContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitDescriptionMLDir(ctx *DescriptionMLDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitDescriptionML(ctx *DescriptionMLContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitTagsDir(ctx *TagsDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitTags(ctx *TagsContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitOwnerDir(ctx *OwnerDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitOwner(ctx *OwnerContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitDestinationDir(ctx *DestinationDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitDestination(ctx *DestinationContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitScheduleDir(ctx *ScheduleDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitSchedule(ctx *ScheduleContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitSourcesDir(ctx *SourcesDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitUniqueKey(ctx *UniqueKeyContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitParamsDir(ctx *ParamsDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitSourcesClause(ctx *SourcesClauseContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
-func (v *BasePipeLangVisitor) VisitPipelineDir(ctx *PipelineDirContext) interface{} {
+func (v *BasePipeLangVisitor) VisitParamsClause(ctx *ParamsClauseContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BasePipeLangVisitor) VisitPipelineClause(ctx *PipelineClauseContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 

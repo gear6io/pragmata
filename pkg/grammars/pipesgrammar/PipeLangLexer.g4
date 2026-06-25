@@ -1,5 +1,26 @@
 lexer grammar PipeLangLexer;
 
+@members {
+// cleanValue strips an inline " #..." comment from the current token text,
+// trims surrounding whitespace, and removes any trailing newline.
+func (p *PipeLangLexer) cleanValue() {
+    b := []byte(p.GetText())
+    for len(b) > 0 && (b[len(b)-1] == '\n' || b[len(b)-1] == '\r') {
+        b = b[:len(b)-1]
+    }
+    for i := 0; i+1 < len(b); i++ {
+        if b[i] == ' ' && b[i+1] == '#' {
+            b = b[:i]
+            break
+        }
+    }
+    s, e := 0, len(b)
+    for s < e && (b[s] == ' ' || b[s] == '\t') { s++ }
+    for e > s && (b[e-1] == ' ' || b[e-1] == '\t') { e-- }
+    p.SetText(string(b[s:e]))
+}
+}
+
 // ── Shared fragments ──────────────────────────────────────────────────────────
 
 // COLON abstracts the separator so ':' is never repeated literally in keyword rules.
@@ -47,7 +68,7 @@ PIPELINE : 'pipeline' COLON REST -> pushMode(PIPELINE_MODE) ;
 
 mode VALUE_MODE;
 
-REST_OF_LINE : ~[\r\n]* [\r\n] -> popMode ;
+REST_OF_LINE : ~[\r\n]* [\r\n]? { l.cleanValue() } -> popMode ;
 
 // ── BLOCK_MODE ────────────────────────────────────────────────────────────────
 //
@@ -109,7 +130,7 @@ BLOCK_PIPELINE
 
 // Indented content lines (the actual block data — sources list items, param
 // definitions, or description continuation lines).
-BLOCK_LINE : [ \t]+ ~[\r\n]* [\r\n] ;
+BLOCK_LINE : [ \t]+ ~[\r\n]* [\r\n]? ;
 
 // Blank lines and column-0 comments are skipped within blocks.
 BLOCK_BLANK   : [ \t]* [\r\n] -> skip ;
