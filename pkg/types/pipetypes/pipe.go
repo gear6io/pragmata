@@ -177,16 +177,6 @@ type Pipe struct {
 	CopySchedule     string   `bun:"copy_schedule" json:"copySchedule,omitempty"`
 }
 
-// StorablePipe is the DB representation of a pipe.
-type StorablePipe struct {
-	bun.BaseModel `bun:"table:pipes"`
-	types.Identifiable
-	types.UserAuditable
-	types.TimeAuditable
-
-	Pipe
-}
-
 // GettablePipe is what the API returns to clients.
 // It exposes the full StorablePipe including ID and audit fields.
 type GettablePipe = StorablePipe

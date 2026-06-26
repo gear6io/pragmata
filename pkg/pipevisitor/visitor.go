@@ -14,6 +14,7 @@ import (
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
+	"github.com/robfig/cron/v3"
 )
 
 type PipeVisitorOpts struct {
@@ -42,7 +43,7 @@ type pipeVisitor struct {
 // Visit converts raw .pipe file content into an ExecutablePipe. name is the initial pipe
 // name (typically derived from the filename); a name: directive in the file
 // overrides it.
-func Visit(name, content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePipe, error) {
+func Visit(content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePipe, error) {
 	if err := opts.validate(); err != nil {
 		return nil, err
 	}
@@ -62,14 +63,14 @@ func Visit(name, content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePip
 	tree := p.PipeFile()
 
 	if lexErr.msg != "" {
-		return nil, fmt.Errorf("lex error in %q: %s", name, lexErr.msg)
+		return nil, fmt.Errorf("lex error in %q: %s", lexErr.msg)
 	}
 	if parseErr.msg != "" {
-		return nil, fmt.Errorf("parse error in %q: %s", name, parseErr.msg)
+		return nil, fmt.Errorf("parse error in %q: %s", parseErr.msg)
 	}
 
 	v := &pipeVisitor{
-		pipe: &pipetypes.ExecutablePipe{Pipe: pipetypes.Pipe{Name: name, Content: content}},
+		pipe: &pipetypes.ExecutablePipe{Pipe: pipetypes.Pipe{Content: content}},
 		opts: opts,
 	}
 	tree.Accept(v)
@@ -78,10 +79,10 @@ func Visit(name, content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePip
 		return nil, errors.Join(v.errs...)
 	}
 	if len(v.pipe.Nodes) == 0 {
-		return nil, fmt.Errorf("pipe %q has no pipeline nodes", name)
+		return nil, fmt.Errorf("pipe %q has no pipeline nodes")
 	}
 	if v.pipe.Type == pipetypes.PipeTypeUndefined {
-		return nil, fmt.Errorf("pipe %q has no type declaration", name)
+		return nil, fmt.Errorf("pipe %q has no type declaration")
 	}
 	return v.pipe, nil
 }
@@ -141,7 +142,12 @@ func (v *pipeVisitor) VisitDestination(ctx *grammar.DestinationContext) interfac
 }
 
 func (v *pipeVisitor) VisitSchedule(ctx *grammar.ScheduleContext) interface{} {
-	v.pipe.Schedule = ctx.VALUE().GetText()
+	expr := ctx.VALUE().GetText()
+	if _, err := cron.ParseStandard(expr); err != nil {
+		v.errs = append(v.errs, fmt.Errorf("invalid cron expression %q: %w", expr, err))
+		return nil
+	}
+	v.pipe.Schedule = expr
 	return nil
 }
 

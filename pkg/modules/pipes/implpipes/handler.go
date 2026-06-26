@@ -3,7 +3,6 @@ package implpipes
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
@@ -47,7 +46,7 @@ func (h *handler) ListPipes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) GetPipe(w http.ResponseWriter, r *http.Request) {
-	name := pipes.PipeName(r)
+	name := "" // Get name from request
 	pipe, err := h.module.GetPipe(r.Context(), name)
 	if err != nil {
 		render.Error(w, http.StatusNotFound, err.Error())
@@ -57,12 +56,11 @@ func (h *handler) GetPipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
-	name := pipes.PipeName(r)
 	var body pipetypes.PostablePipe
 	if !decodeJSON(w, r, &body) {
 		return
 	}
-	exec, err := pipevisitor.Visit(name, body.Content, pipevisitor.PipeVisitorOpts{})
+	exec, err := pipevisitor.Visit(body.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
 		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
 		return
@@ -76,7 +74,8 @@ func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) DeletePipe(w http.ResponseWriter, r *http.Request) {
-	name := pipes.PipeName(r)
+	// Get name from request
+	name := ""
 	if err := h.module.DeletePipe(r.Context(), name); err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return

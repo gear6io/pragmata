@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gear6io/pragmata/pkg/scheduler"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
@@ -28,23 +27,4 @@ type Module interface {
 	UpdatePipe(ctx context.Context, exec *pipetypes.ExecutablePipe) (*pipetypes.GettablePipe, error)
 	DeletePipe(ctx context.Context, name string) error
 	// ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error)
-}
-
-// Scheduler is re-exported from pkg/scheduler for use as a dependency type in this module.
-type Scheduler = scheduler.Scheduler
-
-// contextKey is a package-scoped type for context values to avoid collisions.
-type contextKey string
-
-const pipeNameKey contextKey = "pipe_name"
-
-// WithPipeName returns a copy of r with the pipe name stored in its context.
-func WithPipeName(r *http.Request, name string) *http.Request {
-	return r.WithContext(context.WithValue(r.Context(), pipeNameKey, name))
-}
-
-// PipeName retrieves the pipe name injected by the router middleware.
-func PipeName(r *http.Request) string {
-	name, _ := r.Context().Value(pipeNameKey).(string)
-	return name
 }

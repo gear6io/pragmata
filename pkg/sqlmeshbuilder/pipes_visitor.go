@@ -22,7 +22,7 @@ const dialect = "clickhouse"
 
 // FromPipe parses the pipe's Content and returns a SQLMesh .sql string.
 func FromPipe(pipe *pipetypes.Pipe) (string, error) {
-	exec, err := pipevisitor.Visit(pipe.Name, pipe.Content, pipevisitor.PipeVisitorOpts{})
+	exec, err := pipevisitor.Visit(pipe.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
 		return "", err
 	}

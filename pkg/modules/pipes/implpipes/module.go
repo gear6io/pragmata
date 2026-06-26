@@ -10,6 +10,7 @@ import (
 	"github.com/gear6io/pragmata/pkg/orchestration"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
+	"github.com/gear6io/pragmata/pkg/scheduler"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
@@ -21,7 +22,7 @@ type module struct {
 	datastore datastore.DataStore
 	store     sqlstore.SQLStore
 	orchest   orchestration.Orchestrator
-	sched     pipes.Scheduler
+	sched     scheduler.Scheduler
 }
 
 // NewModule constructs a Module with all required dependencies.
@@ -29,7 +30,7 @@ func NewModule(
 	datastore datastore.DataStore,
 	store sqlstore.SQLStore,
 	orchest orchestration.Orchestrator,
-	sched pipes.Scheduler,
+	sched scheduler.Scheduler,
 ) pipes.Module {
 	return &module{
 		datastore: datastore,
@@ -40,7 +41,7 @@ func NewModule(
 }
 
 func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePipe) (*pipetypes.GettablePipe, error) {
-	exec, err := pipevisitor.Visit("", postable.Content, pipevisitor.PipeVisitorOpts{
+	exec, err := pipevisitor.Visit(postable.Content, pipevisitor.PipeVisitorOpts{
 		FetchSources: func(srcs ...string) ([]sourcetypes.Source, error) {
 			return m.datastore.ListSources(ctx, srcs)
 		},
@@ -74,7 +75,7 @@ func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePip
 		}
 	case pipetypes.PipeTypeCopy:
 		if m.sched != nil && exec.CopySchedule != "" {
-			if err := m.sched.Register(&exec.Pipe); err != nil {
+			if err := m.sched.Register(exec); err != nil {
 				return nil, fmt.Errorf("register schedule: %w", err)
 			}
 		}
@@ -108,7 +109,7 @@ func (m *module) UpdatePipe(ctx context.Context, exec *pipetypes.ExecutablePipe)
 	}
 	if exec.Type == pipetypes.PipeTypeCopy && m.sched != nil {
 		if exec.CopySchedule != "" {
-			_ = m.sched.Register(&exec.Pipe)
+			_ = m.sched.Register(exec)
 		} else {
 			m.sched.Unregister(exec.Name)
 		}
