@@ -3,6 +3,7 @@ package implpipes
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"

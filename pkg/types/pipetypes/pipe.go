@@ -208,3 +208,12 @@ type ExecutablePipe struct {
 type PostablePipe struct {
 	Content string `json:"content"`
 }
+
+type StorablePipe struct {
+	bun.BaseModel `bun:"table:pipes"`
+	types.Identifiable
+	types.UserAuditable
+	types.TimeAuditable
+
+	Pipe
+}
