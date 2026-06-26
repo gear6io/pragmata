@@ -15,6 +15,7 @@ import (
 
 // PRQLVisitorOpts configures optional validation hooks for the PRQL visitor.
 type PRQLVisitorOpts struct {
+	FromValidator  FromValidator
 	FieldValidator Validator
 }
 
@@ -23,15 +24,13 @@ type prqlVisitor struct {
 	sb      *sqlbuilder.SelectBuilder
 	inGroup bool
 	err     error
-	opts    *PRQLVisitorOpts
-
-	fromValidator FromValidator
+	opts    PRQLVisitorOpts
 }
 
 // Visit parses pqlSrc as a PRQL pipeline and returns a SelectBuilder pre-populated with the
 // compiled ClickHouse query. The caller may further compose the builder before calling Build().
 // pqlSrc must be the body of a single pipeline node (no @name: header).
-func Visit(pqlSrc string, fromValidator FromValidator, opts *PRQLVisitorOpts) (*sqlbuilder.SelectBuilder, error) {
+func Visit(pqlSrc string, opts PRQLVisitorOpts) (*sqlbuilder.SelectBuilder, error) {
 	if !strings.HasSuffix(pqlSrc, "\n") {
 		pqlSrc += "\n"
 	}
@@ -52,13 +51,9 @@ func Visit(pqlSrc string, fromValidator FromValidator, opts *PRQLVisitorOpts) (*
 		return nil, fmt.Errorf("prql: %s", el.msg)
 	}
 
-	if opts == nil {
-		opts = &PRQLVisitorOpts{}
-	}
 	v := &prqlVisitor{
-		sb:            sqlbuilder.NewSelectBuilder(),
-		opts:          opts,
-		fromValidator: fromValidator,
+		sb:   sqlbuilder.NewSelectBuilder(),
+		opts: opts,
 	}
 	v.visitQuery(tree)
 	if v.err != nil {
@@ -109,9 +104,12 @@ func (v *prqlVisitor) visitClause(ctx prql.IClauseContext) {
 func (v *prqlVisitor) visitFromClause(ctx prql.IFromClauseContext) {
 	ident := ctx.IDENT().GetText()
 	isNode := strings.HasPrefix(ident, "@")
-	if err := v.fromValidator(ident, isNode); err != nil {
-		v.err = err
-		return
+	if v.opts.FromValidator != nil {
+		if err := v.opts.FromValidator(ident, isNode); err != nil {
+			v.err = err
+			return
+		}
+
 	}
 
 	from := ident

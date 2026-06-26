@@ -25,7 +25,7 @@ func (m *module) CreateSource(ctx context.Context, src *sourcetypes.Source) (*so
 }
 
 func (m *module) ListSources(ctx context.Context) ([]sourcetypes.Source, error) {
-	return m.store.ListSources(ctx)
+	return m.store.ListSources(ctx, nil)
 }
 
 func (m *module) GetSource(ctx context.Context, name string) (*sourcetypes.Source, error) {

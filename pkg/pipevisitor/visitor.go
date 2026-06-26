@@ -243,7 +243,9 @@ func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) in
 
 	for _, node := range nodes {
 		if v.opts.SourceValidator != nil {
-			if _, err := prqlvisitor.Visit(node.SQL, v.prqlFROMValidator(), nil); err != nil {
+			if _, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{
+				FromValidator: v.prqlFROMValidator(),
+			}); err != nil {
 				v.errs = append(v.errs, fmt.Errorf("node %q: %w", node.Name, err))
 			}
 		}
