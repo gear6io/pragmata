@@ -1,0 +1,16 @@
+type: incremental
+description: Hourly event aggregations, append-only.
+sources:
+  - events
+  - meta: ref.event_metadata
+params:
+  lookback_hours: { type: int64, default: 6 }
+pipeline:
+  @raw:
+    from events
+    select { event_id, ts, kind }
+
+  @final:
+    from @raw
+    join meta (==event_id)
+    select { event_id, ts, kind, meta.label }

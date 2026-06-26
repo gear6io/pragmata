@@ -64,8 +64,6 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 	s := &Server{router: r, provider: p, store: store, addr: addr, openapi: oac}
 
 	v0 := r.PathPrefix("/api/v0").Subrouter()
-	v0.Use(s.injectPipeName)   // no-op on routes without pipe {name}
-	v0.Use(s.injectSourceName) // no-op on routes without source {name}
 
 	h := p.Pipes
 
@@ -230,28 +228,6 @@ func (s *Server) serveOpenAPIYAML(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/x-yaml")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
-}
-
-// injectPipeName reads the {name} path variable and stores it in the request context
-// so stdlib handlers can retrieve it via pipes.PipeName. No-op on routes without {name}.
-func (s *Server) injectPipeName(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if name := mux.Vars(r)["name"]; name != "" {
-			r = pipes.WithPipeName(r, name)
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-// injectSourceName reads the {name} path variable and stores it in the request context
-// so stdlib handlers can retrieve it via sources.SourceName. No-op on routes without {name}.
-func (s *Server) injectSourceName(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if name := mux.Vars(r)["name"]; name != "" {
-			r = sources.WithSourceName(r, name)
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 
 func recoveryMiddleware(next http.Handler) http.Handler {

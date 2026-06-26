@@ -21,7 +21,7 @@ var (
 
 // MaterializedPipeParams carries everything needed to create a materialized pipe.
 type MaterializedPipeParams struct {
-	Pipe              *pipetypes.Pipe
+	Pipe              *pipetypes.ExecutablePipe
 	BackfillIntervals []orchestratortypes.TimeInterval
 }
 

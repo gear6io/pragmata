@@ -10,6 +10,7 @@ import (
 	"github.com/gear6io/pragmata/pkg/orchestration"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
+	"github.com/gear6io/pragmata/pkg/scheduler"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
@@ -21,7 +22,7 @@ type module struct {
 	datastore datastore.DataStore
 	store     sqlstore.SQLStore
 	orchest   orchestration.Orchestrator
-	sched     pipes.Scheduler
+	sched     scheduler.Scheduler
 }
 
 // NewModule constructs a Module with all required dependencies.
@@ -29,7 +30,7 @@ func NewModule(
 	datastore datastore.DataStore,
 	store sqlstore.SQLStore,
 	orchest orchestration.Orchestrator,
-	sched pipes.Scheduler,
+	sched scheduler.Scheduler,
 ) pipes.Module {
 	return &module{
 		datastore: datastore,
@@ -39,8 +40,8 @@ func NewModule(
 	}
 }
 
-func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePipe) (*pipetypes.Pipe, error) {
-	pipe, err := pipevisitor.Visit("", postable.Content, pipevisitor.PipeVisitorOpts{
+func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePipe) (*pipetypes.GettablePipe, error) {
+	exec, err := pipevisitor.Visit(postable.Content, pipevisitor.PipeVisitorOpts{
 		FetchSources: func(srcs ...string) ([]sourcetypes.Source, error) {
 			return m.datastore.ListSources(ctx, srcs)
 		},
@@ -50,12 +51,11 @@ func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePip
 		return nil, err
 	}
 
-	// create storable flavor
 	storable := pipetypes.StorablePipe{
 		Identifiable: types.Identifiable{
 			ID: valuer.GenerateUUID(),
 		},
-		Pipe: *pipe,
+		Pipe: exec.Pipe,
 		TimeAuditable: types.TimeAuditable{
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -65,50 +65,56 @@ func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePip
 	if err := m.store.CreatePipe(ctx, &storable); err != nil {
 		return nil, fmt.Errorf("store: %w", err)
 	}
-	switch pipe.Type {
+	switch exec.Type {
 	case pipetypes.PipeTypeMaterialized:
 		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{
-			Pipe: pipe,
+			Pipe: exec,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("start materialized pipe: %w", err)
 		}
 	case pipetypes.PipeTypeCopy:
-		if m.sched != nil && pipe.CopySchedule != "" {
-			if err := m.sched.Register(pipe); err != nil {
+		if m.sched != nil && exec.CopySchedule != "" {
+			if err := m.sched.Register(exec); err != nil {
 				return nil, fmt.Errorf("register schedule: %w", err)
 			}
 		}
 	}
-	return pipe, nil
+	return &storable, nil
 }
 
-func (m *module) GetPipe(ctx context.Context, name string) (*pipetypes.Pipe, error) {
+func (m *module) GetPipe(ctx context.Context, name string) (*pipetypes.GettablePipe, error) {
 	return m.store.GetPipe(ctx, name)
 }
 
-func (m *module) ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error) {
+func (m *module) ListPipes(ctx context.Context) ([]*pipetypes.GettablePipe, error) {
 	return m.store.ListPipes(ctx)
 }
 
-func (m *module) UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) (*pipetypes.Pipe, error) {
-	if err := m.store.UpdatePipe(ctx, pipe); err != nil {
+func (m *module) UpdatePipe(ctx context.Context, exec *pipetypes.ExecutablePipe) (*pipetypes.GettablePipe, error) {
+	storable := &pipetypes.StorablePipe{
+		Pipe: exec.Pipe,
+		TimeAuditable: types.TimeAuditable{
+			UpdatedAt: time.Now(),
+		},
+	}
+	if err := m.store.UpdatePipe(ctx, storable); err != nil {
 		return nil, fmt.Errorf("store: %w", err)
 	}
-	if pipe.Type == pipetypes.PipeTypeMaterialized {
-		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{Pipe: &pipe.Pipe})
+	if exec.Type == pipetypes.PipeTypeMaterialized {
+		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{Pipe: exec})
 		if err != nil {
 			return nil, fmt.Errorf("re-sync materialized pipe: %w", err)
 		}
 	}
-	if pipe.Type == pipetypes.PipeTypeCopy && m.sched != nil {
-		if pipe.CopySchedule != "" {
-			_ = m.sched.Register(&pipe.Pipe)
+	if exec.Type == pipetypes.PipeTypeCopy && m.sched != nil {
+		if exec.CopySchedule != "" {
+			_ = m.sched.Register(exec)
 		} else {
-			m.sched.Unregister(pipe.Name)
+			m.sched.Unregister(exec.Name)
 		}
 	}
-	return &pipe.Pipe, nil
+	return storable, nil
 }
 
 func (m *module) DeletePipe(ctx context.Context, name string) error {

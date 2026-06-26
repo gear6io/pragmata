@@ -3,12 +3,10 @@ package implpipes
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
-	"github.com/gear6io/pragmata/pkg/types"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
@@ -42,13 +40,13 @@ func (h *handler) ListPipes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if list == nil {
-		list = []*pipetypes.Pipe{}
+		list = []*pipetypes.GettablePipe{}
 	}
 	render.Success(w, http.StatusOK, list)
 }
 
 func (h *handler) GetPipe(w http.ResponseWriter, r *http.Request) {
-	name := pipes.PipeName(r)
+	name := "" // Get name from request
 	pipe, err := h.module.GetPipe(r.Context(), name)
 	if err != nil {
 		render.Error(w, http.StatusNotFound, err.Error())
@@ -58,24 +56,16 @@ func (h *handler) GetPipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
-	name := pipes.PipeName(r)
 	var body pipetypes.PostablePipe
 	if !decodeJSON(w, r, &body) {
 		return
 	}
-	pipe, err := pipevisitor.Visit(name, body.Content, pipevisitor.PipeVisitorOpts{})
+	exec, err := pipevisitor.Visit(body.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
 		render.Error(w, http.StatusBadRequest, "parse error: "+err.Error())
 		return
 	}
-	// create storable flavor
-	storable := &pipetypes.StorablePipe{
-		Pipe: *pipe,
-		TimeAuditable: types.TimeAuditable{
-			UpdatedAt: time.Now(),
-		},
-	}
-	updated, err := h.module.UpdatePipe(r.Context(), storable)
+	updated, err := h.module.UpdatePipe(r.Context(), exec)
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -84,7 +74,8 @@ func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) DeletePipe(w http.ResponseWriter, r *http.Request) {
-	name := pipes.PipeName(r)
+	// Get name from request
+	name := ""
 	if err := h.module.DeletePipe(r.Context(), name); err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return

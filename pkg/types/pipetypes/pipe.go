@@ -165,7 +165,7 @@ func (t *Tags) Scan(src any) error {
 	return json.Unmarshal(b, (*[]string)(t))
 }
 
-// Pipe is the core abstraction — a named chain of SQL nodes with an execution type.
+// Pipe holds the persisted fields for a pipe definition.
 type Pipe struct {
 	Name             string   `bun:"name,pk" json:"name"`
 	Type             PipeType `bun:"type,notnull" json:"type"`
@@ -175,14 +175,28 @@ type Pipe struct {
 	Datasource       string   `bun:"datasource" json:"datasource,omitempty"`
 	TargetDatasource string   `bun:"target_datasource" json:"targetDatasource,omitempty"`
 	CopySchedule     string   `bun:"copy_schedule" json:"copySchedule,omitempty"`
+}
 
-	// Virtual / computed fields
-	Nodes       Nodes     `bun:"-" json:"-"`
-	Owner       string    `bun:"-" json:"-"`
-	Destination string    `bun:"-" json:"-"`
-	Schedule    string    `bun:"-" json:"-"`
-	Sources     Sources   `bun:"-" json:"-"`
-	Params      ParamDefs `bun:"-" json:"-"`
+// GettablePipe is what the API returns to clients.
+// It exposes the full StorablePipe including ID and audit fields.
+type GettablePipe = StorablePipe
+
+// ExecutablePipe is a parsed pipe ready for execution.
+// It extends Pipe with fields derived by parsing Content at runtime.
+type ExecutablePipe struct {
+	Pipe
+	Nodes       Nodes
+	Owner       string
+	Destination string
+	Schedule    string
+	Sources     Sources
+	Params      ParamDefs
+}
+
+// PostablePipe is the create/update request body for pipe endpoints.
+// The raw PipeLang content is parsed server-side to populate all pipe fields.
+type PostablePipe struct {
+	Content string `json:"content"`
 }
 
 type StorablePipe struct {

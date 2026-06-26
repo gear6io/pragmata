@@ -82,11 +82,11 @@ func serve(ctx context.Context) error {
 	}
 
 	// Scheduler — loads its own pipes from the store on Start
-	sched := cronscheduler.New(orchest, store)
-	if err := sched.Start(ctx); err != nil {
+	scheduler := cronscheduler.New(orchest, store)
+	if err := scheduler.Start(ctx); err != nil {
 		return fmt.Errorf("start scheduler: %w", err)
 	}
-	defer func() { _ = sched.Stop(context.Background()) }()
+	defer func() { _ = scheduler.Stop(context.Background()) }()
 
 	// DataStore (ClickHouse) + sources module + handler
 	ds, err := datastore.New(cfg.ClickHouse)
@@ -95,7 +95,7 @@ func serve(ctx context.Context) error {
 	}
 
 	// Pipes module + handler
-	mod := implpipes.NewModule(ds, store, orchest, sched)
+	mod := implpipes.NewModule(ds, store, orchest, scheduler)
 	h := implpipes.NewHandler(mod)
 
 	// Suggestions module + handler

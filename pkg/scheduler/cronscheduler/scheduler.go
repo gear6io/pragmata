@@ -10,6 +10,7 @@ import (
 	"github.com/robfig/cron/v3"
 
 	"github.com/gear6io/pragmata/pkg/orchestration"
+	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
@@ -42,10 +43,15 @@ func (s *Scheduler) Start(ctx context.Context) error {
 		return fmt.Errorf("load pipes for scheduler: %w", err)
 	}
 	for _, p := range pipes {
-		if p.Type == pipetypes.PipeTypeCopy && p.CopySchedule != "" {
-			if err := s.Register(p); err != nil {
-				return err
-			}
+		if p.Type != pipetypes.PipeTypeCopy || p.CopySchedule == "" {
+			continue
+		}
+		exec, err := pipevisitor.Visit(p.Content, pipevisitor.PipeVisitorOpts{})
+		if err != nil {
+			return fmt.Errorf("parse pipe %q for scheduler: %w", p.Name, err)
+		}
+		if err := s.Register(exec); err != nil {
+			return err
 		}
 	}
 	s.cron.Start()
@@ -61,7 +67,7 @@ func (s *Scheduler) Stop(_ context.Context) error {
 
 // Register adds a COPY pipe to the cron scheduler.
 // If the pipe is already registered, it is replaced.
-func (s *Scheduler) Register(pipe *pipetypes.Pipe) error {
+func (s *Scheduler) Register(pipe *pipetypes.ExecutablePipe) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

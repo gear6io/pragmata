@@ -49,7 +49,7 @@ func (o *Orchestrator) ResumeInterrupted(ctx context.Context) error {
 			continue
 		}
 		// Re-generate intervals; skip already completed ones.
-		intervals := o.runner.BackfillIntervals(pipe)
+		intervals := o.runner.BackfillIntervals(&pipe.Pipe)
 		remaining := intervals[job.CompletedIntervals:]
 		go o.runBackfill(job, pipe.Name, remaining)
 	}
@@ -112,7 +112,7 @@ func (o *Orchestrator) runMaterializedPipeline(job *sqlstoretypes.BackfillJob, p
 		return
 	}
 
-	if err := o.runner.SyncModel(ctx, pipe); err != nil {
+	if err := o.runner.SyncModel(ctx, &pipe.Pipe); err != nil {
 		o.failJob(ctx, job, fmt.Errorf("sync model: %w", err))
 		return
 	}
