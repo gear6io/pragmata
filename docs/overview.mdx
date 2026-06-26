@@ -1,0 +1,13 @@
+This project aims to build a seamless transformation framework on top of ClickHouse. Currently, teams use dbt, SQL Mesh, and similar tools, which can be tedious. Our goal is to abstract that complexity and provide a semantic layer.
+
+A core concept is a **source**. A source is either a physical table that receives data from a customer, or the output destination of an existing pipeline. Pipelines transform data and store the result in a destination, which can then serve as a source for other pipelines or pipe files.
+
+A **pipe file** is a type of SQL model, similar to those in dbt or Tinybird. It defines:
+- the schedule on which it should run  
+- the sources it will use  
+
+The file uses PRQL syntax, allowing users to write SQL in chunks that produce a destination. That destination can be consumed by other pipe files, or another pipe file can expose it as an endpoint.This project is an open‑source version of Tiny Bird, but it aims to go beyond simply replicating it. It will enable seamless usage for customers. It began as an open‑source version of Tiny Bird, and I plan to add a layer that improves the developer experience when working with ClickHouse.
+
+Database transformation is a common pain point for customers. They must learn tools such as dbt or SQLMesh, but this project removes that abstraction and provides an easy‑to‑use solution. This project uses PRQL instead of standard SQL. Although PRQL is not yet widely adopted, I believe it is a simpler replacement for SQL and fits this project's needs, so we are using it.
+
+The project will initially host its own ClickHouse cluster, but we plan to move away from that and allow use on ClickHouse Cloud or direct attachment to a user's own ClickHouse cluster. Alternatively, we may host ClickHouse alongside the project. These three modes will be available in the future.
