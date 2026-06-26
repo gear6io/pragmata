@@ -1,5 +1,7 @@
 package suggestiontypes
 
+import "github.com/gear6io/pragmata/pkg/valuer"
+
 // MatchingType controls how candidate strings are compared against the search text.
 type MatchingType string
 
@@ -9,23 +11,25 @@ const (
 )
 
 // ContextType identifies which kind of completion is being requested.
-type ContextType string
+type ContextType struct {
+	valuer.String
+}
 
-const (
+var (
 	// ContextTypeSource requests suggestions for items in a sources: directive
 	// (pipe names or database tables).
-	ContextTypeSource ContextType = "source"
+	ContextTypeSource = ContextType{valuer.NewString("source")}
 	// ContextTypeField requests column/field name suggestions for use inside SQL
 	// pipeline node bodies.
-	ContextTypeField ContextType = "field"
+	ContextTypeField = ContextType{valuer.NewString("field")}
 )
 
 // Suggestion is a single autocomplete candidate.
 type Suggestion struct {
-	Value  string `json:"value"`
-	Label  string `json:"label"`
-	Kind   string `json:"kind"`             // "source" | "field"
-	Detail string `json:"detail,omitempty"` // human-readable provenance, e.g. "from step1"
+	Value  string      `json:"value"`
+	Label  string      `json:"label"`
+	Kind   ContextType `json:"kind"`             // "source" | "field"
+	Detail string      `json:"detail,omitempty"` // human-readable provenance, e.g. "from step1"
 }
 
 // SuggestionRequest is the payload sent by the editor for every completion trigger.

@@ -15,10 +15,10 @@ type SQLStore interface {
 	BunDB() *bun.DB
 
 	// Pipes
-	CreatePipe(ctx context.Context, pipe *pipetypes.Pipe) error
+	CreatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) error
 	GetPipe(ctx context.Context, name string) (*pipetypes.Pipe, error)
 	ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error)
-	UpdatePipe(ctx context.Context, pipe *pipetypes.Pipe) error
+	UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) error
 	DeletePipe(ctx context.Context, name string) error
 
 	// BackfillJobs track long-running SQLMesh materialization progress.

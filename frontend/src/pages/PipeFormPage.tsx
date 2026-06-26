@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EditorState } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
+import { EditorView, keymap } from '@codemirror/view';
+import { indentWithTab } from '@codemirror/commands';
 import { autocompletion } from '@codemirror/autocomplete';
 import { pipeLangCompletions } from '../editor/pipeLangCompletions';
 import {
@@ -12,6 +13,7 @@ import {
   invalidateGetPipe,
 } from '../api/generated/services/pipes';
 import { useQueryClient } from '@tanstack/react-query';
+import ErrorMessage from '../components/ErrorMessage';
 
 const STARTER_TEMPLATE = `type: ENDPOINT
 name: my_pipe
@@ -34,11 +36,21 @@ function CodeEditor({
   const docRef = useRef(value);
 
   useEffect(() => {
+    const view = viewRef.current;
+    if (view && value !== view.state.doc.toString()) {
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: value },
+      });
+    }
+  }, [value]);
+
+  useEffect(() => {
     if (!containerRef.current) return;
     const view = new EditorView({
       state: EditorState.create({
         doc: value,
         extensions: [
+          keymap.of([indentWithTab]),
           EditorView.lineWrapping,
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
@@ -138,11 +150,7 @@ export default function PipeFormPage({ mode }: Props) {
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-4">
         <CodeEditor value={editorText} onChange={setEditorText} />
 
-        {mutationError && (
-          <p className="text-sm text-red-600">
-            {(mutationError as Error).message ?? 'An error occurred.'}
-          </p>
-        )}
+        <ErrorMessage error={mutationError} />
 
         <div className="flex gap-3">
           <button

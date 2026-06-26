@@ -11,7 +11,7 @@ import (
 // DataStore is the interface for interacting with the ClickHouse data store.
 type DataStore interface {
 	CreateSource(ctx context.Context, src *sourcetypes.Source) error
-	ListSources(ctx context.Context) ([]sourcetypes.Source, error)
+	ListSources(ctx context.Context, match []string) ([]sourcetypes.Source, error)
 	GetSource(ctx context.Context, name string) (*sourcetypes.Source, error)
 }
 

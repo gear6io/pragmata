@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	sqlmesh "github.com/gear6io/pragmata/pkg/grammars/sqlmeshgrammar"
-	"github.com/gear6io/pragmata/pkg/parser/pipeparser"
+	"github.com/gear6io/pragmata/pkg/pipevisitor"
+	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/huandu/go-sqlbuilder"
 )
@@ -21,7 +22,7 @@ const dialect = "clickhouse"
 
 // FromContent parses raw .pipe file content and returns a SQLMesh .sql string.
 func FromPipe(pipe *pipetypes.Pipe) (string, error) {
-	pipe, err := pipeparser.Parse(pipe.Name, pipe.Content)
+	pipe, err := pipevisitor.Visit(pipe.Name, pipe.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
 		return "", err
 	}
@@ -115,13 +116,13 @@ func buildSQL(nodes []pipetypes.Node, copyTarget string) (string, error) {
 	}
 
 	lastNode := nodes[len(nodes)-1]
-	lastSB, err := QueryBuilder(lastNode.SQL)
+	lastSB, err := prqlvisitor.Visit(lastNode.SQL, prqlvisitor.PRQLVisitorOpts{})
 	if err != nil {
 		return "", fmt.Errorf("node %q: %w", lastNode.Name, err)
 	}
 
 	for _, node := range nodes[:len(nodes)-1] {
-		sb, err := QueryBuilder(node.SQL)
+		sb, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{})
 		if err != nil {
 			return "", fmt.Errorf("node %q: %w", node.Name, err)
 		}

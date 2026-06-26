@@ -12,6 +12,7 @@ import (
 	"github.com/uptrace/bun/dialect/sqlitedialect"
 	_ "modernc.org/sqlite" // pure-Go SQLite driver
 
+	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/gear6io/pragmata/pkg/types/sqlstoretypes"
 )
@@ -23,7 +24,7 @@ type Store struct {
 
 // New opens (or creates) a SQLite database at path.
 // Schema migrations are handled separately via pkg/sqlmigrator — call Migrate before serving.
-func New(path string) (*Store, error) {
+func New(path string) (sqlstore.SQLStore, error) {
 	sqldb, err := sql.Open("sqlite", path)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite %q: %w", path, err)
@@ -39,7 +40,7 @@ func (s *Store) BunDB() *bun.DB {
 
 // --- Pipe methods ---
 
-func (s *Store) CreatePipe(ctx context.Context, pipe *pipetypes.Pipe) error {
+func (s *Store) CreatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) error {
 	_, err := s.bundb.NewInsert().Model(pipe).Exec(ctx)
 	return err
 }
@@ -63,7 +64,7 @@ func (s *Store) ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error) {
 	return pipes, nil
 }
 
-func (s *Store) UpdatePipe(ctx context.Context, pipe *pipetypes.Pipe) error {
+func (s *Store) UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) error {
 	pipe.UpdatedAt = time.Now()
 	res, err := s.bundb.NewUpdate().Model(pipe).
 		Column("type", "description", "tags", "content", "datasource", "target_datasource", "copy_schedule", "updated_at").

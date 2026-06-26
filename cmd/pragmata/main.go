@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gear6io/pragmata/pkg/config"
-	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/datastore"
+	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes/implpipes"
 	"github.com/gear6io/pragmata/pkg/modules/sources/implsources"
 	"github.com/gear6io/pragmata/pkg/modules/suggestions/implsuggestions"
@@ -88,19 +88,20 @@ func serve(ctx context.Context) error {
 	}
 	defer func() { _ = sched.Stop(context.Background()) }()
 
+	// DataStore (ClickHouse) + sources module + handler
+	ds, err := datastore.New(cfg.ClickHouse)
+	if err != nil {
+		return fmt.Errorf("open datastore: %w", err)
+	}
+
 	// Pipes module + handler
-	mod := implpipes.NewModule(store, orchest, sched)
+	mod := implpipes.NewModule(ds, store, orchest, sched)
 	h := implpipes.NewHandler(mod)
 
 	// Suggestions module + handler
 	suggestMod := implsuggestions.NewModule(store)
 	suggestH := implsuggestions.NewHandler(suggestMod)
 
-	// DataStore (ClickHouse) + sources module + handler
-	ds, err := datastore.New(cfg.ClickHouse)
-	if err != nil {
-		return fmt.Errorf("open datastore: %w", err)
-	}
 	sourceMod := implsources.NewModule(ds)
 	sourceH := implsources.NewHandler(sourceMod)
 

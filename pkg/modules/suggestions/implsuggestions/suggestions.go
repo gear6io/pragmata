@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gear6io/pragmata/pkg/modules/suggestions"
-	"github.com/gear6io/pragmata/pkg/parser/pipeparser"
+	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/gear6io/pragmata/pkg/types/suggestiontypes"
@@ -49,7 +49,7 @@ func (m *module) sourceSuggestions(ctx context.Context, req suggestiontypes.Sugg
 		out = append(out, suggestiontypes.Suggestion{
 			Value:  p.Name,
 			Label:  p.Name,
-			Kind:   "source",
+			Kind:   suggestiontypes.ContextTypeSource,
 			Detail: "pipe",
 		})
 	}
@@ -66,7 +66,7 @@ func (m *module) fieldSuggestions(ctx context.Context, req suggestiontypes.Sugge
 
 	// 1. Same-pipe node resolution.
 	if req.PipeContent != "" {
-		pipe, err := pipeparser.Parse("", req.PipeContent)
+		pipe, err := pipevisitor.Visit("", req.PipeContent, pipevisitor.PipeVisitorOpts{})
 		if err == nil {
 			for _, node := range pipe.Nodes {
 				if strings.EqualFold(node.Name, nodeRef) {
@@ -100,7 +100,7 @@ func buildFieldResponse(cols []string, detail, searchText string, mt suggestiont
 		out = append(out, suggestiontypes.Suggestion{
 			Value:  col,
 			Label:  col,
-			Kind:   "field",
+			Kind:   suggestiontypes.ContextTypeField,
 			Detail: detail,
 		})
 	}

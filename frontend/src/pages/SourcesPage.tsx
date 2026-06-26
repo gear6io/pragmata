@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { useListSources } from '../api/generated/services/sources';
 
 export default function SourcesPage() {
-  const { data, isLoading, error } = useListSources();
+  const { data: resp, isLoading, error } = useListSources();
+  const data = resp?.data ?? [];
 
   return (
     <div className="p-8">
@@ -19,7 +20,7 @@ export default function SourcesPage() {
       {isLoading && <p className="text-sm text-gray-500">Loading...</p>}
       {error && <p className="text-sm text-red-600">Failed to load sources.</p>}
 
-      {data && (
+      {!isLoading && !error && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -30,7 +31,7 @@ export default function SourcesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {(data ?? []).length === 0 && (
+              {data.length === 0 && (
                 <tr>
                   <td colSpan={3} className="px-5 py-8 text-center text-gray-400">
                     No sources yet.{' '}
@@ -40,7 +41,7 @@ export default function SourcesPage() {
                   </td>
                 </tr>
               )}
-              {(data ?? []).map((source) => (
+              {data.map((source) => (
                 <tr key={source.name} className="hover:bg-gray-50 transition-colors">
                   <td className="px-5 py-3 font-medium text-indigo-700">
                     <Link to={`/sources/${source.name}`} className="hover:underline">

@@ -76,11 +76,14 @@ func (s *Store) CreateSource(ctx context.Context, src *sourcetypes.Source) error
 }
 
 // ListSources returns all sources in the pragmata_source database.
-func (s *Store) ListSources(ctx context.Context) ([]sourcetypes.Source, error) {
+func (s *Store) ListSources(ctx context.Context, match []string) ([]sourcetypes.Source, error) {
 	sb := sqlbuilder.NewSelectBuilder()
 	sb.Select("name", "engine")
 	sb.From("system.tables")
 	sb.Where(sb.Equal("database", sourceDatabase))
+	if len(match) > 0 {
+		sb.Where(sb.In("table", match))
+	}
 	query, args := sb.Build()
 
 	rows, err := s.conn.Query(ctx, query, args...)

@@ -3,34 +3,66 @@ package implpipes
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/gear6io/pragmata/pkg/datastore"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/orchestration"
+	"github.com/gear6io/pragmata/pkg/pipevisitor"
+	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
+	"github.com/gear6io/pragmata/pkg/types"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
+	"github.com/gear6io/pragmata/pkg/valuer"
 )
 
 type module struct {
-	store   sqlstore.SQLStore
-	orchest orchestration.Orchestrator
-	sched   pipes.Scheduler
+	datastore datastore.DataStore
+	store     sqlstore.SQLStore
+	orchest   orchestration.Orchestrator
+	sched     pipes.Scheduler
 }
 
 // NewModule constructs a Module with all required dependencies.
 func NewModule(
+	datastore datastore.DataStore,
 	store sqlstore.SQLStore,
 	orchest orchestration.Orchestrator,
 	sched pipes.Scheduler,
 ) pipes.Module {
 	return &module{
-		store:   store,
-		orchest: orchest,
-		sched:   sched,
+		datastore: datastore,
+		store:     store,
+		orchest:   orchest,
+		sched:     sched,
 	}
 }
 
-func (m *module) CreatePipe(ctx context.Context, pipe *pipetypes.Pipe) (*pipetypes.Pipe, error) {
-	if err := m.store.CreatePipe(ctx, pipe); err != nil {
+func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePipe) (*pipetypes.Pipe, error) {
+	pipe, err := pipevisitor.Visit("", postable.Content, pipevisitor.PipeVisitorOpts{
+		FetchSources: func(srcs ...string) ([]sourcetypes.Source, error) {
+			return m.datastore.ListSources(ctx, srcs)
+		},
+		SourceValidator: prqlvisitor.NewSourceValidator,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// create storable flavor
+	storable := pipetypes.StorablePipe{
+		Identifiable: types.Identifiable{
+			ID: valuer.GenerateUUID(),
+		},
+		Pipe: *pipe,
+		TimeAuditable: types.TimeAuditable{
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		},
+	}
+
+	if err := m.store.CreatePipe(ctx, &storable); err != nil {
 		return nil, fmt.Errorf("store: %w", err)
 	}
 	switch pipe.Type {
@@ -59,25 +91,24 @@ func (m *module) ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error) {
 	return m.store.ListPipes(ctx)
 }
 
-func (m *module) UpdatePipe(ctx context.Context, name string, pipe *pipetypes.Pipe) (*pipetypes.Pipe, error) {
-	pipe.Name = name
+func (m *module) UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) (*pipetypes.Pipe, error) {
 	if err := m.store.UpdatePipe(ctx, pipe); err != nil {
 		return nil, fmt.Errorf("store: %w", err)
 	}
 	if pipe.Type == pipetypes.PipeTypeMaterialized {
-		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{Pipe: pipe})
+		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{Pipe: &pipe.Pipe})
 		if err != nil {
 			return nil, fmt.Errorf("re-sync materialized pipe: %w", err)
 		}
 	}
 	if pipe.Type == pipetypes.PipeTypeCopy && m.sched != nil {
 		if pipe.CopySchedule != "" {
-			_ = m.sched.Register(pipe)
+			_ = m.sched.Register(&pipe.Pipe)
 		} else {
-			m.sched.Unregister(name)
+			m.sched.Unregister(pipe.Name)
 		}
 	}
-	return pipe, nil
+	return &pipe.Pipe, nil
 }
 
 func (m *module) DeletePipe(ctx context.Context, name string) error {
