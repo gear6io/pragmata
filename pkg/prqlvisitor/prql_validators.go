@@ -12,6 +12,9 @@ type Validator func(name string) error
 
 type SourceValidator func(src string, sources []sourcetypes.Source) error
 
+// FROMValidator is a PRQL validator, isNode means either source or referring another node
+type FromValidator func(table string, isNode bool) error
+
 func NewSourceValidator(src string, availableSources []sourcetypes.Source) error {
 	has := slices.ContainsFunc(availableSources, func(source sourcetypes.Source) bool {
 		return source.Name == src

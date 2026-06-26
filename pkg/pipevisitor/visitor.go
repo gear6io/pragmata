@@ -5,6 +5,7 @@ package pipevisitor
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
@@ -32,9 +33,10 @@ func (opts *PipeVisitorOpts) validate() error {
 // pipeVisitor implements grammar.PipeLangVisitor, accumulating a Pipe and any errors.
 type pipeVisitor struct {
 	grammar.BasePipeLangVisitor
-	pipe *pipetypes.Pipe
-	errs []error
-	opts PipeVisitorOpts
+	pipe         *pipetypes.Pipe
+	validSources []sourcetypes.Source
+	errs         []error
+	opts         PipeVisitorOpts
 }
 
 // Visit converts raw .pipe file content into a Pipe. name is the initial pipe
@@ -170,12 +172,14 @@ func (v *pipeVisitor) VisitSourcesClause(ctx *grammar.SourcesClauseContext) inte
 		for _, src := range v.pipe.Sources {
 			sources = append(sources, src.Table)
 		}
-		validSources, err := v.opts.FetchSources(sources...)
+		var err error
+		v.validSources, err = v.opts.FetchSources(sources...)
 		if err != nil {
 			return err
 		}
+
 		for _, src := range v.pipe.Sources {
-			if err := v.opts.SourceValidator(src.Table, validSources); err != nil {
+			if err := v.opts.SourceValidator(src.Table, v.validSources); err != nil {
 				v.errs = append(v.errs, err)
 			}
 		}
@@ -218,64 +222,55 @@ func (v *pipeVisitor) VisitParam(ctx *grammar.ParamContext) interface{} {
 }
 
 func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) interface{} {
-	var cur *pipetypes.Node
+	var nodes []pipetypes.Node
 	for _, tok := range ctx.AllSECTION_LINE() {
 		line := strings.TrimSpace(tok.GetText())
 		if line == "" {
 			continue
 		}
-		if strings.HasPrefix(line, "@") {
-			if cur != nil {
-				v.finalizeNode(cur)
-			}
-			header := strings.TrimPrefix(line, "@")
-			if idx := strings.IndexByte(header, ':'); idx >= 0 {
-				header = header[:idx]
-			}
+		if rest, ok := strings.CutPrefix(line, "@"); ok {
+			header, _, _ := strings.Cut(rest, ":")
 			name := strings.TrimSpace(header)
 			if name == "" {
 				v.errs = append(v.errs, fmt.Errorf("pipeline node has empty name"))
 				return nil
 			}
-			cur = &pipetypes.Node{Name: name}
-		} else if cur != nil {
-			if cur.SQL != "" {
-				cur.SQL += " "
-			}
-			cur.SQL += line
+			nodes = append(nodes, pipetypes.Node{Name: name})
+		} else if len(nodes) > 0 {
+			nodes[len(nodes)-1].SQL = strings.TrimSpace(nodes[len(nodes)-1].SQL + " " + line)
 		}
 	}
-	if cur != nil {
-		v.finalizeNode(cur)
+
+	for _, node := range nodes {
+		if v.opts.SourceValidator != nil {
+			if _, err := prqlvisitor.Visit(node.SQL, v.prqlFROMValidator(), nil); err != nil {
+				v.errs = append(v.errs, fmt.Errorf("node %q: %w", node.Name, err))
+			}
+		}
+		v.pipe.Nodes = append(v.pipe.Nodes, node)
 	}
 	return nil
 }
 
-func (v *pipeVisitor) finalizeNode(node *pipetypes.Node) {
-	if v.opts.SourceValidator != nil {
-		_, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{
-			SourceValidator: v.fromValidator(),
-		})
-		if err != nil {
-			v.errs = append(v.errs, fmt.Errorf("node %q: %w", node.Name, err))
+func (v *pipeVisitor) prqlFROMValidator() prqlvisitor.FromValidator {
+	return func(table string, isNode bool) error {
+		if isNode {
+			has := slices.ContainsFunc(v.pipe.Nodes, func(node pipetypes.Node) bool {
+				return node.Name == table
+			})
+			if has {
+				return nil
+			}
 		}
-	}
-	v.pipe.Nodes = append(v.pipe.Nodes, *node)
-}
 
-func (v *pipeVisitor) fromValidator() prqlvisitor.Validator {
-	return func(name string) error {
-		for _, src := range v.pipe.Sources {
-			if src.Alias == name {
-				return nil
-			}
+		has := slices.ContainsFunc(v.pipe.Sources, func(src pipetypes.Source) bool {
+			return src.String() == table
+		})
+		if has {
+			return nil
 		}
-		for _, node := range v.pipe.Nodes {
-			if node.Name == name {
-				return nil
-			}
-		}
-		return fmt.Errorf("unknown from target %q: not a declared source or node", name)
+
+		return fmt.Errorf("unknown reference [%s]", table)
 	}
 }
 

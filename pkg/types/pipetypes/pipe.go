@@ -67,6 +67,13 @@ type Source struct {
 	Table string `json:"table"`
 }
 
+func (s *Source) String() string {
+	if s.Alias != "" {
+		return s.Alias
+	}
+	return s.Table
+}
+
 // Sources is a JSON-serialised slice of Source, stored as TEXT in SQLite.
 type Sources []Source
 
