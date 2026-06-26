@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gear6io/pragmata/pkg/datastore"
+	"github.com/gear6io/pragmata/pkg/executor"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
-	"github.com/gear6io/pragmata/pkg/orchestration"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/scheduler"
@@ -21,7 +21,7 @@ import (
 type module struct {
 	datastore datastore.DataStore
 	store     sqlstore.SQLStore
-	orchest   orchestration.Orchestrator
+	exec      executor.Executor
 	sched     scheduler.Scheduler
 }
 
@@ -29,13 +29,13 @@ type module struct {
 func NewModule(
 	datastore datastore.DataStore,
 	store sqlstore.SQLStore,
-	orchest orchestration.Orchestrator,
+	exec executor.Executor,
 	sched scheduler.Scheduler,
 ) pipes.Module {
 	return &module{
 		datastore: datastore,
 		store:     store,
-		orchest:   orchest,
+		exec:      exec,
 		sched:     sched,
 	}
 }
@@ -67,11 +67,16 @@ func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePip
 	}
 	switch exec.Type {
 	case pipetypes.PipeTypeMaterialized:
-		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{
+		_, err := m.exec.StartMaterializedPipe(ctx, executor.MaterializedPipeParams{
 			Pipe: exec,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("start materialized pipe: %w", err)
+		}
+		if m.sched != nil && exec.CopySchedule != "" {
+			if err := m.sched.Register(exec); err != nil {
+				return nil, fmt.Errorf("register schedule: %w", err)
+			}
 		}
 	case pipetypes.PipeTypeCopy:
 		if m.sched != nil && exec.CopySchedule != "" {
@@ -102,12 +107,12 @@ func (m *module) UpdatePipe(ctx context.Context, exec *pipetypes.ExecutablePipe)
 		return nil, fmt.Errorf("store: %w", err)
 	}
 	if exec.Type == pipetypes.PipeTypeMaterialized {
-		_, err := m.orchest.StartMaterializedPipe(ctx, orchestration.MaterializedPipeParams{Pipe: exec})
+		_, err := m.exec.StartMaterializedPipe(ctx, executor.MaterializedPipeParams{Pipe: exec})
 		if err != nil {
 			return nil, fmt.Errorf("re-sync materialized pipe: %w", err)
 		}
 	}
-	if exec.Type == pipetypes.PipeTypeCopy && m.sched != nil {
+	if m.sched != nil {
 		if exec.CopySchedule != "" {
 			_ = m.sched.Register(exec)
 		} else {
@@ -123,19 +128,3 @@ func (m *module) DeletePipe(ctx context.Context, name string) error {
 	}
 	return m.store.DeletePipe(ctx, name)
 }
-
-// func (m *module) ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error) {
-// 	pipe, err := m.store.GetPipe(ctx, name)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("load pipe: %w", err)
-// 	}
-// 	sql, err := executor.BuildCTE(pipe.Nodes, params)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("build query: %w", err)
-// 	}
-// 	result, err := m.exec.Query(ctx, sql)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("execute: %w", err)
-// 	}
-// 	return result, nil
-// }

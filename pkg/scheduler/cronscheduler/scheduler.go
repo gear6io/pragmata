@@ -1,4 +1,4 @@
-// Package cronscheduler manages cron-driven execution of COPY pipes using robfig/cron.
+// Package cronscheduler manages cron-driven execution of pipes using robfig/cron.
 package cronscheduler
 
 import (
@@ -9,41 +9,41 @@ import (
 
 	"github.com/robfig/cron/v3"
 
-	"github.com/gear6io/pragmata/pkg/orchestration"
+	"github.com/gear6io/pragmata/pkg/executor"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
-// Scheduler registers and fires COPY pipe cron jobs.
+// Scheduler registers and fires pipe cron jobs.
 // Implements factory.Service (Start/Stop) and scheduler.Scheduler (Register/Unregister).
 type Scheduler struct {
 	cron    *cron.Cron
-	orchest orchestration.Orchestrator
+	exec    executor.Executor
 	store   sqlstore.SQLStore
 	entries map[string]cron.EntryID
 	mu      sync.Mutex
 }
 
-// New creates a Scheduler backed by the given orchestrator and store.
-func New(orchest orchestration.Orchestrator, store sqlstore.SQLStore) *Scheduler {
+// New creates a Scheduler backed by the given executor and store.
+func New(exec executor.Executor, store sqlstore.SQLStore) *Scheduler {
 	return &Scheduler{
 		cron:    cron.New(),
-		orchest: orchest,
+		exec:    exec,
 		store:   store,
 		entries: make(map[string]cron.EntryID),
 	}
 }
 
-// Start loads all COPY pipes from the store, registers their cron entries, and
-// begins the scheduler. Implements factory.Service.
+// Start loads all pipes with a schedule from the store, registers their cron entries,
+// and begins the scheduler. Implements factory.Service.
 func (s *Scheduler) Start(ctx context.Context) error {
 	pipes, err := s.store.ListPipes(ctx)
 	if err != nil {
 		return fmt.Errorf("load pipes for scheduler: %w", err)
 	}
 	for _, p := range pipes {
-		if p.Type != pipetypes.PipeTypeCopy || p.CopySchedule == "" {
+		if p.CopySchedule == "" {
 			continue
 		}
 		exec, err := pipevisitor.Visit(p.Content, pipevisitor.PipeVisitorOpts{})
@@ -65,7 +65,7 @@ func (s *Scheduler) Stop(_ context.Context) error {
 	return nil
 }
 
-// Register adds a COPY pipe to the cron scheduler.
+// Register adds a pipe to the cron scheduler.
 // If the pipe is already registered, it is replaced.
 func (s *Scheduler) Register(pipe *pipetypes.ExecutablePipe) error {
 	s.mu.Lock()
@@ -76,10 +76,10 @@ func (s *Scheduler) Register(pipe *pipetypes.ExecutablePipe) error {
 	}
 
 	pipeName := pipe.Name
-	orchest := s.orchest
+	exec := s.exec
 	entryID, err := s.cron.AddFunc(pipe.CopySchedule, func() {
-		if err := orchest.RunCopyPipe(context.Background(), pipeName); err != nil {
-			log.Printf("copy pipe %q run failed: %v", pipeName, err)
+		if err := exec.RunPipe(context.Background(), pipeName); err != nil {
+			log.Printf("pipe %q run failed: %v", pipeName, err)
 		}
 	})
 	if err != nil {
@@ -89,7 +89,7 @@ func (s *Scheduler) Register(pipe *pipetypes.ExecutablePipe) error {
 	return nil
 }
 
-// Unregister removes a COPY pipe from the cron scheduler.
+// Unregister removes a pipe from the cron scheduler.
 func (s *Scheduler) Unregister(pipeID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

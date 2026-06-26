@@ -1,14 +1,14 @@
-package orchestration
+package executor
 
 import (
 	"context"
 
-	"github.com/gear6io/pragmata/pkg/types/orchestratortypes"
+	"github.com/gear6io/pragmata/pkg/types/executortypes"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
 )
 
-// JobStatus is the lifecycle state of an orchestration job.
+// JobStatus is the lifecycle state of an execution job.
 type JobStatus struct {
 	valuer.String
 }
@@ -22,13 +22,13 @@ var (
 // MaterializedPipeParams carries everything needed to create a materialized pipe.
 type MaterializedPipeParams struct {
 	Pipe              *pipetypes.ExecutablePipe
-	BackfillIntervals []orchestratortypes.TimeInterval
+	BackfillIntervals []executortypes.TimeInterval
 }
 
-// JobID is an opaque string identifying an orchestration job.
+// JobID is an opaque string identifying an execution job.
 type JobID = string
 
-// Job is the observable state of an orchestration job.
+// Job is the observable state of an execution job.
 type Job struct {
 	ID                 JobID
 	PipeID             string
@@ -38,17 +38,18 @@ type Job struct {
 	LastError          string
 }
 
-// Orchestrator drives long-running pipe lifecycle operations.
+// Executor drives long-running pipe lifecycle operations.
 //
-// The interface is designed so the Phase 1 goroutine implementation and a future
-// Temporal implementation are interchangeable via dependency injection.
-type Orchestrator interface {
+// The goroutineexecutor implementation uses goroutines and SQLite checkpoints.
+// Swap in a Temporal implementation via dependency injection when needed.
+type Executor interface {
 	// StartMaterializedPipe writes the SQLMesh model, applies it, and runs the
 	// full backfill loop. Returns a JobID for status polling. Non-blocking.
 	StartMaterializedPipe(ctx context.Context, params MaterializedPipeParams) (JobID, error)
 
-	// RunCopyPipe fires a single execution of a COPY pipe's SQL. Blocking.
-	RunCopyPipe(ctx context.Context, pipeID string) error
+	// RunPipe fires a single execution of a pipe's SQLMesh model. Blocking.
+	// Works for both COPY and MATERIALIZED pipes.
+	RunPipe(ctx context.Context, pipeID string) error
 
 	// GetJobStatus returns the current state of a previously started job.
 	GetJobStatus(ctx context.Context, jobID JobID) (*Job, error)
