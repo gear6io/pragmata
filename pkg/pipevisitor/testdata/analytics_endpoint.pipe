@@ -1,0 +1,31 @@
+type: endpoint
+name: dau_report
+description: |
+  Daily active user count
+  grouped by country.
+tags: [analytics, dashboard, pii]
+owner: data-team@acme.com
+destination: reporting.dau
+schedule: every 24 hours
+sources:
+  - evt: raw.events
+  - users
+params:
+  country: { type: string, default: "US" }
+  days_back: { type: int64, default: 30 }
+pipeline:
+  @filtered:
+    from evt
+    filter country == $country
+
+  @enriched:
+    from @filtered
+    join users (==user_id)
+    select { user_id, country, ts }
+
+  @result:
+    from @enriched
+    group { country } (
+      aggregate { cnt = count user_id }
+    )
+    sort cnt desc

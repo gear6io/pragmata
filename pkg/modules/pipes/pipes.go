@@ -22,10 +22,10 @@ type Handler interface {
 
 // Module is the business logic layer for pipe operations.
 type Module interface {
-	CreatePipe(ctx context.Context, pipe *pipetypes.PostablePipe) (*pipetypes.Pipe, error)
-	GetPipe(ctx context.Context, name string) (*pipetypes.Pipe, error)
-	ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error)
-	UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) (*pipetypes.Pipe, error)
+	CreatePipe(ctx context.Context, pipe *pipetypes.PostablePipe) (*pipetypes.GettablePipe, error)
+	GetPipe(ctx context.Context, name string) (*pipetypes.GettablePipe, error)
+	ListPipes(ctx context.Context) ([]*pipetypes.GettablePipe, error)
+	UpdatePipe(ctx context.Context, exec *pipetypes.ExecutablePipe) (*pipetypes.GettablePipe, error)
 	DeletePipe(ctx context.Context, name string) error
 	// ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error)
 }

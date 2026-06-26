@@ -45,8 +45,8 @@ func (s *Store) CreatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) er
 	return err
 }
 
-func (s *Store) GetPipe(ctx context.Context, name string) (*pipetypes.Pipe, error) {
-	pipe := new(pipetypes.Pipe)
+func (s *Store) GetPipe(ctx context.Context, name string) (*pipetypes.GettablePipe, error) {
+	pipe := new(pipetypes.GettablePipe)
 	if err := s.bundb.NewSelect().Model(pipe).Where("name = ?", name).Scan(ctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("pipe %q not found", name)
@@ -56,8 +56,8 @@ func (s *Store) GetPipe(ctx context.Context, name string) (*pipetypes.Pipe, erro
 	return pipe, nil
 }
 
-func (s *Store) ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error) {
-	var pipes []*pipetypes.Pipe
+func (s *Store) ListPipes(ctx context.Context) ([]*pipetypes.GettablePipe, error) {
+	var pipes []*pipetypes.GettablePipe
 	if err := s.bundb.NewSelect().Model(&pipes).OrderExpr("name ASC").Scan(ctx); err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (s *Store) UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) er
 }
 
 func (s *Store) DeletePipe(ctx context.Context, name string) error {
-	_, err := s.bundb.NewDelete().Model((*pipetypes.Pipe)(nil)).Where("name = ?", name).Exec(ctx)
+	_, err := s.bundb.NewDelete().Model((*pipetypes.StorablePipe)(nil)).Where("name = ?", name).Exec(ctx)
 	return err
 }
 

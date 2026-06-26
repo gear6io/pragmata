@@ -16,8 +16,8 @@ type SQLStore interface {
 
 	// Pipes
 	CreatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) error
-	GetPipe(ctx context.Context, name string) (*pipetypes.Pipe, error)
-	ListPipes(ctx context.Context) ([]*pipetypes.Pipe, error)
+	GetPipe(ctx context.Context, name string) (*pipetypes.GettablePipe, error)
+	ListPipes(ctx context.Context) ([]*pipetypes.GettablePipe, error)
 	UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) error
 	DeletePipe(ctx context.Context, name string) error
 

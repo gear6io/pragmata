@@ -20,15 +20,15 @@ func tok(tokenType int) string {
 // dialect is the ClickHouse dialect value emitted in every model block.
 const dialect = "clickhouse"
 
-// FromContent parses raw .pipe file content and returns a SQLMesh .sql string.
+// FromPipe parses the pipe's Content and returns a SQLMesh .sql string.
 func FromPipe(pipe *pipetypes.Pipe) (string, error) {
-	pipe, err := pipevisitor.Visit(pipe.Name, pipe.Content, pipevisitor.PipeVisitorOpts{})
+	exec, err := pipevisitor.Visit(pipe.Name, pipe.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
 		return "", err
 	}
 
-	kind := kindForType(pipe.Type)
-	modelName := coalesce(pipe.Destination, pipe.Name)
+	kind := kindForType(exec.Type)
+	modelName := coalesce(exec.Destination, exec.Name)
 
 	var sb strings.Builder
 
@@ -38,19 +38,19 @@ func FromPipe(pipe *pipetypes.Pipe) (string, error) {
 	writeProp(&sb, tok(sqlmesh.SQLMeshPROP_NAME), modelName)
 	writeProp(&sb, tok(sqlmesh.SQLMeshPROP_KIND), kind)
 	writeProp(&sb, tok(sqlmesh.SQLMeshPROP_DIALECT), quoted(dialect))
-	if pipe.Description != "" {
-		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_DESCRIPTION), quoted(pipe.Description))
+	if exec.Description != "" {
+		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_DESCRIPTION), quoted(exec.Description))
 	}
-	if len(pipe.Tags) > 0 {
-		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_TAGS), tagsArray(pipe.Tags))
+	if len(exec.Tags) > 0 {
+		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_TAGS), tagsArray(exec.Tags))
 	}
-	if pipe.Schedule != "" {
-		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_CRON), quoted(pipe.Schedule))
+	if exec.Schedule != "" {
+		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_CRON), quoted(exec.Schedule))
 	}
 	sb.WriteString(");\n\n")
 
 	// SQL body — copyTarget is empty for the new format (destination is the model name).
-	sql, err := buildSQL(pipe.Nodes, "")
+	sql, err := buildSQL(exec.Nodes, "")
 	if err != nil {
 		return "", err
 	}

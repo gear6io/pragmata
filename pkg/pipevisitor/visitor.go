@@ -30,19 +30,19 @@ func (opts *PipeVisitorOpts) validate() error {
 	return nil
 }
 
-// pipeVisitor implements grammar.PipeLangVisitor, accumulating a Pipe and any errors.
+// pipeVisitor implements grammar.PipeLangVisitor, accumulating an ExecutablePipe and any errors.
 type pipeVisitor struct {
 	grammar.BasePipeLangVisitor
-	pipe         *pipetypes.Pipe
+	pipe         *pipetypes.ExecutablePipe
 	validSources []sourcetypes.Source
 	errs         []error
 	opts         PipeVisitorOpts
 }
 
-// Visit converts raw .pipe file content into a Pipe. name is the initial pipe
+// Visit converts raw .pipe file content into an ExecutablePipe. name is the initial pipe
 // name (typically derived from the filename); a name: directive in the file
 // overrides it.
-func Visit(name, content string, opts PipeVisitorOpts) (*pipetypes.Pipe, error) {
+func Visit(name, content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePipe, error) {
 	if err := opts.validate(); err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func Visit(name, content string, opts PipeVisitorOpts) (*pipetypes.Pipe, error) 
 	}
 
 	v := &pipeVisitor{
-		pipe: &pipetypes.Pipe{Name: name, Content: content},
+		pipe: &pipetypes.ExecutablePipe{Pipe: pipetypes.Pipe{Name: name, Content: content}},
 		opts: opts,
 	}
 	tree.Accept(v)

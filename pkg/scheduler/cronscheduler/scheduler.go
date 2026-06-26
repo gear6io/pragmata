@@ -43,7 +43,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	}
 	for _, p := range pipes {
 		if p.Type == pipetypes.PipeTypeCopy && p.CopySchedule != "" {
-			if err := s.Register(p); err != nil {
+			if err := s.Register(&p.Pipe); err != nil {
 				return err
 			}
 		}
