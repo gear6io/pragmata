@@ -12,11 +12,11 @@ import (
 
 	"github.com/gear6io/pragmata/pkg/config"
 	"github.com/gear6io/pragmata/pkg/datastore"
+	"github.com/gear6io/pragmata/pkg/executor/goroutineexecutor"
 	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes/implpipes"
 	"github.com/gear6io/pragmata/pkg/modules/sources/implsources"
 	"github.com/gear6io/pragmata/pkg/modules/suggestions/implsuggestions"
-	"github.com/gear6io/pragmata/pkg/orchestration/goroutineorchestration"
 	"github.com/gear6io/pragmata/pkg/scheduler/cronscheduler"
 	"github.com/gear6io/pragmata/pkg/sqlmesh"
 	"github.com/gear6io/pragmata/pkg/sqlmigration"
@@ -72,17 +72,20 @@ func serve(ctx context.Context) error {
 		return fmt.Errorf("migrate: %w", err)
 	}
 
-	// SQLMesh runner (Phase B stubs)
+	// SQLMesh runner
 	runner := sqlmesh.New(cfg.SQLMesh.ProjectDir, cfg.SQLMesh.BinaryPath)
+	if err := runner.EnsureProject(cfg.ClickHouse.URL); err != nil {
+		return fmt.Errorf("bootstrap sqlmesh project: %w", err)
+	}
 
-	// Orchestrator
-	orchest := goroutineorchestration.New(store, runner)
-	if err := orchest.ResumeInterrupted(ctx); err != nil {
+	// Executor
+	exec := goroutineexecutor.New(store, runner)
+	if err := exec.ResumeInterrupted(ctx); err != nil {
 		log.Printf("warn: resume interrupted jobs: %v", err)
 	}
 
 	// Scheduler — loads its own pipes from the store on Start
-	scheduler := cronscheduler.New(orchest, store)
+	scheduler := cronscheduler.New(exec, store)
 	if err := scheduler.Start(ctx); err != nil {
 		return fmt.Errorf("start scheduler: %w", err)
 	}
@@ -95,7 +98,7 @@ func serve(ctx context.Context) error {
 	}
 
 	// Pipes module + handler
-	mod := implpipes.NewModule(ds, store, orchest, scheduler)
+	mod := implpipes.NewModule(ds, store, exec, scheduler)
 	h := implpipes.NewHandler(mod)
 
 	// Suggestions module + handler

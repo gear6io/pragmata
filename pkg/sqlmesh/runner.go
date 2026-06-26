@@ -5,13 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/gear6io/pragmata/pkg/sqlmeshbuilder"
-	"github.com/gear6io/pragmata/pkg/types/orchestratortypes"
+	"github.com/gear6io/pragmata/pkg/types/executortypes"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
@@ -27,6 +28,44 @@ func New(projectDir, binaryPath string) *Runner {
 		binaryPath = "sqlmesh"
 	}
 	return &Runner{ProjectDir: projectDir, BinaryPath: binaryPath}
+}
+
+// EnsureProject creates ProjectDir and writes a minimal config.yaml if absent.
+// Call once on startup before PlanApply.
+func (r *Runner) EnsureProject(clickhouseURL string) error {
+	if err := os.MkdirAll(r.ProjectDir, 0o755); err != nil {
+		return fmt.Errorf("create sqlmesh project dir: %w", err)
+	}
+	cfgPath := filepath.Join(r.ProjectDir, "config.yaml")
+	if _, err := os.Stat(cfgPath); err == nil {
+		return nil // already exists
+	}
+	u, err := url.Parse(clickhouseURL)
+	if err != nil {
+		return fmt.Errorf("parse clickhouse url: %w", err)
+	}
+	host := u.Hostname()
+	port := u.Port()
+	if port == "" {
+		port = "9000"
+	}
+	db := strings.TrimPrefix(u.Path, "/")
+	if db == "" {
+		db = "default"
+	}
+	// ponytail: minimal config; extend when multi-gateway or audit table needed
+	cfg := fmt.Sprintf(`gateways:
+  default:
+    connection:
+      type: clickhouse
+      host: %s
+      port: %s
+      database: %s
+
+model_defaults:
+  dialect: clickhouse
+`, host, port, db)
+	return os.WriteFile(cfgPath, []byte(cfg), 0o644)
 }
 
 // SyncModel writes (or updates) the SQLMesh .sql model file for pipe.
@@ -58,9 +97,9 @@ func (r *Runner) PlanApply(ctx context.Context) error {
 }
 
 // Run executes `sqlmesh run --model name [--start S --end E]`.
-// interval may be nil for a full run (used by COPY pipes).
-func (r *Runner) Run(ctx context.Context, pipeID string, interval *orchestratortypes.TimeInterval) error {
-	args := []string{"run", "--model", pipeID}
+// interval may be nil for a full run.
+func (r *Runner) Run(ctx context.Context, modelName string, interval *executortypes.TimeInterval) error {
+	args := []string{"run", "--model", modelName}
 	if interval != nil {
 		args = append(args,
 			"--start", interval.Start.Format("2006-01-02"),
@@ -70,12 +109,10 @@ func (r *Runner) Run(ctx context.Context, pipeID string, interval *orchestratort
 	return r.run(ctx, args...)
 }
 
-// BackfillIntervals generates the list of daily intervals from the pipe's
-// configured start date to today.
-// TODO: decide where the start date comes from (per-pipe field or global config)
-// and implement date generation. Returns nil until then — the orchestrator
-// handles an empty slice gracefully (no backfill runs are scheduled).
-func (r *Runner) BackfillIntervals(_ *pipetypes.Pipe) []orchestratortypes.TimeInterval {
+// BackfillIntervals returns the date intervals for incremental backfill.
+// ponytail: returns nil (no intervals) → initial load is done by PlanApply for FULL models.
+// Extend when Pipe gains BackfillStart + time_column for INCREMENTAL_BY_TIME_RANGE kind.
+func (r *Runner) BackfillIntervals(_ *pipetypes.Pipe) []executortypes.TimeInterval {
 	return nil
 }
 

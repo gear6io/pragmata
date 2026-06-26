@@ -66,7 +66,11 @@ func FromPipe(pipe *pipetypes.Pipe) (string, error) {
 func kindForType(t pipetypes.PipeType) string {
 	switch t {
 	case pipetypes.PipeTypeMaterialized, pipetypes.PipeTypeCopy,
-		pipetypes.PipeTypeTable, pipetypes.PipeTypeIncremental, pipetypes.PipeTypeSnapshot:
+		pipetypes.PipeTypeTable, pipetypes.PipeTypeSnapshot:
+		return tok(sqlmesh.SQLMeshKIND_FULL)
+	case pipetypes.PipeTypeIncremental:
+		// ponytail: FULL for now; extend to INCREMENTAL_BY_TIME_RANGE when
+		// Pipe gains a time_column field in the grammar
 		return tok(sqlmesh.SQLMeshKIND_FULL)
 	default:
 		return tok(sqlmesh.SQLMeshKIND_VIEW)

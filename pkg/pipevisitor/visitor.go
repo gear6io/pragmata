@@ -63,10 +63,10 @@ func Visit(content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePipe, err
 	tree := p.PipeFile()
 
 	if lexErr.msg != "" {
-		return nil, fmt.Errorf("lex error in %q: %s", lexErr.msg)
+		return nil, fmt.Errorf("lex error: %s", lexErr.msg)
 	}
 	if parseErr.msg != "" {
-		return nil, fmt.Errorf("parse error in %q: %s", parseErr.msg)
+		return nil, fmt.Errorf("parse error: %s", parseErr.msg)
 	}
 
 	v := &pipeVisitor{
@@ -79,10 +79,10 @@ func Visit(content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePipe, err
 		return nil, errors.Join(v.errs...)
 	}
 	if len(v.pipe.Nodes) == 0 {
-		return nil, fmt.Errorf("pipe %q has no pipeline nodes")
+		return nil, fmt.Errorf("pipe has no pipeline nodes")
 	}
 	if v.pipe.Type == pipetypes.PipeTypeUndefined {
-		return nil, fmt.Errorf("pipe %q has no type declaration")
+		return nil, fmt.Errorf("pipe has no type declaration")
 	}
 	return v.pipe, nil
 }
@@ -148,6 +148,7 @@ func (v *pipeVisitor) VisitSchedule(ctx *grammar.ScheduleContext) interface{} {
 		return nil
 	}
 	v.pipe.Schedule = expr
+	v.pipe.CopySchedule = expr // persisted to DB; used by cronscheduler on restart
 	return nil
 }
 

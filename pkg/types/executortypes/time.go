@@ -1,4 +1,4 @@
-package orchestratortypes
+package executortypes
 
 import "time"
 
