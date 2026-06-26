@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateSource } from '../api/generated/services/sources';
+import ErrorMessage from '../components/ErrorMessage';
 
 type FieldRow = { name: string; type: string };
 
@@ -10,7 +11,7 @@ const FIELD_TYPES = [
 
 export default function SourceFormPage() {
   const navigate = useNavigate();
-  const { mutate: createSource, isPending } = useCreateSource();
+  const { mutate: createSource, isPending, error: createError } = useCreateSource();
 
   const [name, setName] = useState('');
   const [engine, setEngine] = useState('');
@@ -111,6 +112,8 @@ export default function SourceFormPage() {
             ))}
           </div>
         </div>
+
+        <ErrorMessage error={createError} />
 
         <div className="flex gap-3 pt-2">
           <button

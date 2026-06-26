@@ -12,6 +12,7 @@ import {
   invalidateGetPipe,
 } from '../api/generated/services/pipes';
 import { useQueryClient } from '@tanstack/react-query';
+import ErrorMessage from '../components/ErrorMessage';
 
 const STARTER_TEMPLATE = `type: ENDPOINT
 name: my_pipe
@@ -138,11 +139,7 @@ export default function PipeFormPage({ mode }: Props) {
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-4">
         <CodeEditor value={editorText} onChange={setEditorText} />
 
-        {mutationError && (
-          <p className="text-sm text-red-600">
-            {(mutationError as Error).message ?? 'An error occurred.'}
-          </p>
-        )}
+        <ErrorMessage error={mutationError} />
 
         <div className="flex gap-3">
           <button
