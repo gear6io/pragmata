@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/sources"
 	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
@@ -45,7 +47,7 @@ func (h *handler) ListSources(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) GetSource(w http.ResponseWriter, r *http.Request) {
-	name := sources.SourceName(r)
+	name := mux.Vars(r)["name"]
 	src, err := h.module.GetSource(r.Context(), name)
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
