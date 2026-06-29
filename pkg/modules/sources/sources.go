@@ -20,18 +20,3 @@ type Module interface {
 	ListSources(ctx context.Context) ([]sourcetypes.Source, error)
 	GetSource(ctx context.Context, name string) (*sourcetypes.Source, error)
 }
-
-type contextKey string
-
-const sourceNameKey contextKey = "source_name"
-
-// WithSourceName returns a copy of r with the source name stored in its context.
-func WithSourceName(r *http.Request, name string) *http.Request {
-	return r.WithContext(context.WithValue(r.Context(), sourceNameKey, name))
-}
-
-// SourceName retrieves the source name injected by the router middleware.
-func SourceName(r *http.Request) string {
-	name, _ := r.Context().Value(sourceNameKey).(string)
-	return name
-}
