@@ -15,6 +15,7 @@ import (
 	"github.com/gear6io/pragmata/pkg/executor/goroutineexecutor"
 	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes/implpipes"
+	"github.com/gear6io/pragmata/pkg/querier"
 	"github.com/gear6io/pragmata/pkg/modules/sources/implsources"
 	"github.com/gear6io/pragmata/pkg/modules/suggestions/implsuggestions"
 	"github.com/gear6io/pragmata/pkg/scheduler/cronscheduler"
@@ -97,8 +98,14 @@ func serve(ctx context.Context) error {
 		return fmt.Errorf("open datastore: %w", err)
 	}
 
+	// Querier (dedicated ClickHouse connection for ENDPOINT pipe execution)
+	q, err := querier.New(cfg.ClickHouse.URL)
+	if err != nil {
+		return fmt.Errorf("open querier: %w", err)
+	}
+
 	// Pipes module + handler
-	mod := implpipes.NewModule(ds, store, exec, scheduler)
+	mod := implpipes.NewModule(ds, store, exec, scheduler, q)
 	h := implpipes.NewHandler(mod)
 
 	// Suggestions module + handler

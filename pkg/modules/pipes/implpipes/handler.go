@@ -84,6 +84,22 @@ func (h *handler) DeletePipe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *handler) ExecutePipe(w http.ResponseWriter, r *http.Request) {
+	name := mux.Vars(r)["name"]
+	params := make(map[string]string)
+	for k, vals := range r.URL.Query() {
+		if len(vals) > 0 {
+			params[k] = vals[0]
+		}
+	}
+	result, err := h.module.ExecutePipe(r.Context(), name, params)
+	if err != nil {
+		render.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	render.Success(w, http.StatusOK, result)
+}
+
 func decodeJSON(w http.ResponseWriter, r *http.Request, v any) bool {
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
 		render.Error(w, http.StatusBadRequest, "invalid JSON: "+err.Error())

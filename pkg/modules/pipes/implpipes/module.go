@@ -10,6 +10,7 @@ import (
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
+	"github.com/gear6io/pragmata/pkg/querier"
 	"github.com/gear6io/pragmata/pkg/scheduler"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types"
@@ -23,6 +24,7 @@ type module struct {
 	store     sqlstore.SQLStore
 	exec      executor.Executor
 	sched     scheduler.Scheduler
+	querier   *querier.Querier
 }
 
 // NewModule constructs a Module with all required dependencies.
@@ -31,12 +33,14 @@ func NewModule(
 	store sqlstore.SQLStore,
 	exec executor.Executor,
 	sched scheduler.Scheduler,
+	q *querier.Querier,
 ) pipes.Module {
 	return &module{
 		datastore: datastore,
 		store:     store,
 		exec:      exec,
 		sched:     sched,
+		querier:   q,
 	}
 }
 
@@ -127,4 +131,16 @@ func (m *module) DeletePipe(ctx context.Context, name string) error {
 		m.sched.Unregister(name)
 	}
 	return m.store.DeletePipe(ctx, name)
+}
+
+func (m *module) ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error) {
+	gettable, err := m.store.GetPipe(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get pipe: %w", err)
+	}
+	exec, err := pipevisitor.Visit(gettable.Content, pipevisitor.PipeVisitorOpts{})
+	if err != nil {
+		return nil, fmt.Errorf("parse pipe: %w", err)
+	}
+	return m.querier.Execute(ctx, exec, params)
 }
