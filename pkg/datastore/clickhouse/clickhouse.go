@@ -2,13 +2,13 @@ package clickhouse
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	driver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/huandu/go-sqlbuilder"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
 )
@@ -24,18 +24,18 @@ type Store struct {
 func New(url string) (*Store, error) {
 	opts, err := clickhouse.ParseDSN(url)
 	if err != nil {
-		return nil, fmt.Errorf("parse clickhouse url: %w", err)
+		return nil, errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "parse clickhouse url")
 	}
 	conn, err := clickhouse.Open(opts)
 	if err != nil {
-		return nil, fmt.Errorf("open clickhouse: %w", err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "open clickhouse")
 	}
 	return &Store{conn: conn}, nil
 }
 
 func (s *Store) createTableStmt(src *sourcetypes.Source) (*sqlbuilder.CreateTableBuilder, error) {
 	if len(src.Fields) == 0 {
-		return nil, fmt.Errorf("source must have at least one field")
+		return nil, errors.NewInvalidInputf(errors.CodeInvalidInput, "source must have at least one field")
 	}
 
 	engine := src.Engine
@@ -50,7 +50,7 @@ func (s *Store) createTableStmt(src *sourcetypes.Source) (*sqlbuilder.CreateTabl
 	for _, f := range src.Fields {
 		chType, err := f.Type.ClickHouseType()
 		if err != nil {
-			return nil, fmt.Errorf("field %q: %w", f.Name, err)
+			return nil, errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "field %q", f.Name)
 		}
 		ctb.Define(f.Name, chType)
 		orderBy = append(orderBy, f.Name)
@@ -69,7 +69,7 @@ func (s *Store) CreateSource(ctx context.Context, src *sourcetypes.Source) error
 
 	query, args := ctb.BuildWithFlavor(sqlbuilder.ClickHouse)
 	if err := s.conn.Exec(ctx, query, args...); err != nil {
-		return fmt.Errorf("create source %q: %w", src.Name, err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "create source %q", src.Name)
 	}
 	src.Database = sourceDatabase
 	return nil
@@ -88,7 +88,7 @@ func (s *Store) ListSources(ctx context.Context, match []string) ([]sourcetypes.
 
 	rows, err := s.conn.Query(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("list sources: %w", err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "list sources")
 	}
 	defer rows.Close()
 
@@ -96,7 +96,7 @@ func (s *Store) ListSources(ctx context.Context, match []string) ([]sourcetypes.
 	for rows.Next() {
 		var src sourcetypes.Source
 		if err := rows.Scan(&src.Name, &src.Engine); err != nil {
-			return nil, fmt.Errorf("scan source: %w", err)
+			return nil, errors.WrapInternalf(err, errors.CodeInternal, "scan source")
 		}
 		src.Database = sourceDatabase
 		sources = append(sources, src)
@@ -114,7 +114,7 @@ func (s *Store) GetSource(ctx context.Context, name string) (*sourcetypes.Source
 
 	rows, err := s.conn.Query(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("get source %q: %w", name, err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "get source %q", name)
 	}
 	defer rows.Close()
 
@@ -123,7 +123,7 @@ func (s *Store) GetSource(ctx context.Context, name string) (*sourcetypes.Source
 	}
 	var src sourcetypes.Source
 	if err := rows.Scan(&src.Name, &src.Engine); err != nil {
-		return nil, fmt.Errorf("scan source %q: %w", name, err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "scan source %q", name)
 	}
 	src.Database = sourceDatabase
 	rows.Close()
@@ -136,14 +136,14 @@ func (s *Store) GetSource(ctx context.Context, name string) (*sourcetypes.Source
 
 	fieldRows, err := s.conn.Query(ctx, fieldQuery, fieldArgs...)
 	if err != nil {
-		return nil, fmt.Errorf("get source fields %q: %w", name, err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "get source fields %q", name)
 	}
 	defer fieldRows.Close()
 
 	for fieldRows.Next() {
 		var colName, colType string
 		if err := fieldRows.Scan(&colName, &colType); err != nil {
-			return nil, fmt.Errorf("scan field: %w", err)
+			return nil, errors.WrapInternalf(err, errors.CodeInternal, "scan field")
 		}
 		src.Fields = append(src.Fields, querybuildertypes.Field{
 			Name: colName,

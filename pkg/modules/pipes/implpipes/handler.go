@@ -13,6 +13,11 @@ import (
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
 
+var (
+	CodePipeNotFound       = errors.MustNewCode("pipe_not_found")
+	CodeInvalidPipeContent = errors.MustNewCode("invalid_pipe_content")
+)
+
 type handler struct {
 	module pipes.Module
 }
@@ -51,7 +56,7 @@ func (h *handler) GetPipe(w http.ResponseWriter, r *http.Request) {
 	name := mux.Vars(r)["name"]
 	pipe, err := h.module.GetPipe(r.Context(), name)
 	if err != nil {
-		render.ErrorFrom(w, errors.WrapNotFoundf(err, errors.CodeNotFound, "pipe %q not found", name))
+		render.ErrorFrom(w, errors.WrapNotFoundf(err, CodePipeNotFound, "pipe %q not found", name))
 		return
 	}
 	render.Success(w, http.StatusOK, pipe)
@@ -64,7 +69,7 @@ func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
 	}
 	exec, err := pipevisitor.Visit(body.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
-		render.ErrorFrom(w, errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "parse error"))
+		render.ErrorFrom(w, errors.WrapInvalidInputf(err, CodeInvalidPipeContent, "parse error"))
 		return
 	}
 	updated, err := h.module.UpdatePipe(r.Context(), exec)

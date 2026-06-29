@@ -4,7 +4,6 @@ package querier
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	driver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/huandu/go-sqlbuilder"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/template"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
@@ -28,11 +28,11 @@ type Querier struct {
 func New(url string) (*Querier, error) {
 	opts, err := clickhouse.ParseDSN(url)
 	if err != nil {
-		return nil, fmt.Errorf("parse clickhouse url: %w", err)
+		return nil, errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "parse clickhouse url")
 	}
 	conn, err := clickhouse.Open(opts)
 	if err != nil {
-		return nil, fmt.Errorf("open clickhouse: %w", err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "open clickhouse")
 	}
 	return &Querier{conn: conn}, nil
 }
@@ -41,7 +41,7 @@ func New(url string) (*Querier, error) {
 // runs the query, and returns the rows.
 func (q *Querier) Execute(ctx context.Context, pipe *pipetypes.ExecutablePipe, urlParams map[string]string) (*pipetypes.ExecuteResult, error) {
 	if len(pipe.Nodes) == 0 {
-		return nil, fmt.Errorf("pipe %q has no nodes", pipe.Name)
+		return nil, errors.NewInvalidInputf(errors.CodeInvalidInput, "pipe %q has no nodes", pipe.Name)
 	}
 
 	// Render template tokens in each node's PRQL then compile to SelectBuilder.
@@ -49,11 +49,11 @@ func (q *Querier) Execute(ctx context.Context, pipe *pipetypes.ExecutablePipe, u
 	for i, node := range pipe.Nodes {
 		rendered, err := renderNode(node.SQL, pipe.Params, urlParams)
 		if err != nil {
-			return nil, fmt.Errorf("node %q: %w", node.Name, err)
+			return nil, errors.WrapInternalf(err, errors.CodeInternal, "node %q", node.Name)
 		}
 		sb, err := prqlvisitor.Visit(rendered, prqlvisitor.PRQLVisitorOpts{})
 		if err != nil {
-			return nil, fmt.Errorf("node %q: compile: %w", node.Name, err)
+			return nil, errors.WrapInternalf(err, errors.CodeInternal, "node %q: compile", node.Name)
 		}
 		sbs[i] = sb
 	}
@@ -76,7 +76,7 @@ func (q *Querier) Execute(ctx context.Context, pipe *pipetypes.ExecutablePipe, u
 
 	rows, err := q.conn.Query(ctx, sql)
 	if err != nil {
-		return nil, fmt.Errorf("execute: %w", err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "execute")
 	}
 	defer rows.Close()
 
@@ -133,7 +133,7 @@ func scanRows(rows driver.Rows) ([]map[string]any, error) {
 			ptrs[i] = &vals[i]
 		}
 		if err := rows.Scan(ptrs...); err != nil {
-			return nil, fmt.Errorf("scan row: %w", err)
+			return nil, errors.WrapInternalf(err, errors.CodeInternal, "scan row")
 		}
 		row := make(map[string]any, len(cols))
 		for i, col := range cols {

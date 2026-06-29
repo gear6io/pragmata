@@ -4,18 +4,19 @@ package sqlitesqlstore
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
 	_ "modernc.org/sqlite" // pure-Go SQLite driver
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/gear6io/pragmata/pkg/types/sqlstoretypes"
 )
+
+var CodePipeNotFound = errors.MustNewCode("pipe_not_found")
 
 // Store implements sqlstore.SQLStore using bun over SQLite.
 type Store struct {
@@ -27,7 +28,7 @@ type Store struct {
 func New(path string) (sqlstore.SQLStore, error) {
 	sqldb, err := sql.Open("sqlite", path)
 	if err != nil {
-		return nil, fmt.Errorf("open sqlite %q: %w", path, err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "open sqlite %q", path)
 	}
 	sqldb.SetMaxOpenConns(1) // SQLite is single-writer
 	return &Store{bundb: bun.NewDB(sqldb, sqlitedialect.New())}, nil
@@ -49,7 +50,7 @@ func (s *Store) GetPipe(ctx context.Context, name string) (*pipetypes.GettablePi
 	pipe := new(pipetypes.GettablePipe)
 	if err := s.bundb.NewSelect().Model(pipe).Where("name = ?", name).Scan(ctx); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("pipe %q not found", name)
+			return nil, errors.WrapNotFoundf(err, CodePipeNotFound, "pipe %q not found", name)
 		}
 		return nil, err
 	}
@@ -78,7 +79,7 @@ func (s *Store) UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) er
 		return err
 	}
 	if n == 0 {
-		return fmt.Errorf("pipe %q not found", pipe.Name)
+		return errors.NewNotFoundf(CodePipeNotFound, "pipe %q not found", pipe.Name)
 	}
 	return nil
 }

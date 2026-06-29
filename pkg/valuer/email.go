@@ -3,10 +3,11 @@ package valuer
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/gear6io/pragmata/pkg/errors"
 )
 
 const (
@@ -16,6 +17,8 @@ const (
 var (
 	emailRegex        = regexp.MustCompile(emailRegexString)
 	_          Valuer = (*Email)(nil)
+
+	CodeInvalidEmail = errors.MustNewCode("invalid_email")
 )
 
 type Email struct {
@@ -24,7 +27,7 @@ type Email struct {
 
 func NewEmail(val string) (Email, error) {
 	if !emailRegex.MatchString(strings.ToLower(strings.TrimSpace(val))) {
-		return Email{}, fmt.Errorf("invalid email %s", val)
+		return Email{}, errors.NewInvalidInputf(CodeInvalidEmail, "invalid email %s", val)
 	}
 
 	return Email{val: strings.ToLower(strings.TrimSpace(val))}, nil
@@ -76,12 +79,12 @@ func (enum Email) Value() (driver.Value, error) {
 
 func (enum *Email) Scan(val interface{}) error {
 	if enum == nil {
-		return fmt.Errorf("email: (nil \"%s\")", reflect.TypeOf(enum).String())
+		return errors.NewInternalf(errors.CodeInternal, "email: (nil \"%s\")", reflect.TypeOf(enum).String())
 	}
 
 	str, ok := val.(string)
 	if !ok {
-		return fmt.Errorf("email: (non-string \"%s\")", reflect.TypeOf(val).String())
+		return errors.NewInternalf(errors.CodeInternal, "email: (non-string \"%s\")", reflect.TypeOf(val).String())
 	}
 
 	var err error

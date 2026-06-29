@@ -7,11 +7,11 @@ package goroutineexecutor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/executor"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/sqlmesh"
@@ -37,7 +37,7 @@ func New(store sqlstore.SQLStore, runner *sqlmesh.Runner) *Executor {
 func (e *Executor) ResumeInterrupted(ctx context.Context) error {
 	jobs, err := e.store.ListRunningBackfillJobs(ctx)
 	if err != nil {
-		return fmt.Errorf("list running jobs: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "list running jobs")
 	}
 	for _, job := range jobs {
 		pipe, err := e.store.GetPipe(ctx, job.PipeID)
@@ -69,7 +69,7 @@ func (e *Executor) StartMaterializedPipe(ctx context.Context, params executor.Ma
 		UpdatedAt:      time.Now(),
 	}
 	if err := e.store.CreateBackfillJob(ctx, job); err != nil {
-		return "", fmt.Errorf("create backfill job: %w", err)
+		return "", errors.WrapInternalf(err, errors.CodeInternal, "create backfill job")
 	}
 
 	intervals := make([]executortypes.TimeInterval, len(params.BackfillIntervals))
@@ -86,11 +86,11 @@ func (e *Executor) StartMaterializedPipe(ctx context.Context, params executor.Ma
 func (e *Executor) RunPipe(ctx context.Context, pipeID string) error {
 	pipe, err := e.store.GetPipe(ctx, pipeID)
 	if err != nil {
-		return fmt.Errorf("load pipe %q: %w", pipeID, err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "load pipe %q", pipeID)
 	}
 	exec, err := pipevisitor.Visit(pipe.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
-		return fmt.Errorf("parse pipe %q: %w", pipeID, err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "parse pipe %q", pipeID)
 	}
 	modelName := coalesce(exec.Destination, exec.Name)
 	return e.runner.Run(ctx, modelName, nil)
@@ -118,16 +118,16 @@ func (e *Executor) runMaterializedPipeline(job *sqlstoretypes.BackfillJob, pipeI
 
 	pipe, err := e.store.GetPipe(ctx, pipeID)
 	if err != nil {
-		e.failJob(ctx, job, fmt.Errorf("load pipe: %w", err))
+		e.failJob(ctx, job, errors.WrapInternalf(err, errors.CodeInternal, "load pipe"))
 		return
 	}
 
 	if err := e.runner.SyncModel(ctx, &pipe.Pipe); err != nil {
-		e.failJob(ctx, job, fmt.Errorf("sync model: %w", err))
+		e.failJob(ctx, job, errors.WrapInternalf(err, errors.CodeInternal, "sync model"))
 		return
 	}
 	if err := e.runner.PlanApply(ctx); err != nil {
-		e.failJob(ctx, job, fmt.Errorf("sqlmesh plan apply: %w", err))
+		e.failJob(ctx, job, errors.WrapInternalf(err, errors.CodeInternal, "sqlmesh plan apply"))
 		return
 	}
 

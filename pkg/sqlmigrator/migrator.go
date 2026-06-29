@@ -3,13 +3,16 @@ package sqlmigrator
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
+
+	"github.com/gear6io/pragmata/pkg/errors"
 )
+
+var CodeMigrationLockTimeout = errors.MustNewCode("migration_lock_timeout")
 
 // Migrator applies and rolls back database migrations.
 type Migrator interface {
@@ -91,7 +94,7 @@ func (r *migrator) lock(ctx context.Context) error {
 	for {
 		select {
 		case <-timer.C:
-			return fmt.Errorf("sqlmigrator: timed out waiting for migration lock")
+			return errors.NewTimeoutf(CodeMigrationLockTimeout, "sqlmigrator: timed out waiting for migration lock")
 		case <-ticker.C:
 			if err := r.m.Lock(ctx); err == nil {
 				return nil

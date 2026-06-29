@@ -14,17 +14,21 @@
 package template
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/gear6io/pragmata/pkg/errors"
 )
 
-// blockRe matches {{ ... }} blocks, non-greedy.
-var blockRe = regexp.MustCompile(`\{\{([^}]*)\}\}`)
+var (
+	// blockRe matches {{ ... }} blocks, non-greedy.
+	blockRe = regexp.MustCompile(`\{\{([^}]*)\}\}`)
+	// callRe matches a single Type(name, default) call inside an expression.
+	callRe = regexp.MustCompile(`(\w+)\(([^)]+)\)`)
 
-// callRe matches a single Type(name, default) call inside an expression.
-var callRe = regexp.MustCompile(`(\w+)\(([^)]+)\)`)
+	CodeInvalidParam = errors.MustNewCode("invalid_param")
+)
 
 // Render substitutes all {{ Type(name, default) }} tokens in sql using params.
 // URL query params take precedence over the declared defaults.
@@ -37,7 +41,7 @@ func Render(sql string, params map[string]string) (string, error) {
 		inner := block[2 : len(block)-2] // strip {{ and }}
 		resolved, err := resolveBlock(inner, params)
 		if err != nil {
-			renderErr = fmt.Errorf("block %q: %w", block, err)
+			renderErr = errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "block %q", block)
 			return block
 		}
 		return resolved
@@ -59,7 +63,7 @@ func resolveBlock(expr string, params map[string]string) (string, error) {
 		typeName := m[1]
 		args := splitArgs(m[2])
 		if len(args) == 0 {
-			resolveErr = fmt.Errorf("%q: missing name argument", call)
+			resolveErr = errors.NewInvalidInputf(errors.CodeInvalidInput, "%q: missing name argument", call)
 			return call
 		}
 		paramName := strings.TrimSpace(args[0])
@@ -73,7 +77,7 @@ func resolveBlock(expr string, params map[string]string) (string, error) {
 		}
 		rendered, err := formatTyped(typeName, val, defaultVal, provided)
 		if err != nil {
-			resolveErr = fmt.Errorf("param %q: %w", paramName, err)
+			resolveErr = errors.WrapInvalidInputf(err, CodeInvalidParam, "param %q", paramName)
 			return call
 		}
 		return rendered
@@ -96,7 +100,7 @@ func formatTyped(typeName, val, defaultVal string, provided bool) (string, error
 			return defaultVal, nil
 		}
 		if _, err := strconv.ParseInt(val, 10, 64); err != nil {
-			return "", fmt.Errorf("invalid %s %q", typeName, val)
+			return "", errors.NewInvalidInputf(CodeInvalidParam, "invalid %s %q", typeName, val)
 		}
 		return val, nil
 
@@ -105,7 +109,7 @@ func formatTyped(typeName, val, defaultVal string, provided bool) (string, error
 			return defaultVal, nil
 		}
 		if _, err := strconv.ParseFloat(val, 64); err != nil {
-			return "", fmt.Errorf("invalid %s %q", typeName, val)
+			return "", errors.NewInvalidInputf(CodeInvalidParam, "invalid %s %q", typeName, val)
 		}
 		return val, nil
 

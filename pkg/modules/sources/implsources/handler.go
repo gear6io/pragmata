@@ -12,6 +12,8 @@ import (
 	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
 )
 
+var CodeSourceNotFound = errors.MustNewCode("source_not_found")
+
 type handler struct {
 	module sources.Module
 }
@@ -55,7 +57,7 @@ func (h *handler) GetSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if src == nil {
-		render.ErrorFrom(w, errors.NewNotFoundf(errors.CodeNotFound, "source %q not found", name))
+		render.ErrorFrom(w, errors.NewNotFoundf(CodeSourceNotFound, "source %q not found", name))
 		return
 	}
 	render.Success(w, http.StatusOK, src)

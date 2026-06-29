@@ -19,6 +19,7 @@ var (
 	// CodeUnset is used when reverse-engineering an error from a response that
 	// lacks a code. Its presence in production code is a bug.
 	CodeUnset = Code{"unset"}
+
 )
 
 var codeRegex = regexp.MustCompile(`^[a-z_]+$`)
