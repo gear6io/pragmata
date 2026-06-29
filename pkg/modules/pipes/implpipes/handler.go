@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
+
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
@@ -46,7 +48,7 @@ func (h *handler) ListPipes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) GetPipe(w http.ResponseWriter, r *http.Request) {
-	name := "" // Get name from request
+	name := mux.Vars(r)["name"]
 	pipe, err := h.module.GetPipe(r.Context(), name)
 	if err != nil {
 		render.Error(w, http.StatusNotFound, err.Error())
@@ -74,8 +76,7 @@ func (h *handler) UpdatePipe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) DeletePipe(w http.ResponseWriter, r *http.Request) {
-	// Get name from request
-	name := ""
+	name := mux.Vars(r)["name"]
 	if err := h.module.DeletePipe(r.Context(), name); err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return
