@@ -3,8 +3,8 @@ package pipetypes
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/types"
 	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
@@ -57,7 +57,7 @@ func (n *Nodes) Scan(src any) error {
 	case string:
 		b = []byte(v)
 	default:
-		return fmt.Errorf("Nodes: cannot scan %T", src)
+		return errors.NewInternalf(errors.CodeInternal, "Nodes: cannot scan %T", src)
 	}
 	return json.Unmarshal(b, (*[]Node)(n))
 }
@@ -98,7 +98,7 @@ func (s *Sources) Scan(src any) error {
 	case string:
 		b = []byte(v)
 	default:
-		return fmt.Errorf("Sources: cannot scan %T", src)
+		return errors.NewInternalf(errors.CodeInternal, "Sources: cannot scan %T", src)
 	}
 	return json.Unmarshal(b, (*[]Source)(s))
 }
@@ -133,7 +133,7 @@ func (p *ParamDefs) Scan(src any) error {
 	case string:
 		b = []byte(v)
 	default:
-		return fmt.Errorf("ParamDefs: cannot scan %T", src)
+		return errors.NewInternalf(errors.CodeInternal, "ParamDefs: cannot scan %T", src)
 	}
 	return json.Unmarshal(b, (*[]ParamDef)(p))
 }
@@ -161,7 +161,7 @@ func (t *Tags) Scan(src any) error {
 	case string:
 		b = []byte(v)
 	default:
-		return fmt.Errorf("Tags: cannot scan %T", src)
+		return errors.NewInternalf(errors.CodeInternal, "Tags: cannot scan %T", src)
 	}
 	return json.Unmarshal(b, (*[]string)(t))
 }

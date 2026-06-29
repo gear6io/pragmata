@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/gear6io/pragmata/pkg/config"
 	"github.com/gear6io/pragmata/pkg/datastore"
+	errors "github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/executor/goroutineexecutor"
 	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes/implpipes"
@@ -53,13 +53,13 @@ func serveCmd() *cobra.Command {
 func serve(ctx context.Context) error {
 	cfg, err := config.Load(configPath)
 	if err != nil {
-		return fmt.Errorf("load config: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "load config")
 	}
 
 	// Storage
 	store, err := sqlitesqlstore.New(cfg.Database.Path)
 	if err != nil {
-		return fmt.Errorf("open database: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "open database")
 	}
 
 	// Migrations
@@ -67,16 +67,16 @@ func serve(ctx context.Context) error {
 		sqlmigration.NewInitialSchema(),
 	})
 	if err != nil {
-		return fmt.Errorf("build migrations: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "build migrations")
 	}
 	if err := sqlmigrator.New(store.BunDB(), migrations).Migrate(ctx); err != nil {
-		return fmt.Errorf("migrate: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "migrate")
 	}
 
 	// SQLMesh runner
 	runner := sqlmesh.New(cfg.SQLMesh.ProjectDir, cfg.SQLMesh.BinaryPath)
 	if err := runner.EnsureProject(cfg.ClickHouse.URL); err != nil {
-		return fmt.Errorf("bootstrap sqlmesh project: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "bootstrap sqlmesh project")
 	}
 
 	// Executor
@@ -88,20 +88,20 @@ func serve(ctx context.Context) error {
 	// Scheduler — loads its own pipes from the store on Start
 	scheduler := cronscheduler.New(exec, store)
 	if err := scheduler.Start(ctx); err != nil {
-		return fmt.Errorf("start scheduler: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "start scheduler")
 	}
 	defer func() { _ = scheduler.Stop(context.Background()) }()
 
 	// DataStore (ClickHouse) + sources module + handler
 	ds, err := datastore.New(cfg.ClickHouse)
 	if err != nil {
-		return fmt.Errorf("open datastore: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "open datastore")
 	}
 
 	// Querier (dedicated ClickHouse connection for ENDPOINT pipe execution)
 	q, err := querier.New(cfg.ClickHouse.URL)
 	if err != nil {
-		return fmt.Errorf("open querier: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "open querier")
 	}
 
 	// Pipes module + handler

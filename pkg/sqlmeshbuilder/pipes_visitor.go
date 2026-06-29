@@ -5,11 +5,14 @@ import (
 	"strings"
 
 	sqlmesh "github.com/gear6io/pragmata/pkg/grammars/sqlmeshgrammar"
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/huandu/go-sqlbuilder"
 )
+
+var CodeInvalidPipeContent = errors.MustNewCode("invalid_pipe_content")
 
 // tok returns the grammar-defined string literal for a SQLMesh token type.
 // LiteralNames entries are ANTLR single-quoted (e.g. "'FULL'"); we strip those quotes.
@@ -111,7 +114,7 @@ func tagsArray(tags []string) string {
 // copyTarget, when non-empty, prepends INSERT INTO <target>.
 func buildSQL(nodes []pipetypes.Node, copyTarget string) (string, error) {
 	if len(nodes) == 0 {
-		return "", fmt.Errorf("no nodes provided")
+		return "", errors.NewInvalidInputf(CodeInvalidPipeContent, "no nodes provided")
 	}
 
 	outBuilder := sqlbuilder.NewInsertBuilder()
@@ -122,13 +125,13 @@ func buildSQL(nodes []pipetypes.Node, copyTarget string) (string, error) {
 	lastNode := nodes[len(nodes)-1]
 	lastSB, err := prqlvisitor.Visit(lastNode.SQL, prqlvisitor.PRQLVisitorOpts{})
 	if err != nil {
-		return "", fmt.Errorf("node %q: %w", lastNode.Name, err)
+		return "", errors.WrapInvalidInputf(err, CodeInvalidPipeContent, "node %q", lastNode.Name)
 	}
 
 	for _, node := range nodes[:len(nodes)-1] {
 		sb, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{})
 		if err != nil {
-			return "", fmt.Errorf("node %q: %w", node.Name, err)
+			return "", errors.WrapInvalidInputf(err, CodeInvalidPipeContent, "node %q", node.Name)
 		}
 		lastSB.With(sqlbuilder.With(sqlbuilder.CTEQuery(node.Name).As(sb)))
 	}

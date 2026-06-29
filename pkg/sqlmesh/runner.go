@@ -3,7 +3,6 @@ package sqlmesh
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/sqlmeshbuilder"
 	"github.com/gear6io/pragmata/pkg/types/executortypes"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
@@ -34,7 +34,7 @@ func New(projectDir, binaryPath string) *Runner {
 // Call once on startup before PlanApply.
 func (r *Runner) EnsureProject(clickhouseURL string) error {
 	if err := os.MkdirAll(r.ProjectDir, 0o755); err != nil {
-		return fmt.Errorf("create sqlmesh project dir: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "create sqlmesh project dir")
 	}
 	cfgPath := filepath.Join(r.ProjectDir, "config.yaml")
 	if _, err := os.Stat(cfgPath); err == nil {
@@ -42,7 +42,7 @@ func (r *Runner) EnsureProject(clickhouseURL string) error {
 	}
 	u, err := url.Parse(clickhouseURL)
 	if err != nil {
-		return fmt.Errorf("parse clickhouse url: %w", err)
+		return errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "parse clickhouse url")
 	}
 	host := u.Hostname()
 	port := u.Port()
@@ -72,11 +72,11 @@ model_defaults:
 func (r *Runner) SyncModel(_ context.Context, pipe *pipetypes.Pipe) error {
 	sql, err := sqlmeshbuilder.FromPipe(pipe)
 	if err != nil {
-		return fmt.Errorf("generate model for %q: %w", pipe.Name, err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "generate model for %q", pipe.Name)
 	}
 	modelsDir := filepath.Join(r.ProjectDir, "models")
 	if err := os.MkdirAll(modelsDir, 0o755); err != nil {
-		return fmt.Errorf("create models dir: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "create models dir")
 	}
 	dest := filepath.Join(modelsDir, pipe.Name+".sql")
 	return os.WriteFile(dest, []byte(sql), 0o644)
@@ -86,7 +86,7 @@ func (r *Runner) SyncModel(_ context.Context, pipe *pipetypes.Pipe) error {
 func (r *Runner) RemoveModel(_ context.Context, name string) error {
 	dest := filepath.Join(r.ProjectDir, "models", name+".sql")
 	if err := os.Remove(dest); err != nil && !errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("remove model %q: %w", dest, err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "remove model %q", dest)
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ func (r *Runner) run(ctx context.Context, args ...string) error {
 	cmd.Dir = r.ProjectDir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("sqlmesh %s: %w\n%s", strings.Join(args, " "), err, out)
+		return errors.WrapInternalf(err, errors.CodeInternal, "sqlmesh %s:\n%s", strings.Join(args, " "), out)
 	}
 	return nil
 }

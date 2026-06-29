@@ -1,10 +1,11 @@
 package config
 
 import (
-	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/gear6io/pragmata/pkg/errors"
 )
 
 type Config struct {
@@ -35,11 +36,11 @@ type DatabaseConfig struct {
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read config %q: %w", path, err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "read config %q", path)
 	}
 	cfg := defaults()
 	if err := yaml.Unmarshal(data, cfg); err != nil {
-		return nil, fmt.Errorf("parse config: %w", err)
+		return nil, errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "parse config")
 	}
 	return cfg, nil
 }

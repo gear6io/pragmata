@@ -1,11 +1,13 @@
 package prqlvisitor
 
 import (
-	"fmt"
 	"slices"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
 )
+
+var CodeSourceNotFound = errors.MustNewCode("source_not_found")
 
 // Validator validates a single identifier (source table or field name).
 type Validator func(name string) error
@@ -20,7 +22,7 @@ func NewSourceValidator(src string, availableSources []sourcetypes.Source) error
 		return source.Name == src
 	})
 	if !has {
-		return fmt.Errorf("source[%s] not found", src)
+		return errors.NewNotFoundf(CodeSourceNotFound, "source[%s] not found", src)
 	}
 
 	return nil

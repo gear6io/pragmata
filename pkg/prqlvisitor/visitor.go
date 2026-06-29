@@ -9,9 +9,12 @@ import (
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
+	"github.com/gear6io/pragmata/pkg/errors"
 	prql "github.com/gear6io/pragmata/pkg/grammars/prqlgrammar"
 	sqlbuilder "github.com/huandu/go-sqlbuilder"
 )
+
+var CodeInvalidPipeContent = errors.MustNewCode("invalid_pipe_content")
 
 // PRQLVisitorOpts configures optional validation hooks for the PRQL visitor.
 type PRQLVisitorOpts struct {
@@ -48,7 +51,7 @@ func Visit(pqlSrc string, opts PRQLVisitorOpts) (*sqlbuilder.SelectBuilder, erro
 
 	tree := p.Query()
 	if el.msg != "" {
-		return nil, fmt.Errorf("prql: %s", el.msg)
+		return nil, errors.NewInvalidInputf(CodeInvalidPipeContent, "prql: %s", el.msg)
 	}
 
 	v := &prqlVisitor{
