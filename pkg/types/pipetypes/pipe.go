@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/gear6io/pragmata/pkg/types"
+	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
 	"github.com/uptrace/bun"
 )
@@ -104,9 +105,9 @@ func (s *Sources) Scan(src any) error {
 
 // ParamDef describes one parameter in the params: section.
 type ParamDef struct {
-	Name         string `json:"name"`
-	DataType     string `json:"dataType"`
-	DefaultValue string `json:"defaultValue"`
+	Name         string                          `json:"name"`
+	DataType     querybuildertypes.FieldDataType `json:"dataType"`
+	DefaultValue string                          `json:"defaultValue"`
 }
 
 // ParamDefs is a JSON-serialised slice of ParamDef, stored as TEXT in SQLite.
@@ -197,6 +198,11 @@ type ExecutablePipe struct {
 // The raw PipeLang content is parsed server-side to populate all pipe fields.
 type PostablePipe struct {
 	Content string `json:"content"`
+}
+
+// ExecuteResult is the response shape for ENDPOINT pipe execution.
+type ExecuteResult struct {
+	Data []map[string]any `json:"data"`
 }
 
 type StorablePipe struct {

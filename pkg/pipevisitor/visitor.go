@@ -12,6 +12,7 @@ import (
 	grammar "github.com/gear6io/pragmata/pkg/grammars/pipesgrammar"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
 	"github.com/robfig/cron/v3"
@@ -223,7 +224,7 @@ func (v *pipeVisitor) VisitParam(ctx *grammar.ParamContext) interface{} {
 		defVal = strings.Trim(pv.GetText(), "\"")
 	}
 	v.pipe.Params = append(v.pipe.Params, pipetypes.ParamDef{
-		Name: name, DataType: dtype, DefaultValue: defVal,
+		Name: name, DataType: querybuildertypes.FieldDataType{String: valuer.NewString(dtype)}, DefaultValue: defVal,
 	})
 	return nil
 }

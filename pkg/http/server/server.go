@@ -96,6 +96,15 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 		SecuritySchemes:  bearerScheme,
 	})).Methods("GET")
 
+	v0.Handle("/execute/{name}", handler.New(h.ExecutePipe, handler.OpenAPIDef{
+		ID:               "executePipe",
+		Tags:             []string{"pipes"},
+		Summary:          "Execute an ENDPOINT pipe",
+		Response:         new(pipetypes.ExecuteResult),
+		ErrorStatusCodes: []int{http.StatusNotFound, http.StatusInternalServerError},
+		SecuritySchemes:  bearerScheme,
+	})).Methods("GET")
+
 	v0.Handle("/pipes/{name}", handler.New(h.UpdatePipe, handler.OpenAPIDef{
 		ID:               "updatePipe",
 		Tags:             []string{"pipes"},
