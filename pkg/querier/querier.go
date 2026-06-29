@@ -15,7 +15,6 @@ import (
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/template"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
-	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 )
 
 const sourceDatabase = "pragmata_source"
@@ -106,24 +105,13 @@ func renderNode(prql string, defs pipetypes.ParamDefs, urlParams map[string]stri
 		if !ok {
 			return match // unknown param — leave for template.Render to handle or fail
 		}
-		typeName := prqlTypeToTemplateType(def.DataType)
+		typeName, err := def.DataType.ClickHouseType()
+		if err != nil {
+			return match
+		}
 		return "{{ " + typeName + "(" + name + ", " + quoteDefault(def.DefaultValue) + ") }}"
 	})
 	return template.Render(normalized, urlParams)
-}
-
-// prqlTypeToTemplateType maps pipe param DataType to template engine type names.
-func prqlTypeToTemplateType(dt querybuildertypes.FieldDataType) string {
-	switch dt {
-	case querybuildertypes.FieldDataTypeInt64:
-		return "Int64"
-	case querybuildertypes.FieldDataTypeFloat64:
-		return "Float64"
-	case querybuildertypes.FieldDataTypeDateTime64, querybuildertypes.FieldDataTypeDate:
-		return "DateTime"
-	default:
-		return "String"
-	}
 }
 
 // quoteDefault wraps a default value in single quotes for the template engine String/DateTime types.

@@ -1,0 +1,163 @@
+# Error Handling
+
+All errors in this codebase go through `pkg/errors`. Do not use `fmt.Errorf`,
+`errors.New`, or any other error mechanism — they produce untyped errors that
+the HTTP layer cannot map to a status code.
+
+---
+
+## New vs Wrap
+
+### Use `New` when you are originating an error
+
+No external error exists. You checked a condition and it failed.
+
+```go
+// validation: nothing to wrap
+if name == "" {
+    return errors.NewInvalidInputf(errors.CodeInvalidInput, "name is required")
+}
+
+// explicit sentinel check
+if row == nil {
+    return errors.NewNotFoundf(errors.CodeNotFound, "pipe %q not found", name)
+}
+```
+
+### Use `Wrap` when you received an error from another layer
+
+Preserves the original cause for `errors.Is` / `errors.As` traversal.
+
+```go
+rows, err := db.Query(ctx, q)
+if err != nil {
+    return errors.WrapInternalf(err, errors.CodeInternal, "query pipes")
+}
+
+if errors.Is(err, sql.ErrNoRows) {
+    return errors.WrapNotFoundf(err, errors.CodeNotFound, "pipe %q not found", name)
+}
+```
+
+### Shorthand: when the module layer returns a typed error
+
+If the module already returns a `*errors.base`, wrapping at the handler boundary
+is still correct — hint propagation copies suggestions/retry through each `Wrap`.
+
+---
+
+## Never use fmt.Errorf or stdlib errors
+
+| Don't | Do instead |
+|---|---|
+| `fmt.Errorf("query: %w", err)` | `errors.WrapInternalf(err, errors.CodeInternal, "query")` |
+| `fmt.Errorf("not found")` | `errors.NewNotFoundf(errors.CodeNotFound, "...")` |
+| `errors.New("invalid input")` | `errors.NewInvalidInputf(errors.CodeInvalidInput, "...")` |
+
+`fmt.Errorf` produces an untyped error. The HTTP layer will default it to
+`500 internal` regardless of what the message says.
+
+---
+
+## Error types and HTTP status codes
+
+| Type constant | HTTP status |
+|---|---|
+| `TypeInvalidInput` | 400 |
+| `TypeUnsupported` | 400 |
+| `TypeUnauthenticated` | 401 |
+| `TypeForbidden` | 403 |
+| `TypeNotFound` | 404 |
+| `TypeMethodNotAllowed` | 405 |
+| `TypeTimeout` | 408 |
+| `TypeAlreadyExists` | 409 |
+| `TypeTooManyRequests` | 429 |
+| `TypeCanceled` | 499 |
+| `TypeInternal` | 500 |
+
+---
+
+## HTTP handlers
+
+Pass errors to `render.ErrorFrom` — never set a status code manually.
+
+```go
+// BAD
+render.Error(w, http.StatusInternalServerError, err.Error())
+
+// GOOD
+render.ErrorFrom(w, errors.WrapInternalf(err, errors.CodeInternal, "create pipe"))
+```
+
+---
+
+## Enriching errors
+
+### User-facing suggestions (typo correction, valid values)
+
+```go
+return errors.NewInvalidInputf(errors.CodeInvalidInput, "unknown field %q", field).
+    WithSuggestions(
+        errors.NewSuggestionsOnLevenshteinDistance(field, errors.NounFields, validFields)...,
+    )
+```
+
+### Retry-after (rate limits, transient failures)
+
+```go
+return errors.NewTooManyRequestsf(errors.CodeTooManyRequests, "rate limit exceeded").
+    WithRetryAfter(30 * time.Second)
+```
+
+### Additional detail lines
+
+```go
+return errors.NewInvalidInputf(errors.CodeInvalidInput, "validation failed").
+    WithAdditional("field `start_time` must be before `end_time`").
+    WithAdditional("field `limit` must be > 0")
+```
+
+---
+
+## Inspecting errors (middleware / tests)
+
+```go
+// by type
+errors.Ast(err, errors.TypeNotFound)
+
+// by code
+errors.Asc(err, errors.CodeNotFound)
+
+// stdlib chain still works
+errors.Is(err, context.Canceled)
+errors.As(err, &target)
+```
+
+---
+
+## Observability
+
+```go
+slog.Error("handler failed", errors.Attr(err))           // structured log
+span.SetAttributes(errors.TypeAttr(err))                 // OTel span
+```
+
+---
+
+## Quick reference
+
+```go
+// originate
+errors.NewInvalidInputf(errors.CodeInvalidInput, "...")
+errors.NewNotFoundf(errors.CodeNotFound, "...")
+errors.NewInternalf(errors.CodeInternal, "...")
+
+// wrap
+errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "...")
+errors.WrapNotFoundf(err, errors.CodeNotFound, "...")
+errors.WrapInternalf(err, errors.CodeInternal, "...")
+
+// custom type + code
+errors.Newf(errors.TypeForbidden, errors.CodeForbidden, "...")
+errors.Wrapf(err, errors.TypeTimeout, errors.CodeTimeout, "...")
+```

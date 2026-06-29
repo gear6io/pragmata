@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/suggestions"
 	"github.com/gear6io/pragmata/pkg/types/suggestiontypes"
@@ -21,17 +22,15 @@ func NewHandler(mod suggestions.Module) suggestions.Handler {
 func (h *handler) GetSuggestions(w http.ResponseWriter, r *http.Request) {
 	var req suggestiontypes.SuggestionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		render.Error(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+		render.ErrorFrom(w, errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "invalid JSON"))
 		return
 	}
-
 	if req.MatchingType == "" {
 		req.MatchingType = suggestiontypes.MatchingTypeFuzzy
 	}
-
 	resp, err := h.module.GetSuggestions(r.Context(), req)
 	if err != nil {
-		render.Error(w, http.StatusInternalServerError, err.Error())
+		render.ErrorFrom(w, errors.WrapInternalf(err, errors.CodeInternal, "get suggestions"))
 		return
 	}
 	render.Success(w, http.StatusOK, resp)
