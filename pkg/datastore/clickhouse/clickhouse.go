@@ -82,7 +82,11 @@ func (s *Store) ListSources(ctx context.Context, match []string) ([]sourcetypes.
 	sb.From("system.tables")
 	sb.Where(sb.Equal("database", sourceDatabase))
 	if len(match) > 0 {
-		sb.Where(sb.In("table", match))
+		vals := make([]any, len(match))
+		for i, v := range match {
+			vals[i] = v
+		}
+		sb.Where(sb.In("name", vals...))
 	}
 	query, args := sb.Build()
 

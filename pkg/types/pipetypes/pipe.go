@@ -13,18 +13,18 @@ import (
 
 // PipeType is the execution model for a pipe.
 type PipeType struct {
-	valuer.String
+	valuer.RawString
 }
 
 var (
-	PipeTypeUndefined    = PipeType{valuer.NewString("")}
-	PipeTypeEndpoint     = PipeType{valuer.NewString("ENDPOINT")}
-	PipeTypeMaterialized = PipeType{valuer.NewString("MATERIALIZED")}
-	PipeTypeCopy         = PipeType{valuer.NewString("COPY")}
-	PipeTypeTable        = PipeType{valuer.NewString("TABLE")}
-	PipeTypeView         = PipeType{valuer.NewString("VIEW")}
-	PipeTypeIncremental  = PipeType{valuer.NewString("INCREMENTAL")}
-	PipeTypeSnapshot     = PipeType{valuer.NewString("SNAPSHOT")}
+	PipeTypeUndefined    = PipeType{valuer.NewRawString("")}
+	PipeTypeEndpoint     = PipeType{valuer.NewRawString("ENDPOINT")}
+	PipeTypeMaterialized = PipeType{valuer.NewRawString("MATERIALIZED")}
+	PipeTypeCopy         = PipeType{valuer.NewRawString("COPY")}
+	PipeTypeTable        = PipeType{valuer.NewRawString("TABLE")}
+	PipeTypeView         = PipeType{valuer.NewRawString("VIEW")}
+	PipeTypeIncremental  = PipeType{valuer.NewRawString("INCREMENTAL")}
+	PipeTypeSnapshot     = PipeType{valuer.NewRawString("SNAPSHOT")}
 )
 
 // Node is one SQL step in a pipe. Nodes are chained into a CTE at query time.

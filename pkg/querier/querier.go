@@ -61,15 +61,18 @@ func (q *Querier) Execute(ctx context.Context, pipe *pipetypes.ExecutablePipe, u
 	last := len(pipe.Nodes) - 1
 	root := sbs[last]
 
-	// Source CTEs must come first so compiled node SQL can reference them.
+	// Collect all CTEs: sources first (so node CTEs can reference them), then preceding nodes.
+	// All CTEs must be passed in a single With() call — each With() call replaces the previous.
+	var ctes []*sqlbuilder.CTEQueryBuilder
 	for _, src := range pipe.Sources {
 		srcSB := sqlbuilder.NewSelectBuilder().Select("*").From(sourceDatabase + "." + src.Table)
-		root.With(sqlbuilder.With(sqlbuilder.CTEQuery(src.Alias).As(srcSB)))
+		ctes = append(ctes, sqlbuilder.CTEQuery(src.Alias).As(srcSB))
 	}
-
-	// Preceding nodes become CTEs in order.
 	for i, node := range pipe.Nodes[:last] {
-		root.With(sqlbuilder.With(sqlbuilder.CTEQuery(node.Name).As(sbs[i])))
+		ctes = append(ctes, sqlbuilder.CTEQuery(node.Name).As(sbs[i]))
+	}
+	if len(ctes) > 0 {
+		root.With(sqlbuilder.With(ctes...))
 	}
 
 	sql, _ := root.BuildWithFlavor(sqlbuilder.ClickHouse)

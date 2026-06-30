@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,13 +47,13 @@ func TestVisit(t *testing.T) {
 					{Alias: "users", Table: "users"},
 				},
 				Params: pipetypes.ParamDefs{
-					{Name: "country", DataType: "string", DefaultValue: "US"},
-					{Name: "days_back", DataType: "int64", DefaultValue: "30"},
+					{Name: "country", DataType: querybuildertypes.FieldDataTypeString, DefaultValue: "US"},
+					{Name: "days_back", DataType: querybuildertypes.FieldDataTypeInt64, DefaultValue: "30"},
 				},
 				Nodes: pipetypes.Nodes{
-					{Name: "filtered", SQL: "from evt filter country == $country"},
-					{Name: "enriched", SQL: "from @filtered join users (==user_id) select { user_id, country, ts }"},
-					{Name: "result", SQL: "from @enriched group { country } ( aggregate { cnt = count user_id } ) sort cnt desc"},
+					{Name: "filtered", SQL: "from evt\nfilter country == $country"},
+					{Name: "enriched", SQL: "from @filtered\njoin users (==user_id)\nselect { user_id, country, ts }"},
+					{Name: "result", SQL: "from @enriched\ngroup { country } (\naggregate { cnt = count user_id }\n)\nsort cnt desc"},
 				},
 			},
 		},
@@ -71,11 +72,11 @@ func TestVisit(t *testing.T) {
 					{Alias: "meta", Table: "ref.event_metadata"},
 				},
 				Params: pipetypes.ParamDefs{
-					{Name: "lookback_hours", DataType: "int64", DefaultValue: "6"},
+					{Name: "lookback_hours", DataType: querybuildertypes.FieldDataTypeInt64, DefaultValue: "6"},
 				},
 				Nodes: pipetypes.Nodes{
-					{Name: "raw", SQL: "from events select { event_id, ts, kind }"},
-					{Name: "final", SQL: "from @raw join meta (==event_id) select { event_id, ts, kind, meta.label }"},
+					{Name: "raw", SQL: "from events\nselect { event_id, ts, kind }"},
+					{Name: "final", SQL: "from @raw\njoin meta (==event_id)\nselect { event_id, ts, kind, meta.label }"},
 				},
 			},
 		},

@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// Pipe content strings copied verbatim from docs/exercise.md.
+// Pipe content uses PRQL (Pipeline Query Language) pipeline syntax.
 
 const pipeCleanPageViews = `type: TABLE
 name: clean_page_views
@@ -21,13 +21,9 @@ sources:
 
 pipeline:
   @result:
-    SELECT
-      toDate(timestamp) AS day,
-      user_id,
-      page
-    FROM raw
-    WHERE user_id != ''
-      AND page != ''`
+    from raw
+    filter user_id != '' AND page != ''
+    select { day = toDate(timestamp), user_id, page }`
 
 const pipeCleanProfiles = `type: TABLE
 name: clean_profiles
@@ -39,14 +35,9 @@ sources:
 
 pipeline:
   @result:
-    SELECT
-      user_id,
-      plan,
-      country,
-      signup_date
-    FROM raw
-    WHERE user_id != ''
-      AND plan != ''`
+    from raw
+    filter user_id != '' AND plan != ''
+    select { user_id, plan, country, signup_date }`
 
 const pipeEnrichSessions = `type: TABLE
 name: enrich_sessions
@@ -59,14 +50,9 @@ sources:
 
 pipeline:
   @result:
-    SELECT
-      views.day,
-      views.user_id,
-      views.page,
-      profiles.plan,
-      profiles.country
-    FROM views
-    INNER JOIN profiles ON views.user_id = profiles.user_id`
+    from views
+    join side:inner profiles (views.user_id = profiles.user_id)
+    select { views.day, views.user_id, views.page, profiles.plan, profiles.country }`
 
 const pipeDailyStats = `type: ENDPOINT
 name: daily_stats
@@ -80,21 +66,15 @@ params:
   country: { type: string, default: "" }
 
 pipeline:
-  @filter:
-    SELECT day, user_id, plan, country
-    FROM enriched
-    WHERE ({{ params.plan }} = '' OR plan = {{ params.plan }})
-      AND ({{ params.country }} = '' OR country = {{ params.country }})
+  @filtered:
+    from enriched
+    filter ({{ params.plan }} = '' OR plan = {{ params.plan }}) AND ({{ params.country }} = '' OR country = {{ params.country }})
+    select { day, user_id, plan, country }
 
   @result:
-    SELECT
-      day,
-      plan,
-      country,
-      uniqExact(user_id) AS dau
-    FROM @filter
-    GROUP BY day, plan, country
-    ORDER BY day DESC, dau DESC`
+    from filtered
+    group { day, plan, country } ( aggregate { dau = uniqExact(user_id) } )
+    sort { -day, -dau }`
 
 const pipeDailyStatsWithStartDay = `type: ENDPOINT
 name: daily_stats
@@ -109,22 +89,15 @@ params:
   start_day: { type: string, default: "2000-01-01" }
 
 pipeline:
-  @filter:
-    SELECT day, user_id, plan, country
-    FROM enriched
-    WHERE ({{ params.plan }} = '' OR plan = {{ params.plan }})
-      AND ({{ params.country }} = '' OR country = {{ params.country }})
-      AND day >= toDate({{ params.start_day }})
+  @filtered:
+    from enriched
+    filter ({{ params.plan }} = '' OR plan = {{ params.plan }}) AND ({{ params.country }} = '' OR country = {{ params.country }}) AND day >= toDate({{ params.start_day }})
+    select { day, user_id, plan, country }
 
   @result:
-    SELECT
-      day,
-      plan,
-      country,
-      uniqExact(user_id) AS dau
-    FROM @filter
-    GROUP BY day, plan, country
-    ORDER BY day DESC, dau DESC`
+    from filtered
+    group { day, plan, country } ( aggregate { dau = uniqExact(user_id) } )
+    sort { -day, -dau }`
 
 type postablePipe struct {
 	Content string `json:"content"`
@@ -132,7 +105,6 @@ type postablePipe struct {
 
 // TestCrossPipeExercise runs the exercise from docs/exercise.md as an integration test.
 // Steps 8 and 9 are UI-only and are omitted.
-// Steps 6 and 7 require an ENDPOINT execution route that does not exist yet (see TODO below).
 func TestCrossPipeExercise(t *testing.T) {
 
 	t.Run("Step1_RegisterSources", func(t *testing.T) {
@@ -225,18 +197,15 @@ func TestCrossPipeExercise(t *testing.T) {
 	})
 
 	t.Run("Step6_ExecuteEndpoint", func(t *testing.T) {
-		// TODO(route): no ENDPOINT execution route exists yet.
-		// exercise.md shows GET /v0/pipes/daily_stats?plan=pro but the server only registers:
-		//   GET /api/v0/pipes         (list)
-		//   GET /api/v0/pipes/{name}/meta  (metadata)
-		// Once the execute route is added, implement:
-		//   data := readResponse(t, apiDo(t, "GET", "/api/v0/pipes/daily_stats/execute", nil), http.StatusOK)
-		//   assertRowsNotEmpty(t, data)
-		//   data = readResponse(t, apiDo(t, "GET", "/api/v0/pipes/daily_stats/execute?plan=pro", nil), http.StatusOK)
-		//   assertAllPlan(t, data, "pro")
-		//   data = readResponse(t, apiDo(t, "GET", "/api/v0/pipes/daily_stats/execute?country=JP", nil), http.StatusOK)
-		//   assertRowCount(t, data, 0)
-		t.Skip("TODO(route): ENDPOINT execution route not yet implemented")
+		data := readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats", nil), http.StatusOK)
+		assertRowsNotEmpty(t, data)
+
+		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?plan=pro", nil), http.StatusOK)
+		assertAllPlan(t, data, "pro")
+
+		// JP has no clean rows (u4 has empty plan, filtered by clean_profiles).
+		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?country=JP", nil), http.StatusOK)
+		assertRowCount(t, data, 0)
 	})
 
 	t.Run("Step7_UpdateEndpoint", func(t *testing.T) {
@@ -253,9 +222,13 @@ func TestCrossPipeExercise(t *testing.T) {
 			t.Errorf("updated pipe missing start_day param; params: %v", params)
 		}
 
-		// TODO(route): once execute route exists, verify:
-		//   GET /execute?start_day=2024-01-16 returns only 2024-01-16 rows
-		//   GET /execute?plan=pro&start_day=2024-01-16 returns pro rows from 2024-01-16 only
+		// Verify start_day filters correctly.
+		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?start_day=2024-01-16", nil), http.StatusOK)
+		assertAllDay(t, data, "2024-01-16")
+
+		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?plan=pro&start_day=2024-01-16", nil), http.StatusOK)
+		assertAllPlan(t, data, "pro")
+		assertAllDay(t, data, "2024-01-16")
 	})
 
 	t.Run("Step10_DeletePipes", func(t *testing.T) {
@@ -286,5 +259,55 @@ func mustUnmarshal(t *testing.T, data json.RawMessage, v any) {
 	t.Helper()
 	if err := json.Unmarshal(data, v); err != nil {
 		t.Fatalf("unmarshal: %v (raw: %s)", err, data)
+	}
+}
+
+type executeResult struct {
+	Data []map[string]any `json:"data"`
+}
+
+func unmarshalExecute(t *testing.T, data json.RawMessage) executeResult {
+	t.Helper()
+	var r executeResult
+	mustUnmarshal(t, data, &r)
+	return r
+}
+
+func assertRowsNotEmpty(t *testing.T, data json.RawMessage) {
+	t.Helper()
+	if r := unmarshalExecute(t, data); len(r.Data) == 0 {
+		t.Error("expected non-empty execute result")
+	}
+}
+
+func assertRowCount(t *testing.T, data json.RawMessage, n int) {
+	t.Helper()
+	if r := unmarshalExecute(t, data); len(r.Data) != n {
+		t.Errorf("execute result: want %d rows, got %d", n, len(r.Data))
+	}
+}
+
+func assertAllPlan(t *testing.T, data json.RawMessage, plan string) {
+	t.Helper()
+	r := unmarshalExecute(t, data)
+	for _, row := range r.Data {
+		if row["plan"] != plan {
+			t.Errorf("execute result: want plan %q, got %v (row: %v)", plan, row["plan"], row)
+		}
+	}
+}
+
+func assertAllDay(t *testing.T, data json.RawMessage, day string) {
+	t.Helper()
+	r := unmarshalExecute(t, data)
+	for _, row := range r.Data {
+		got := fmt.Sprintf("%v", row["day"])
+		// ClickHouse Date columns marshal as RFC 3339 ("2024-01-16T00:00:00Z"); take YYYY-MM-DD prefix.
+		if len(got) > 10 {
+			got = got[:10]
+		}
+		if got != day {
+			t.Errorf("execute result: want day %q, got %v (row: %v)", day, row["day"], row)
+		}
 	}
 }

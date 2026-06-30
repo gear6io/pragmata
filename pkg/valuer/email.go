@@ -87,6 +87,11 @@ func (enum *Email) Scan(val interface{}) error {
 		return errors.NewInternalf(errors.CodeInternal, "email: (non-string \"%s\")", reflect.TypeOf(val).String())
 	}
 
+	if str == "" {
+		*enum = Email{}
+		return nil
+	}
+
 	var err error
 	*enum, err = NewEmail(str)
 	if err != nil {
