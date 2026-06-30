@@ -284,7 +284,7 @@ func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) in
 			if _, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{
 				FromValidator: v.prqlFROMValidator(),
 			}); err != nil {
-				v.errs = append(v.errs, errors.WrapInvalidInputf(err, CodeInvalidPipeContent, "node %q", node.Name))
+				v.errs = append(v.errs, errors.WithAdditionalf(err, "node %q", node.Name))
 			}
 		}
 		v.pipe.Nodes = append(v.pipe.Nodes, node)

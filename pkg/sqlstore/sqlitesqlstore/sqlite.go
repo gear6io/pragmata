@@ -69,7 +69,7 @@ func (s *Store) UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) er
 	pipe.UpdatedAt = time.Now()
 	res, err := s.bundb.NewUpdate().Model(pipe).
 		Column("type", "description", "tags", "content", "datasource", "target_datasource", "copy_schedule", "updated_at").
-		WherePK().
+		Where("name = ?", pipe.Name).
 		Exec(ctx)
 	if err != nil {
 		return err

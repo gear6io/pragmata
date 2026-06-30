@@ -4,6 +4,7 @@ package querier
 
 import (
 	"context"
+	"reflect"
 	"regexp"
 	"strings"
 
@@ -37,23 +38,22 @@ func New(url string) (*Querier, error) {
 	return &Querier{conn: conn}, nil
 }
 
-// Execute resolves params, compiles PRQL nodes, assembles a CTE chain with source aliases,
-// runs the query, and returns the rows.
-func (q *Querier) Execute(ctx context.Context, pipe *pipetypes.ExecutablePipe, urlParams map[string]string) (*pipetypes.ExecuteResult, error) {
+// BuildSQL resolves params, compiles PRQL nodes, and assembles a CTE chain with source aliases,
+// returning the final ClickHouse SQL string. It does not touch the database.
+func BuildSQL(pipe *pipetypes.ExecutablePipe, urlParams map[string]string) (string, error) {
 	if len(pipe.Nodes) == 0 {
-		return nil, errors.NewInvalidInputf(errors.CodeInvalidInput, "pipe %q has no nodes", pipe.Name)
+		return "", errors.NewInvalidInputf(errors.CodeInvalidInput, "pipe %q has no nodes", pipe.Name)
 	}
 
-	// Render template tokens in each node's PRQL then compile to SelectBuilder.
 	sbs := make([]*sqlbuilder.SelectBuilder, len(pipe.Nodes))
 	for i, node := range pipe.Nodes {
 		rendered, err := renderNode(node.SQL, pipe.Params, urlParams)
 		if err != nil {
-			return nil, errors.WrapInternalf(err, errors.CodeInternal, "node %q", node.Name)
+			return "", errors.WithAdditionalf(err, "node %q", node.Name)
 		}
 		sb, err := prqlvisitor.Visit(rendered, prqlvisitor.PRQLVisitorOpts{})
 		if err != nil {
-			return nil, errors.WrapInternalf(err, errors.CodeInternal, "node %q: compile", node.Name)
+			return "", errors.WithAdditionalf(err, "node %q: compile", node.Name)
 		}
 		sbs[i] = sb
 	}
@@ -76,6 +76,16 @@ func (q *Querier) Execute(ctx context.Context, pipe *pipetypes.ExecutablePipe, u
 	}
 
 	sql, _ := root.BuildWithFlavor(sqlbuilder.ClickHouse)
+	return sql, nil
+}
+
+// Execute resolves params, compiles PRQL nodes, assembles a CTE chain with source aliases,
+// runs the query, and returns the rows.
+func (q *Querier) Execute(ctx context.Context, pipe *pipetypes.ExecutablePipe, urlParams map[string]string) (*pipetypes.ExecuteResult, error) {
+	sql, err := BuildSQL(pipe, urlParams)
+	if err != nil {
+		return nil, err
+	}
 
 	rows, err := q.conn.Query(ctx, sql)
 	if err != nil {
@@ -126,21 +136,23 @@ func quoteDefault(v string) string {
 }
 
 // scanRows reads all rows into a slice of column-name → value maps.
+// It uses ColumnTypes().ScanType() to allocate typed destinations so that
+// ClickHouse native-protocol types (Date, DateTime64, etc.) scan correctly.
 func scanRows(rows driver.Rows) ([]map[string]any, error) {
 	cols := rows.Columns()
+	colTypes := rows.ColumnTypes()
 	var result []map[string]any
 	for rows.Next() {
-		vals := make([]any, len(cols))
 		ptrs := make([]any, len(cols))
-		for i := range vals {
-			ptrs[i] = &vals[i]
+		for i, ct := range colTypes {
+			ptrs[i] = reflect.New(ct.ScanType()).Interface()
 		}
 		if err := rows.Scan(ptrs...); err != nil {
 			return nil, errors.WrapInternalf(err, errors.CodeInternal, "scan row")
 		}
 		row := make(map[string]any, len(cols))
 		for i, col := range cols {
-			row[col] = vals[i]
+			row[col] = reflect.ValueOf(ptrs[i]).Elem().Interface()
 		}
 		result = append(result, row)
 	}

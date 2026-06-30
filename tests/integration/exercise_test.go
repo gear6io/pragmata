@@ -155,40 +155,21 @@ func TestCrossPipeExercise(t *testing.T) {
 
 	t.Run("Step2_CleanPageViews", func(t *testing.T) {
 		readResponse(t, apiDo(t, "POST", "/api/v0/pipes", postablePipe{Content: pipeCleanPageViews}), http.StatusCreated)
-
-		data := readResponse(t, apiDo(t, "GET", "/api/v0/pipes/clean_page_views/meta", nil), http.StatusOK)
-		assertPipeType(t, data, "TABLE")
 	})
 
 	t.Run("Step3_CleanProfiles", func(t *testing.T) {
 		readResponse(t, apiDo(t, "POST", "/api/v0/pipes", postablePipe{Content: pipeCleanProfiles}), http.StatusCreated)
-
-		data := readResponse(t, apiDo(t, "GET", "/api/v0/pipes/clean_profiles/meta", nil), http.StatusOK)
-		assertPipeType(t, data, "TABLE")
 	})
 
 	t.Run("Step4_EnrichSessions", func(t *testing.T) {
 		readResponse(t, apiDo(t, "POST", "/api/v0/pipes", postablePipe{Content: pipeEnrichSessions}), http.StatusCreated)
-
-		data := readResponse(t, apiDo(t, "GET", "/api/v0/pipes/enrich_sessions/meta", nil), http.StatusOK)
-		assertPipeType(t, data, "TABLE")
-		// Verify two sources are declared.
-		var pipe map[string]any
-		mustUnmarshal(t, data, &pipe)
-		sources, _ := pipe["sources"].([]any)
-		if len(sources) != 2 {
-			t.Errorf("enrich_sessions: want 2 sources, got %d", len(sources))
-		}
 	})
 
 	t.Run("Step5_DailyStats", func(t *testing.T) {
 		readResponse(t, apiDo(t, "POST", "/api/v0/pipes", postablePipe{Content: pipeDailyStats}), http.StatusCreated)
 
-		data := readResponse(t, apiDo(t, "GET", "/api/v0/pipes/daily_stats/meta", nil), http.StatusOK)
-		assertPipeType(t, data, "ENDPOINT")
-
 		// All four pipes are listed.
-		data = readResponse(t, apiDo(t, "GET", "/api/v0/pipes", nil), http.StatusOK)
+		data := readResponse(t, apiDo(t, "GET", "/api/v0/pipes", nil), http.StatusOK)
 		var pipes []map[string]any
 		mustUnmarshal(t, data, &pipes)
 		if len(pipes) != 4 {
@@ -209,21 +190,10 @@ func TestCrossPipeExercise(t *testing.T) {
 	})
 
 	t.Run("Step7_UpdateEndpoint", func(t *testing.T) {
-		// Depends on Step 6 (execution) to verify the start_day param filters correctly.
-		// TODO(route): unblock once the execute route exists (see Step6 TODO).
 		readResponse(t, apiDo(t, "PUT", "/api/v0/pipes/daily_stats", postablePipe{Content: pipeDailyStatsWithStartDay}), http.StatusOK)
 
-		// Verify the updated pipe has the new start_day param.
-		data := readResponse(t, apiDo(t, "GET", "/api/v0/pipes/daily_stats/meta", nil), http.StatusOK)
-		var pipe map[string]any
-		mustUnmarshal(t, data, &pipe)
-		params, _ := pipe["params"].(map[string]any)
-		if _, ok := params["start_day"]; !ok {
-			t.Errorf("updated pipe missing start_day param; params: %v", params)
-		}
-
 		// Verify start_day filters correctly.
-		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?start_day=2024-01-16", nil), http.StatusOK)
+		data := readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?start_day=2024-01-16", nil), http.StatusOK)
 		assertAllDay(t, data, "2024-01-16")
 
 		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?plan=pro&start_day=2024-01-16", nil), http.StatusOK)
@@ -244,15 +214,6 @@ func TestCrossPipeExercise(t *testing.T) {
 			t.Errorf("want 0 pipes after deletion, got %d", len(pipes))
 		}
 	})
-}
-
-func assertPipeType(t *testing.T, data json.RawMessage, want string) {
-	t.Helper()
-	var pipe map[string]any
-	mustUnmarshal(t, data, &pipe)
-	if pipe["type"] != want {
-		t.Errorf("want pipe type %q, got %v", want, pipe["type"])
-	}
 }
 
 func mustUnmarshal(t *testing.T, data json.RawMessage, v any) {

@@ -17,9 +17,9 @@
 //	    return errors.NewNotFoundf(errors.CodeNotFound, "source %q not found", name)
 //	}
 //
-// Use [Wrap] / [Wrapf] / type-specific shortcuts (e.g. [WrapInternalf]) when
-// you received an error from another layer and want to add type, code, and
-// context while preserving the original cause for errors.Is / errors.As:
+// Use [Wrap] / [Wrapf] / type-specific shortcuts (e.g. [WrapInternalf]) ONLY
+// at system boundaries — when you received an untyped error from an external
+// library or stdlib and need to assign a type, code, and message:
 //
 //	row, err := db.QueryRow(ctx, q)
 //	if err != nil {
@@ -28,6 +28,24 @@
 //
 //	if errors.Is(err, sql.ErrNoRows) {
 //	    return errors.WrapNotFoundf(err, errors.CodeNotFound, "pipe %q not found", name)
+//	}
+//
+// # Never re-wrap an already-typed error
+//
+// If the error comes from another internal function (one that already uses this
+// package), do NOT wrap it again — that overrides its type and code. Use
+// [WithAdditionalf] to attach context without altering type, code, or message:
+//
+//	// BAD — overrides the type/code set by an internal function
+//	exec, err := pipevisitor.Visit(content, opts)
+//	if err != nil {
+//	    return errors.WrapInternalf(err, errors.CodeInternal, "parse pipe %q", name)
+//	}
+//
+//	// GOOD — preserves type/code, appends caller context
+//	exec, err := pipevisitor.Visit(content, opts)
+//	if err != nil {
+//	    return errors.WithAdditionalf(err, "parse pipe %q", name)
 //	}
 //
 // # Never use fmt.Errorf or stdlib errors.New

@@ -125,13 +125,13 @@ func buildSQL(nodes []pipetypes.Node, copyTarget string) (string, error) {
 	lastNode := nodes[len(nodes)-1]
 	lastSB, err := prqlvisitor.Visit(lastNode.SQL, prqlvisitor.PRQLVisitorOpts{})
 	if err != nil {
-		return "", errors.WrapInvalidInputf(err, CodeInvalidPipeContent, "node %q", lastNode.Name)
+		return "", errors.WithAdditionalf(err, "node %q", lastNode.Name)
 	}
 
 	for _, node := range nodes[:len(nodes)-1] {
 		sb, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{})
 		if err != nil {
-			return "", errors.WrapInvalidInputf(err, CodeInvalidPipeContent, "node %q", node.Name)
+			return "", errors.WithAdditionalf(err, "node %q", node.Name)
 		}
 		lastSB.With(sqlbuilder.With(sqlbuilder.CTEQuery(node.Name).As(sb)))
 	}
