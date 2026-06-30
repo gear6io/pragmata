@@ -1,0 +1,21 @@
+type: ENDPOINT
+name: daily_stats
+description: Daily active users segmented by plan and country, with optional filters.
+
+sources:
+  - enriched: enriched_sessions
+
+params:
+  plan:    { type: string, default: "" }
+  country: { type: string, default: "" }
+
+pipeline:
+  @filtered:
+    from enriched
+    filter ({{ params.plan }} = '' OR plan = {{ params.plan }}) AND ({{ params.country }} = '' OR country = {{ params.country }})
+    select { day, user_id, plan, country }
+
+  @result:
+    from filtered
+    group { day, plan, country } ( aggregate { dau = uniqExact(user_id) } )
+    sort { -day, -dau }
