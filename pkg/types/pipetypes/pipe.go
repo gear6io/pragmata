@@ -3,9 +3,10 @@ package pipetypes
 import (
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/types"
+	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
 	"github.com/uptrace/bun"
 )
@@ -56,7 +57,7 @@ func (n *Nodes) Scan(src any) error {
 	case string:
 		b = []byte(v)
 	default:
-		return fmt.Errorf("Nodes: cannot scan %T", src)
+		return errors.NewInternalf(errors.CodeInternal, "Nodes: cannot scan %T", src)
 	}
 	return json.Unmarshal(b, (*[]Node)(n))
 }
@@ -97,16 +98,16 @@ func (s *Sources) Scan(src any) error {
 	case string:
 		b = []byte(v)
 	default:
-		return fmt.Errorf("Sources: cannot scan %T", src)
+		return errors.NewInternalf(errors.CodeInternal, "Sources: cannot scan %T", src)
 	}
 	return json.Unmarshal(b, (*[]Source)(s))
 }
 
 // ParamDef describes one parameter in the params: section.
 type ParamDef struct {
-	Name         string `json:"name"`
-	DataType     string `json:"dataType"`
-	DefaultValue string `json:"defaultValue"`
+	Name         string                          `json:"name"`
+	DataType     querybuildertypes.FieldDataType `json:"dataType"`
+	DefaultValue string                          `json:"defaultValue"`
 }
 
 // ParamDefs is a JSON-serialised slice of ParamDef, stored as TEXT in SQLite.
@@ -132,7 +133,7 @@ func (p *ParamDefs) Scan(src any) error {
 	case string:
 		b = []byte(v)
 	default:
-		return fmt.Errorf("ParamDefs: cannot scan %T", src)
+		return errors.NewInternalf(errors.CodeInternal, "ParamDefs: cannot scan %T", src)
 	}
 	return json.Unmarshal(b, (*[]ParamDef)(p))
 }
@@ -160,7 +161,7 @@ func (t *Tags) Scan(src any) error {
 	case string:
 		b = []byte(v)
 	default:
-		return fmt.Errorf("Tags: cannot scan %T", src)
+		return errors.NewInternalf(errors.CodeInternal, "Tags: cannot scan %T", src)
 	}
 	return json.Unmarshal(b, (*[]string)(t))
 }
@@ -197,6 +198,11 @@ type ExecutablePipe struct {
 // The raw PipeLang content is parsed server-side to populate all pipe fields.
 type PostablePipe struct {
 	Content string `json:"content"`
+}
+
+// ExecuteResult is the response shape for ENDPOINT pipe execution.
+type ExecuteResult struct {
+	Data []map[string]any `json:"data"`
 }
 
 type StorablePipe struct {

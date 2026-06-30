@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/gear6io/pragmata/pkg/config"
+	errors "github.com/gear6io/pragmata/pkg/errors"
 	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/modules/sources"
@@ -52,15 +53,15 @@ func runGenerateOpenAPI() error {
 
 	data, err := srv.OpenAPISpec()
 	if err != nil {
-		return fmt.Errorf("marshal spec: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "marshal spec")
 	}
 
 	const outPath = "docs/api/openapi.yaml"
 	if err := os.MkdirAll("docs/api", 0o755); err != nil {
-		return fmt.Errorf("create output dir: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "create output dir")
 	}
 	if err := os.WriteFile(outPath, data, 0o644); err != nil {
-		return fmt.Errorf("write %s: %w", outPath, err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "write %s", outPath)
 	}
 	fmt.Printf("wrote %s\n", outPath)
 	return nil

@@ -1,9 +1,9 @@
 package querybuildertypes
 
 import (
-	"fmt"
 	"strings"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/valuer"
 )
 
@@ -30,6 +30,8 @@ var (
 	FieldDataTypeArrayDynamic = FieldDataType{valuer.NewString("[]dynamic")}
 	FieldDataTypeArrayJSON    = FieldDataType{valuer.NewString("[]json")}
 )
+
+var CodeUnknownDataType = errors.MustNewCode("unknown_data_type")
 
 // Field describes one column of a Source table.
 type Field struct {
@@ -87,7 +89,7 @@ func (dt FieldDataType) ClickHouseType() (string, error) {
 	if chType, ok := fieldDataTypeToClickHouse[dt]; ok {
 		return chType, nil
 	}
-	return "", fmt.Errorf("unknown data type %q", dt.StringValue())
+	return "", errors.NewInvalidInputf(CodeUnknownDataType, "unknown data type %q", dt.StringValue())
 }
 
 // FieldDataTypeFromClickHouse maps a ClickHouse native type string to a FieldDataType.

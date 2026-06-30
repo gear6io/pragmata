@@ -12,6 +12,7 @@ import (
 	"github.com/swaggest/openapi-go/openapi3"
 
 	frontend "github.com/gear6io/pragmata/frontend"
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/http/handler"
 	"github.com/gear6io/pragmata/pkg/http/render"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
@@ -93,6 +94,15 @@ func New(p *Provider, store sqlstore.SQLStore, addr string) *Server {
 		Summary:          "Get pipe metadata",
 		Response:         new(pipetypes.Pipe),
 		ErrorStatusCodes: []int{http.StatusNotFound},
+		SecuritySchemes:  bearerScheme,
+	})).Methods("GET")
+
+	v0.Handle("/execute/{name}", handler.New(h.ExecutePipe, handler.OpenAPIDef{
+		ID:               "executePipe",
+		Tags:             []string{"pipes"},
+		Summary:          "Execute an ENDPOINT pipe",
+		Response:         new(pipetypes.ExecuteResult),
+		ErrorStatusCodes: []int{http.StatusNotFound, http.StatusInternalServerError},
 		SecuritySchemes:  bearerScheme,
 	})).Methods("GET")
 
@@ -222,7 +232,7 @@ func Addr(host string, port int) string {
 func (s *Server) serveOpenAPIYAML(w http.ResponseWriter, _ *http.Request) {
 	data, err := s.openapi.MarshalYAML()
 	if err != nil {
-		render.Error(w, http.StatusInternalServerError, err.Error())
+		render.ErrorFrom(w, errors.WrapInternalf(err, errors.CodeInternal, "marshal openapi yaml"))
 		return
 	}
 	w.Header().Set("Content-Type", "application/x-yaml")
@@ -234,7 +244,7 @@ func recoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				render.Error(w, http.StatusInternalServerError, "internal server error")
+				render.ErrorFrom(w, errors.NewInternalf(errors.CodeInternal, "internal server error"))
 			}
 		}()
 		next.ServeHTTP(w, r)

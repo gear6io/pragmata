@@ -3,12 +3,12 @@ package cronscheduler
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/executor"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
@@ -40,7 +40,7 @@ func New(exec executor.Executor, store sqlstore.SQLStore) *Scheduler {
 func (s *Scheduler) Start(ctx context.Context) error {
 	pipes, err := s.store.ListPipes(ctx)
 	if err != nil {
-		return fmt.Errorf("load pipes for scheduler: %w", err)
+		return errors.WrapInternalf(err, errors.CodeInternal, "load pipes for scheduler")
 	}
 	for _, p := range pipes {
 		if p.CopySchedule == "" {
@@ -48,7 +48,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 		}
 		exec, err := pipevisitor.Visit(p.Content, pipevisitor.PipeVisitorOpts{})
 		if err != nil {
-			return fmt.Errorf("parse pipe %q for scheduler: %w", p.Name, err)
+			return errors.WrapInternalf(err, errors.CodeInternal, "parse pipe %q for scheduler", p.Name)
 		}
 		if err := s.Register(exec); err != nil {
 			return err

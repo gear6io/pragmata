@@ -3,18 +3,26 @@
 package pipevisitor
 
 import (
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/antlr4-go/antlr/v4"
+	"github.com/gear6io/pragmata/pkg/errors"
 	grammar "github.com/gear6io/pragmata/pkg/grammars/pipesgrammar"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
+	"github.com/gear6io/pragmata/pkg/types/querybuildertypes"
 	"github.com/gear6io/pragmata/pkg/types/sourcetypes"
 	"github.com/gear6io/pragmata/pkg/valuer"
 	"github.com/robfig/cron/v3"
+)
+
+var (
+	CodeInvalidPipeContent    = errors.MustNewCode("invalid_pipe_content")
+	CodeInvalidCronExpression = errors.MustNewCode("invalid_cron_expression")
+	CodeAliasCollision        = errors.MustNewCode("alias_collision")
+	CodeUnknownReference      = errors.MustNewCode("unknown_reference")
 )
 
 type PipeVisitorOpts struct {
@@ -25,7 +33,7 @@ type PipeVisitorOpts struct {
 
 func (opts *PipeVisitorOpts) validate() error {
 	if opts.SourceValidator != nil && opts.FetchSources == nil {
-		return fmt.Errorf("FetchSources can not be nil, with SourceValidator")
+		return errors.NewInternalf(errors.CodeInternal, "FetchSources can not be nil, with SourceValidator")
 	}
 
 	return nil
@@ -63,10 +71,10 @@ func Visit(content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePipe, err
 	tree := p.PipeFile()
 
 	if lexErr.msg != "" {
-		return nil, fmt.Errorf("lex error: %s", lexErr.msg)
+		return nil, errors.NewInvalidInputf(CodeInvalidPipeContent, "lex error: %s", lexErr.msg)
 	}
 	if parseErr.msg != "" {
-		return nil, fmt.Errorf("parse error: %s", parseErr.msg)
+		return nil, errors.NewInvalidInputf(CodeInvalidPipeContent, "parse error: %s", parseErr.msg)
 	}
 
 	v := &pipeVisitor{
@@ -79,10 +87,10 @@ func Visit(content string, opts PipeVisitorOpts) (*pipetypes.ExecutablePipe, err
 		return nil, errors.Join(v.errs...)
 	}
 	if len(v.pipe.Nodes) == 0 {
-		return nil, fmt.Errorf("pipe has no pipeline nodes")
+		return nil, errors.NewInvalidInputf(CodeInvalidPipeContent, "pipe has no pipeline nodes")
 	}
 	if v.pipe.Type == pipetypes.PipeTypeUndefined {
-		return nil, fmt.Errorf("pipe has no type declaration")
+		return nil, errors.NewInvalidInputf(CodeInvalidPipeContent, "pipe has no type declaration")
 	}
 	return v.pipe, nil
 }
@@ -144,7 +152,7 @@ func (v *pipeVisitor) VisitDestination(ctx *grammar.DestinationContext) interfac
 func (v *pipeVisitor) VisitSchedule(ctx *grammar.ScheduleContext) interface{} {
 	expr := ctx.VALUE().GetText()
 	if _, err := cron.ParseStandard(expr); err != nil {
-		v.errs = append(v.errs, fmt.Errorf("invalid cron expression %q: %w", expr, err))
+		v.errs = append(v.errs, errors.WrapInvalidInputf(err, CodeInvalidCronExpression, "invalid cron expression %q", expr))
 		return nil
 	}
 	v.pipe.Schedule = expr
@@ -168,7 +176,7 @@ func (v *pipeVisitor) VisitSourcesClause(ctx *grammar.SourcesClauseContext) inte
 			}
 			_, found := sourcesSet[alias]
 			if found {
-				return fmt.Errorf("alias collision in sources")
+				return errors.NewInvalidInputf(CodeAliasCollision, "alias collision in sources")
 			}
 			sourcesSet[alias] = struct{}{}
 		}
@@ -223,7 +231,7 @@ func (v *pipeVisitor) VisitParam(ctx *grammar.ParamContext) interface{} {
 		defVal = strings.Trim(pv.GetText(), "\"")
 	}
 	v.pipe.Params = append(v.pipe.Params, pipetypes.ParamDef{
-		Name: name, DataType: dtype, DefaultValue: defVal,
+		Name: name, DataType: querybuildertypes.FieldDataType{String: valuer.NewString(dtype)}, DefaultValue: defVal,
 	})
 	return nil
 }
@@ -239,7 +247,7 @@ func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) in
 			header, _, _ := strings.Cut(rest, ":")
 			name := strings.TrimSpace(header)
 			if name == "" {
-				v.errs = append(v.errs, fmt.Errorf("pipeline node has empty name"))
+				v.errs = append(v.errs, errors.NewInvalidInputf(CodeInvalidPipeContent, "pipeline node has empty name"))
 				return nil
 			}
 			nodes = append(nodes, pipetypes.Node{Name: name})
@@ -253,7 +261,7 @@ func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) in
 			if _, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{
 				FromValidator: v.prqlFROMValidator(),
 			}); err != nil {
-				v.errs = append(v.errs, fmt.Errorf("node %q: %w", node.Name, err))
+				v.errs = append(v.errs, errors.WrapInvalidInputf(err, CodeInvalidPipeContent, "node %q", node.Name))
 			}
 		}
 		v.pipe.Nodes = append(v.pipe.Nodes, node)
@@ -279,7 +287,7 @@ func (v *pipeVisitor) prqlFROMValidator() prqlvisitor.FromValidator {
 			return nil
 		}
 
-		return fmt.Errorf("unknown reference [%s]", table)
+		return errors.NewInvalidInputf(CodeUnknownReference, "unknown reference [%s]", table)
 	}
 }
 

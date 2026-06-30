@@ -2,14 +2,15 @@ package implpipes
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/gear6io/pragmata/pkg/datastore"
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/executor"
 	"github.com/gear6io/pragmata/pkg/modules/pipes"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
+	"github.com/gear6io/pragmata/pkg/querier"
 	"github.com/gear6io/pragmata/pkg/scheduler"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
 	"github.com/gear6io/pragmata/pkg/types"
@@ -23,6 +24,7 @@ type module struct {
 	store     sqlstore.SQLStore
 	exec      executor.Executor
 	sched     scheduler.Scheduler
+	querier   *querier.Querier
 }
 
 // NewModule constructs a Module with all required dependencies.
@@ -31,12 +33,14 @@ func NewModule(
 	store sqlstore.SQLStore,
 	exec executor.Executor,
 	sched scheduler.Scheduler,
+	q *querier.Querier,
 ) pipes.Module {
 	return &module{
 		datastore: datastore,
 		store:     store,
 		exec:      exec,
 		sched:     sched,
+		querier:   q,
 	}
 }
 
@@ -63,7 +67,7 @@ func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePip
 	}
 
 	if err := m.store.CreatePipe(ctx, &storable); err != nil {
-		return nil, fmt.Errorf("store: %w", err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "store")
 	}
 	switch exec.Type {
 	case pipetypes.PipeTypeMaterialized:
@@ -71,17 +75,17 @@ func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePip
 			Pipe: exec,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("start materialized pipe: %w", err)
+			return nil, errors.WrapInternalf(err, errors.CodeInternal, "start materialized pipe")
 		}
 		if m.sched != nil && exec.CopySchedule != "" {
 			if err := m.sched.Register(exec); err != nil {
-				return nil, fmt.Errorf("register schedule: %w", err)
+				return nil, errors.WrapInternalf(err, errors.CodeInternal, "register schedule")
 			}
 		}
 	case pipetypes.PipeTypeCopy:
 		if m.sched != nil && exec.CopySchedule != "" {
 			if err := m.sched.Register(exec); err != nil {
-				return nil, fmt.Errorf("register schedule: %w", err)
+				return nil, errors.WrapInternalf(err, errors.CodeInternal, "register schedule")
 			}
 		}
 	}
@@ -104,12 +108,12 @@ func (m *module) UpdatePipe(ctx context.Context, exec *pipetypes.ExecutablePipe)
 		},
 	}
 	if err := m.store.UpdatePipe(ctx, storable); err != nil {
-		return nil, fmt.Errorf("store: %w", err)
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "store")
 	}
 	if exec.Type == pipetypes.PipeTypeMaterialized {
 		_, err := m.exec.StartMaterializedPipe(ctx, executor.MaterializedPipeParams{Pipe: exec})
 		if err != nil {
-			return nil, fmt.Errorf("re-sync materialized pipe: %w", err)
+			return nil, errors.WrapInternalf(err, errors.CodeInternal, "re-sync materialized pipe")
 		}
 	}
 	if m.sched != nil {
@@ -127,4 +131,16 @@ func (m *module) DeletePipe(ctx context.Context, name string) error {
 		m.sched.Unregister(name)
 	}
 	return m.store.DeletePipe(ctx, name)
+}
+
+func (m *module) ExecutePipe(ctx context.Context, name string, params map[string]string) (*pipetypes.ExecuteResult, error) {
+	gettable, err := m.store.GetPipe(ctx, name)
+	if err != nil {
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "get pipe")
+	}
+	exec, err := pipevisitor.Visit(gettable.Content, pipevisitor.PipeVisitorOpts{})
+	if err != nil {
+		return nil, errors.WrapInternalf(err, errors.CodeInternal, "parse pipe")
+	}
+	return m.querier.Execute(ctx, exec, params)
 }
