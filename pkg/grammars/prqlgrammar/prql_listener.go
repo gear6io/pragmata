@@ -22,6 +22,12 @@ type PRQLListener interface {
 	// EnterFilterBody is called when entering the filterBody production.
 	EnterFilterBody(c *FilterBodyContext)
 
+	// EnterFilterToken is called when entering the filterToken production.
+	EnterFilterToken(c *FilterTokenContext)
+
+	// EnterFilterInner is called when entering the filterInner production.
+	EnterFilterInner(c *FilterInnerContext)
+
 	// EnterDeriveClause is called when entering the deriveClause production.
 	EnterDeriveClause(c *DeriveClauseContext)
 
@@ -126,6 +132,12 @@ type PRQLListener interface {
 
 	// ExitFilterBody is called when exiting the filterBody production.
 	ExitFilterBody(c *FilterBodyContext)
+
+	// ExitFilterToken is called when exiting the filterToken production.
+	ExitFilterToken(c *FilterTokenContext)
+
+	// ExitFilterInner is called when exiting the filterInner production.
+	ExitFilterInner(c *FilterInnerContext)
 
 	// ExitDeriveClause is called when exiting the deriveClause production.
 	ExitDeriveClause(c *DeriveClauseContext)

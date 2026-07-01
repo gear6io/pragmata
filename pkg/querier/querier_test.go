@@ -62,6 +62,35 @@ func TestBuildSQL(t *testing.T) {
 				"SELECT day, plan, country, uniqExact(user_id) AS dau FROM filtered GROUP BY day, plan, country ORDER BY day DESC, dau DESC",
 		},
 		{
+			// Verifies that multi-line PRQL (newline-separated clauses) parses correctly —
+			// the same SQL the grammar must handle when a user writes clauses on separate lines.
+			name: "multi-line PRQL: filter then select on separate lines",
+			pipe: func() *pipetypes.ExecutablePipe {
+				return &pipetypes.ExecutablePipe{
+					Pipe: pipetypes.Pipe{Name: "test"},
+					Sources: pipetypes.Sources{{Alias: "raw", Table: "page_views"}},
+					Nodes: pipetypes.Nodes{
+						{Name: "result", SQL: "from raw\nfilter user_id != ''\nselect { user_id, page }"},
+					},
+				}
+			},
+			expectedSQL: "WITH raw AS (SELECT * FROM pragmata_source.page_views) SELECT user_id, page FROM raw WHERE user_id != ''",
+		},
+		{
+			// Verifies that single-line PRQL (space-separated clauses, as pipevisitor produces) also works.
+			name: "single-line PRQL: filter then select on same line",
+			pipe: func() *pipetypes.ExecutablePipe {
+				return &pipetypes.ExecutablePipe{
+					Pipe: pipetypes.Pipe{Name: "test"},
+					Sources: pipetypes.Sources{{Alias: "raw", Table: "page_views"}},
+					Nodes: pipetypes.Nodes{
+						{Name: "result", SQL: "from raw filter user_id != '' select { user_id, page }"},
+					},
+				}
+			},
+			expectedSQL: "WITH raw AS (SELECT * FROM pragmata_source.page_views) SELECT user_id, page FROM raw WHERE user_id != ''",
+		},
+		{
 			name: "empty nodes returns error",
 			pipe: func() *pipetypes.ExecutablePipe {
 				return &pipetypes.ExecutablePipe{Pipe: pipetypes.Pipe{Name: "empty"}}

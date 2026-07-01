@@ -50,6 +50,18 @@ func (s *BasePRQLListener) EnterFilterBody(ctx *FilterBodyContext) {}
 // ExitFilterBody is called when production filterBody is exited.
 func (s *BasePRQLListener) ExitFilterBody(ctx *FilterBodyContext) {}
 
+// EnterFilterToken is called when production filterToken is entered.
+func (s *BasePRQLListener) EnterFilterToken(ctx *FilterTokenContext) {}
+
+// ExitFilterToken is called when production filterToken is exited.
+func (s *BasePRQLListener) ExitFilterToken(ctx *FilterTokenContext) {}
+
+// EnterFilterInner is called when production filterInner is entered.
+func (s *BasePRQLListener) EnterFilterInner(ctx *FilterInnerContext) {}
+
+// ExitFilterInner is called when production filterInner is exited.
+func (s *BasePRQLListener) ExitFilterInner(ctx *FilterInnerContext) {}
+
 // EnterDeriveClause is called when production deriveClause is entered.
 func (s *BasePRQLListener) EnterDeriveClause(ctx *DeriveClauseContext) {}
 
