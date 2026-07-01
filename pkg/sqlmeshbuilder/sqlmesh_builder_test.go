@@ -3,10 +3,11 @@ package sqlmeshbuilder
 import (
 	"testing"
 
+	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 	"github.com/stretchr/testify/require"
 )
 
-func TestFromContent(t *testing.T) {
+func TestFromPipe(t *testing.T) {
 	tests := []struct {
 		name     string
 		pipeName string
@@ -111,17 +112,32 @@ pipeline:
 SELECT id, name, age FROM users ORDER BY age DESC LIMIT ?
 `,
 		},
+		{
+			name:     "source alias emits CTE before node CTEs",
+			pipeName: "source_pipe",
+			content: `type: VIEW
+sources:
+  - views
+pipeline:
+  @main:
+    from views
+`,
+			want: `MODEL (
+  name = source_pipe,
+  kind = VIEW,
+  dialect = 'clickhouse',
+);
+
+WITH views AS (SELECT * FROM pragmata_source.views) SELECT * FROM views
+`,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := FromContent(tt.pipeName, tt.content)
-			if err != nil {
-				require.NoError(t, err)
-			}
-			if got != tt.want {
-				require.Equal(t, tt.want, got)
-			}
+			got, err := FromPipe(&pipetypes.Pipe{Name: tt.pipeName, Content: tt.content})
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

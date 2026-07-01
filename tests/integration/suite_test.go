@@ -60,6 +60,9 @@ func run(m *testing.M) int {
 			NetworkAliases: map[string][]string{
 				networkName: {"clickhouse"},
 			},
+ 			Env: map[string]string{
+				"CLICKHOUSE_PASSWORD": "test",
+			},
 		},
 		Started: true,
 	})
@@ -83,13 +86,19 @@ func run(m *testing.M) int {
 	chConn, err = clickhouse.Open(&clickhouse.Options{
 		Addr:     []string{fmt.Sprintf("%s:%s", chHost, chPort.Port())},
 		Protocol: clickhouse.Native,
-		Auth:     clickhouse.Auth{Database: "default", Username: "default", Password: ""},
+		Auth:     clickhouse.Auth{Database: "default", Username: "default", Password: "test"},
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "open ClickHouse conn:", err)
 		return 1
 	}
 	defer chConn.Close()
+
+	// TODO(migration): replace with the actual migration utility once it exists.
+	if err := setupClickHouse(ctx, chConn); err != nil {
+		fmt.Fprintln(os.Stderr, "setup ClickHouse:", err)
+		return 1
+	}
 
 	repoRoot, err := repoRootDir()
 	if err != nil {
@@ -99,16 +108,13 @@ func run(m *testing.M) int {
 
 	// Pragmata config passed directly into the container via Reader — no host temp file needed.
 	// ClickHouse URL uses the internal network alias, not the host-mapped port.
-	// TODO(sqlmesh): /bin/true as binary_path avoids sqlmesh invocation at startup; verify this
-	// doesn't block TABLE pipe creation once materialization is in scope.
 	cfgContent := `
 server:
   host: 0.0.0.0
   port: 7181
 clickhouse:
-  url: clickhouse://clickhouse:9000
+  url: clickhouse://default:test@clickhouse:9000
 sqlmesh:
-  binary_path: /bin/true
   project_dir: /tmp/pragmata-sqlmesh
 database:
   path: /tmp/pragmata.db
@@ -158,6 +164,14 @@ database:
 		return 1
 	}
 	baseURL = fmt.Sprintf("http://%s:%s", pgHost, pgPort.Port())
+
+	// Stream Pragmata container logs to stderr so failures are diagnosable.
+	logReader, err := pgCtr.Logs(ctx)
+	if err == nil {
+		go func() {
+			io.Copy(os.Stderr, logReader) //nolint:errcheck
+		}()
+	}
 
 	return m.Run()
 }
@@ -223,9 +237,11 @@ func assertNoContent(t *testing.T, resp *http.Response) {
 	}
 }
 
-// seedTestData inserts test rows into ClickHouse after source registration has created the tables.
+// seedTestData inserts raw test rows into ClickHouse after source registration has created the tables.
 // page_views: last row has empty user_id (intentionally dirty, filtered by clean_page_views).
 // user_profiles: u4 has empty plan (filtered by clean_profiles) and country JP (no data after filter).
+// Intermediate tables (clean_page_views, clean_profiles, enriched_sessions) are populated by sqlmesh
+// when the TABLE pipes execute — do not seed them here.
 func seedTestData(t *testing.T) {
 	t.Helper()
 	ctx := context.Background()
@@ -251,6 +267,12 @@ func seedTestData(t *testing.T) {
 	`); err != nil {
 		t.Fatalf("seed user_profiles: %v", err)
 	}
+}
+
+// setupClickHouse creates the pragmata_source database that the server expects to exist.
+// TODO(migration): remove once a proper migration utility creates it on server startup.
+func setupClickHouse(ctx context.Context, conn driver.Conn) error {
+	return conn.Exec(ctx, "CREATE DATABASE IF NOT EXISTS pragmata_source")
 }
 
 func repoRootDir() (string, error) {

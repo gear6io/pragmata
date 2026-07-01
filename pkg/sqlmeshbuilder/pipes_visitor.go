@@ -9,7 +9,6 @@ import (
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
-	"github.com/huandu/go-sqlbuilder"
 )
 
 var CodeInvalidPipeContent = errors.MustNewCode("invalid_pipe_content")
@@ -31,7 +30,7 @@ func FromPipe(pipe *pipetypes.Pipe) (string, error) {
 	}
 
 	kind := kindForType(exec.Type)
-	modelName := coalesce(exec.Destination, exec.Name)
+	modelName := coalesce(exec.Destination)
 
 	var sb strings.Builder
 
@@ -52,8 +51,7 @@ func FromPipe(pipe *pipetypes.Pipe) (string, error) {
 	}
 	sb.WriteString(");\n\n")
 
-	// SQL body — copyTarget is empty for the new format (destination is the model name).
-	sql, err := buildSQL(exec.Nodes, "")
+	sql, err := prqlvisitor.BuildSQL(exec.Nodes, exec.Sources)
 	if err != nil {
 		return "", err
 	}
@@ -109,43 +107,6 @@ func tagsArray(tags []string) string {
 	return "[" + strings.Join(q, ", ") + "]"
 }
 
-// buildSQL compiles each node's PQL source to SQL, then assembles the body.
-// All-but-last nodes become CTEs; the last node's SQL is the final SELECT.
-// copyTarget, when non-empty, prepends INSERT INTO <target>.
-func buildSQL(nodes []pipetypes.Node, copyTarget string) (string, error) {
-	if len(nodes) == 0 {
-		return "", errors.NewInvalidInputf(CodeInvalidPipeContent, "no nodes provided")
-	}
-
-	outBuilder := sqlbuilder.NewInsertBuilder()
-	if copyTarget != "" {
-		outBuilder.InsertInto(copyTarget)
-	}
-
-	lastNode := nodes[len(nodes)-1]
-	lastSB, err := prqlvisitor.Visit(lastNode.SQL, prqlvisitor.PRQLVisitorOpts{})
-	if err != nil {
-		return "", errors.WithAdditionalf(err, "node %q", lastNode.Name)
-	}
-
-	for _, node := range nodes[:len(nodes)-1] {
-		sb, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{})
-		if err != nil {
-			return "", errors.WithAdditionalf(err, "node %q", node.Name)
-		}
-		lastSB.With(sqlbuilder.With(sqlbuilder.CTEQuery(node.Name).As(sb)))
-	}
-
-	compiled, _ := lastSB.BuildWithFlavor(sqlbuilder.ClickHouse)
-	if copyTarget != "" {
-		outBuilder.SQL(compiled)
-
-		finalSQL, _ := outBuilder.BuildWithFlavor(sqlbuilder.ClickHouse)
-		return finalSQL, nil
-	}
-
-	return compiled, nil
-}
 
 func init() {
 	// Populate SQLMeshParserStaticData.LiteralNames so tok() works without

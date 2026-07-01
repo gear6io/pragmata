@@ -173,9 +173,7 @@ type Pipe struct {
 	Description      string   `bun:"description" json:"description,omitempty"`
 	Tags             Tags     `bun:"tags" json:"tags,omitempty"`
 	Content          string   `bun:"content,notnull" json:"content"`
-	Datasource       string   `bun:"datasource" json:"datasource,omitempty"`
-	TargetDatasource string   `bun:"target_datasource" json:"targetDatasource,omitempty"`
-	CopySchedule     string   `bun:"copy_schedule" json:"copySchedule,omitempty"`
+	CopySchedule string `bun:"copy_schedule" json:"copySchedule,omitempty"`
 }
 
 // GettablePipe is what the API returns to clients.

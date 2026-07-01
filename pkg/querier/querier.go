@@ -10,15 +10,12 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	driver "github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/huandu/go-sqlbuilder"
 
 	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/prqlvisitor"
 	"github.com/gear6io/pragmata/pkg/template"
 	"github.com/gear6io/pragmata/pkg/types/pipetypes"
 )
-
-const sourceDatabase = "pragmata_source"
 
 // Querier executes ENDPOINT pipes against ClickHouse.
 type Querier struct {
@@ -44,39 +41,15 @@ func BuildSQL(pipe *pipetypes.ExecutablePipe, urlParams map[string]string) (stri
 	if len(pipe.Nodes) == 0 {
 		return "", errors.NewInvalidInputf(errors.CodeInvalidInput, "pipe %q has no nodes", pipe.Name)
 	}
-
-	sbs := make([]*sqlbuilder.SelectBuilder, len(pipe.Nodes))
+	rendered := make(pipetypes.Nodes, len(pipe.Nodes))
 	for i, node := range pipe.Nodes {
-		rendered, err := renderNode(node.SQL, pipe.Params, urlParams)
+		sql, err := renderNode(node.SQL, pipe.Params, urlParams)
 		if err != nil {
 			return "", errors.WithAdditionalf(err, "node %q", node.Name)
 		}
-		sb, err := prqlvisitor.Visit(rendered, prqlvisitor.PRQLVisitorOpts{})
-		if err != nil {
-			return "", errors.WithAdditionalf(err, "node %q: compile", node.Name)
-		}
-		sbs[i] = sb
+		rendered[i] = pipetypes.Node{Name: node.Name, SQL: sql}
 	}
-
-	last := len(pipe.Nodes) - 1
-	root := sbs[last]
-
-	// Collect all CTEs: sources first (so node CTEs can reference them), then preceding nodes.
-	// All CTEs must be passed in a single With() call — each With() call replaces the previous.
-	var ctes []*sqlbuilder.CTEQueryBuilder
-	for _, src := range pipe.Sources {
-		srcSB := sqlbuilder.NewSelectBuilder().Select("*").From(sourceDatabase + "." + src.Table)
-		ctes = append(ctes, sqlbuilder.CTEQuery(src.Alias).As(srcSB))
-	}
-	for i, node := range pipe.Nodes[:last] {
-		ctes = append(ctes, sqlbuilder.CTEQuery(node.Name).As(sbs[i]))
-	}
-	if len(ctes) > 0 {
-		root.With(sqlbuilder.With(ctes...))
-	}
-
-	sql, _ := root.BuildWithFlavor(sqlbuilder.ClickHouse)
-	return sql, nil
+	return prqlvisitor.BuildSQL(rendered, pipe.Sources)
 }
 
 // Execute resolves params, compiles PRQL nodes, assembles a CTE chain with source aliases,

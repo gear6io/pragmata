@@ -49,10 +49,8 @@ func (r *Runner) EnsureProject(clickhouseURL string) error {
 	if port == "" {
 		port = "9000"
 	}
-	db := strings.TrimPrefix(u.Path, "/")
-	if db == "" {
-		db = "default"
-	}
+	username := u.User.Username()
+	password, _ := u.User.Password()
 	// ponytail: minimal config; extend when multi-gateway or audit table needed
 	cfg := fmt.Sprintf(`gateways:
   default:
@@ -60,11 +58,13 @@ func (r *Runner) EnsureProject(clickhouseURL string) error {
       type: clickhouse
       host: %s
       port: %s
-      database: %s
+      username: %s
+      password: %s
+      database: pragmata_source
 
 model_defaults:
   dialect: clickhouse
-`, host, port, db)
+`, host, port, username, password)
 	return os.WriteFile(cfgPath, []byte(cfg), 0o644)
 }
 

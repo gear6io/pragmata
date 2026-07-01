@@ -3,10 +3,12 @@
 package integration
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 )
 
 // Pipe content uses PRQL (Pipeline Query Language) pipeline syntax.
@@ -15,6 +17,7 @@ const pipeCleanPageViews = `type: TABLE
 name: clean_page_views
 description: Drops incomplete page view rows and normalizes timestamp to date.
 destination: clean_page_views
+schedule: @every 5s
 
 sources:
   - raw: page_views
@@ -29,6 +32,7 @@ const pipeCleanProfiles = `type: TABLE
 name: clean_profiles
 description: Drops user profiles with missing plan tier.
 destination: clean_profiles
+schedule: @every 5s
 
 sources:
   - raw: user_profiles
@@ -43,6 +47,7 @@ const pipeEnrichSessions = `type: TABLE
 name: enrich_sessions
 description: Joins clean page views with user profiles to produce enriched sessions.
 destination: enriched_sessions
+schedule: @every 5s
 
 sources:
   - views:    clean_page_views
@@ -163,6 +168,27 @@ func TestCrossPipeExercise(t *testing.T) {
 
 	t.Run("Step4_EnrichSessions", func(t *testing.T) {
 		readResponse(t, apiDo(t, "POST", "/api/v0/pipes", postablePipe{Content: pipeEnrichSessions}), http.StatusCreated)
+	})
+
+	t.Run("Step4b_WaitForMaterialization", func(t *testing.T) {
+		// Poll until enriched_sessions has data — all three sqlmesh models must have run.
+		ctx := context.Background()
+		deadline := time.Now().Add(60 * time.Second)
+		for time.Now().Before(deadline) {
+			rows, err := chConn.Query(ctx, "SELECT count() FROM pragmata_source.enriched_sessions")
+			if err == nil {
+				var count uint64
+				if rows.Next() {
+					_ = rows.Scan(&count)
+				}
+				rows.Close()
+				if count > 0 {
+					return
+				}
+			}
+			time.Sleep(2 * time.Second)
+		}
+		t.Fatal("enriched_sessions not populated within 60s — sqlmesh materialization failed or timed out")
 	})
 
 	t.Run("Step5_DailyStats", func(t *testing.T) {

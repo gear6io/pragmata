@@ -47,7 +47,35 @@ func NewModule(
 func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePipe) (*pipetypes.GettablePipe, error) {
 	exec, err := pipevisitor.Visit(postable.Content, pipevisitor.PipeVisitorOpts{
 		FetchSources: func(srcs ...string) ([]sourcetypes.Source, error) {
-			return m.datastore.ListSources(ctx, srcs)
+			found, err := m.datastore.ListSources(ctx, srcs)
+			if err != nil {
+				return nil, err
+			}
+			if len(found) == len(srcs) {
+				return found, nil
+			}
+			// Some tables may not exist in ClickHouse yet (sqlmesh materializes async).
+			// Accept them if they're registered as a pipe destination.
+			foundSet := make(map[string]bool, len(found))
+			for _, s := range found {
+				foundSet[s.Name] = true
+			}
+			pipes, err := m.store.ListPipes(ctx)
+			if err != nil {
+				return nil, err
+			}
+			destSet := make(map[string]bool, len(pipes))
+			for _, p := range pipes {
+				if exec, err := pipevisitor.Visit(p.Content, pipevisitor.PipeVisitorOpts{}); err == nil && exec.Destination != "" {
+					destSet[exec.Destination] = true
+				}
+			}
+			for _, name := range srcs {
+				if !foundSet[name] && destSet[name] {
+					found = append(found, sourcetypes.Source{Name: name})
+				}
+			}
+			return found, nil
 		},
 		SourceValidator: prqlvisitor.NewSourceValidator,
 	})
@@ -70,7 +98,7 @@ func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePip
 		return nil, errors.WrapInternalf(err, errors.CodeInternal, "store")
 	}
 	switch exec.Type {
-	case pipetypes.PipeTypeMaterialized:
+	case pipetypes.PipeTypeMaterialized, pipetypes.PipeTypeTable:
 		_, err := m.exec.StartMaterializedPipe(ctx, executor.MaterializedPipeParams{
 			Pipe: exec,
 		})
@@ -110,7 +138,7 @@ func (m *module) UpdatePipe(ctx context.Context, exec *pipetypes.ExecutablePipe)
 	if err := m.store.UpdatePipe(ctx, storable); err != nil {
 		return nil, errors.WrapInternalf(err, errors.CodeInternal, "store")
 	}
-	if exec.Type == pipetypes.PipeTypeMaterialized {
+	if exec.Type == pipetypes.PipeTypeMaterialized || exec.Type == pipetypes.PipeTypeTable {
 		_, err := m.exec.StartMaterializedPipe(ctx, executor.MaterializedPipeParams{Pipe: exec})
 		if err != nil {
 			return nil, errors.WrapInternalf(err, errors.CodeInternal, "re-sync materialized pipe")

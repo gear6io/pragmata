@@ -168,7 +168,8 @@ func (v *pipeVisitor) VisitOwner(ctx *grammar.OwnerContext) interface{} {
 }
 
 func (v *pipeVisitor) VisitDestination(ctx *grammar.DestinationContext) interface{} {
-	v.pipe.Destination = ctx.VALUE().GetText()
+	dest := ctx.VALUE().GetText()
+	v.pipe.Destination = dest
 	return nil
 }
 
