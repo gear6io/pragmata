@@ -30,7 +30,6 @@ func (m *initialSchema) Up(ctx context.Context, db *bun.DB) error {
 			Description      string    `bun:"description,type:text,default:''"`
 			Tags             string    `bun:"tags,notnull,type:text,default:'[]'"`
 			Content          string    `bun:"content,notnull,type:text,default:'[]'"`
-			CopySchedule string `bun:"copy_schedule,type:text,default:''"`
 			CreatedBy        string    `bun:"created_by,type:text,default:''"`
 			UpdatedBy        string    `bun:"updated_by,type:text,default:''"`
 			CreatedAt        time.Time `bun:"created_at,notnull,default:current_timestamp"`

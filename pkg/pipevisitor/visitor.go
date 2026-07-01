@@ -180,7 +180,6 @@ func (v *pipeVisitor) VisitSchedule(ctx *grammar.ScheduleContext) interface{} {
 		return nil
 	}
 	v.pipe.Schedule = expr
-	v.pipe.CopySchedule = expr // persisted to DB; used by cronscheduler on restart
 	return nil
 }
 

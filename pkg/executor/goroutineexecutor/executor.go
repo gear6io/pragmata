@@ -88,6 +88,7 @@ func (e *Executor) RunPipe(ctx context.Context, pipeID string) error {
 	if err != nil {
 		return errors.WithAdditionalf(err, "load pipe %q", pipeID)
 	}
+
 	exec, err := pipevisitor.Visit(pipe.Content, pipevisitor.PipeVisitorOpts{})
 	if err != nil {
 		return errors.WithAdditionalf(err, "parse pipe %q", pipeID)

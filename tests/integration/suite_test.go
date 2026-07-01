@@ -165,15 +165,17 @@ database:
 	}
 	baseURL = fmt.Sprintf("http://%s:%s", pgHost, pgPort.Port())
 
-	// Stream Pragmata container logs to stderr so failures are diagnosable.
-	logReader, err := pgCtr.Logs(ctx)
-	if err == nil {
-		go func() {
-			io.Copy(os.Stderr, logReader) //nolint:errcheck
-		}()
+	result := m.Run()
+
+	// Dump all Pragmata container logs after tests finish — Logs() is a snapshot,
+	// not a stream, so reading after m.Run() captures everything generated during tests.
+	fmt.Fprintln(os.Stderr, "\n--- pragmata container logs ---")
+	if logReader, err := pgCtr.Logs(ctx); err == nil {
+		io.Copy(os.Stderr, logReader) //nolint:errcheck
+		logReader.Close()             //nolint:errcheck
 	}
 
-	return m.Run()
+	return result
 }
 
 // apiDo sends a JSON request; caller must not use resp after returning — readResponse

@@ -68,7 +68,7 @@ func (s *Store) ListPipes(ctx context.Context) ([]*pipetypes.GettablePipe, error
 func (s *Store) UpdatePipe(ctx context.Context, pipe *pipetypes.StorablePipe) error {
 	pipe.UpdatedAt = time.Now()
 	res, err := s.bundb.NewUpdate().Model(pipe).
-		Column("type", "description", "tags", "content", "copy_schedule", "updated_at").
+		Column("type", "description", "tags", "content", "updated_at").
 		Where("name = ?", pipe.Name).
 		Exec(ctx)
 	if err != nil {

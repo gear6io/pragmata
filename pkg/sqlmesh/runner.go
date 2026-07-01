@@ -52,6 +52,7 @@ func (r *Runner) EnsureProject(clickhouseURL string) error {
 	username := u.User.Username()
 	password, _ := u.User.Password()
 	// ponytail: minimal config; extend when multi-gateway or audit table needed
+	// database field omitted — rejected by sqlmesh clickhouse connector as extra input
 	cfg := fmt.Sprintf(`gateways:
   default:
     connection:
@@ -60,7 +61,6 @@ func (r *Runner) EnsureProject(clickhouseURL string) error {
       port: %s
       username: %s
       password: %s
-      database: pragmata_source
 
 model_defaults:
   dialect: clickhouse

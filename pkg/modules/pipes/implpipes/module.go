@@ -105,13 +105,13 @@ func (m *module) CreatePipe(ctx context.Context, postable *pipetypes.PostablePip
 		if err != nil {
 			return nil, errors.WrapInternalf(err, errors.CodeInternal, "start materialized pipe")
 		}
-		if m.sched != nil && exec.CopySchedule != "" {
+		if m.sched != nil {
 			if err := m.sched.Register(exec); err != nil {
 				return nil, errors.WrapInternalf(err, errors.CodeInternal, "register schedule")
 			}
 		}
 	case pipetypes.PipeTypeCopy:
-		if m.sched != nil && exec.CopySchedule != "" {
+		if m.sched != nil {
 			if err := m.sched.Register(exec); err != nil {
 				return nil, errors.WrapInternalf(err, errors.CodeInternal, "register schedule")
 			}
@@ -145,11 +145,8 @@ func (m *module) UpdatePipe(ctx context.Context, exec *pipetypes.ExecutablePipe)
 		}
 	}
 	if m.sched != nil {
-		if exec.CopySchedule != "" {
-			_ = m.sched.Register(exec)
-		} else {
-			m.sched.Unregister(exec.Name)
-		}
+		m.sched.Unregister(exec.Name)
+		_ = m.sched.Register(exec)
 	}
 	return storable, nil
 }

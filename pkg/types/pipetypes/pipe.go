@@ -168,12 +168,11 @@ func (t *Tags) Scan(src any) error {
 
 // Pipe holds the persisted fields for a pipe definition.
 type Pipe struct {
-	Name             string   `bun:"name,pk" json:"name"`
-	Type             PipeType `bun:"type,notnull" json:"type"`
-	Description      string   `bun:"description" json:"description,omitempty"`
-	Tags             Tags     `bun:"tags" json:"tags,omitempty"`
-	Content          string   `bun:"content,notnull" json:"content"`
-	CopySchedule string `bun:"copy_schedule" json:"copySchedule,omitempty"`
+	Name        string   `bun:"name,pk" json:"name"`
+	Type        PipeType `bun:"type,notnull" json:"type"`
+	Description string   `bun:"description" json:"description,omitempty"`
+	Tags        Tags     `bun:"tags" json:"tags,omitempty"`
+	Content     string   `bun:"content,notnull" json:"content"`
 }
 
 // GettablePipe is what the API returns to clients.

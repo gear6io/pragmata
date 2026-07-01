@@ -3,11 +3,12 @@ package cronscheduler
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/executor"
 	"github.com/gear6io/pragmata/pkg/pipevisitor"
 	"github.com/gear6io/pragmata/pkg/sqlstore"
@@ -42,9 +43,6 @@ func (s *Scheduler) Start(ctx context.Context) error {
 		return err
 	}
 	for _, p := range pipes {
-		if p.CopySchedule == "" {
-			continue
-		}
 		exec, err := pipevisitor.Visit(p.Content, pipevisitor.PipeVisitorOpts{})
 		if err != nil {
 			return err
@@ -70,15 +68,19 @@ func (s *Scheduler) Register(pipe *pipetypes.ExecutablePipe) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if pipe.Schedule == "" {
+		slog.Warn("missing schedule", "pipe", pipe.Name)
+		return nil
+	}
+
 	if entryID, ok := s.entries[pipe.Name]; ok {
 		s.cron.Remove(entryID)
 	}
-
 	pipeName := pipe.Name
 	exec := s.exec
-	entryID, err := s.cron.AddFunc(pipe.CopySchedule, func() {
+	entryID, err := s.cron.AddFunc(pipe.Schedule, func() {
 		if err := exec.RunPipe(context.Background(), pipeName); err != nil {
-			log.Printf("pipe %q run failed: %v", pipeName, err)
+			slog.Error("pipe run failed", "pipe", pipeName, errors.Attr(err))
 		}
 	})
 	if err != nil {
