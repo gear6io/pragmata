@@ -191,6 +191,16 @@ func TestCrossPipeExercise(t *testing.T) {
 		t.Fatal("enriched_sessions not populated within 60s — sqlmesh materialization failed or timed out")
 	})
 
+	t.Run("Step4c_VerifyTransformations", func(t *testing.T) {
+		ctx := context.Background()
+		// clean_page_views: 5 rows (row with empty user_id dropped by filter)
+		assertTableCount(t, ctx, "clean_page_views", 5)
+		// clean_profiles: 3 rows (u4 with empty plan dropped by filter)
+		assertTableCount(t, ctx, "clean_profiles", 3)
+		// enriched_sessions: 5 rows (inner join; u4 absent from clean_profiles, '' user_id absent from clean_page_views)
+		assertTableCount(t, ctx, "enriched_sessions", 5)
+	})
+
 	t.Run("Step5_DailyStats", func(t *testing.T) {
 		readResponse(t, apiDo(t, "POST", "/api/v0/pipes", postablePipe{Content: pipeDailyStats}), http.StatusCreated)
 
@@ -205,10 +215,12 @@ func TestCrossPipeExercise(t *testing.T) {
 
 	t.Run("Step6_ExecuteEndpoint", func(t *testing.T) {
 		data := readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats", nil), http.StatusOK)
-		assertRowsNotEmpty(t, data)
+		// 3 aggregated groups: (2024-01-15,pro,US), (2024-01-16,pro,US), (2024-01-16,free,DE)
+		assertRowCount(t, data, 3)
 
 		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?plan=pro", nil), http.StatusOK)
 		assertAllPlan(t, data, "pro")
+		assertRowCount(t, data, 2) // pro on 2024-01-15 and 2024-01-16
 
 		// JP has no clean rows (u4 has empty plan, filtered by clean_profiles).
 		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?country=JP", nil), http.StatusOK)
@@ -218,13 +230,16 @@ func TestCrossPipeExercise(t *testing.T) {
 	t.Run("Step7_UpdateEndpoint", func(t *testing.T) {
 		readResponse(t, apiDo(t, "PUT", "/api/v0/pipes/daily_stats", postablePipe{Content: pipeDailyStatsWithStartDay}), http.StatusOK)
 
-		// Verify start_day filters correctly.
+		// start_day=2024-01-16 excludes 2024-01-15 rows → 2 groups remain: (2024-01-16,pro,US), (2024-01-16,free,DE)
 		data := readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?start_day=2024-01-16", nil), http.StatusOK)
 		assertAllDay(t, data, "2024-01-16")
+		assertRowCount(t, data, 2)
 
+		// plan=pro further narrows to 1 group: (2024-01-16,pro,US)
 		data = readResponse(t, apiDo(t, "GET", "/api/v0/execute/daily_stats?plan=pro&start_day=2024-01-16", nil), http.StatusOK)
 		assertAllPlan(t, data, "pro")
 		assertAllDay(t, data, "2024-01-16")
+		assertRowCount(t, data, 1)
 	})
 
 	t.Run("Step10_DeletePipes", func(t *testing.T) {
@@ -260,13 +275,6 @@ func unmarshalExecute(t *testing.T, data json.RawMessage) executeResult {
 	return r
 }
 
-func assertRowsNotEmpty(t *testing.T, data json.RawMessage) {
-	t.Helper()
-	if r := unmarshalExecute(t, data); len(r.Data) == 0 {
-		t.Error("expected non-empty execute result")
-	}
-}
-
 func assertRowCount(t *testing.T, data json.RawMessage, n int) {
 	t.Helper()
 	if r := unmarshalExecute(t, data); len(r.Data) != n {
@@ -296,5 +304,23 @@ func assertAllDay(t *testing.T, data json.RawMessage, day string) {
 		if got != day {
 			t.Errorf("execute result: want day %q, got %v (row: %v)", day, row["day"], row)
 		}
+	}
+}
+
+func assertTableCount(t *testing.T, ctx context.Context, table string, want int) {
+	t.Helper()
+	rows, err := chConn.Query(ctx, "SELECT count() FROM pragmata_source."+table)
+	if err != nil {
+		t.Fatalf("query pragmata_source.%s: %v", table, err)
+	}
+	defer rows.Close()
+	var count uint64
+	if rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			t.Fatalf("scan count for pragmata_source.%s: %v", table, err)
+		}
+	}
+	if int(count) != want {
+		t.Errorf("pragmata_source.%s: want %d rows, got %d", table, want, count)
 	}
 }
