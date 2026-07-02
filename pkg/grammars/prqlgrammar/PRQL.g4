@@ -42,7 +42,23 @@ fromClause: KW_FROM IDENT KW_FINAL?;
 
 filterClause: KW_FILTER filterBody;
 
-filterBody: FILTER_LINE+;
+// filterBody captures an arbitrary ClickHouse SQL expression in the filter position.
+// Uses the same token-level approach as opaqueExpr so clause keywords (select, from, etc.)
+// correctly terminate the body regardless of line/column position.
+// GetTextFromInterval is used in the visitor to reconstruct the original text with whitespace.
+filterBody: filterToken+ ;
+
+filterToken
+    : IDENT | INTEGER | FLOAT | STRING
+    | STAR | PLUS | MINUS | SLASH | PERCENT | PIPE
+    | EQ | NEQ | LT | GT | LTE | GTE | CAST_OP
+    | DOT | RANGE
+    | KW_AS | KW_FINAL | KW_INNER | KW_LEFT | KW_RIGHT | KW_FULL | KW_SIDE
+    | LPAREN filterInner* RPAREN
+    | LBRACE filterInner* RBRACE
+    ;
+
+filterInner: filterToken | COMMA ;
 
 // ── derive ───────────────────────────────────────────────────────────────────── derive { name =
 // <ch-expr> [, name = <ch-expr>]* } Adds computed columns to every row without grouping.

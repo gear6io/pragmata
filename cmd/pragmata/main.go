@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +12,7 @@ import (
 	"github.com/gear6io/pragmata/pkg/config"
 	"github.com/gear6io/pragmata/pkg/datastore"
 	errors "github.com/gear6io/pragmata/pkg/errors"
+	"github.com/gear6io/pragmata/pkg/logging"
 	"github.com/gear6io/pragmata/pkg/executor/goroutineexecutor"
 	httpserver "github.com/gear6io/pragmata/pkg/http/server"
 	"github.com/gear6io/pragmata/pkg/modules/pipes/implpipes"
@@ -51,6 +52,8 @@ func serveCmd() *cobra.Command {
 }
 
 func serve(ctx context.Context) error {
+	logging.NewLogger(slog.LevelInfo)
+
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		return errors.WrapInternalf(err, errors.CodeInternal, "load config")
@@ -82,7 +85,7 @@ func serve(ctx context.Context) error {
 	// Executor
 	exec := goroutineexecutor.New(store, runner)
 	if err := exec.ResumeInterrupted(ctx); err != nil {
-		log.Printf("warn: resume interrupted jobs: %v", err)
+		slog.Warn("resume interrupted jobs failed", errors.Attr(err))
 	}
 
 	// Scheduler — loads its own pipes from the store on Start
@@ -118,7 +121,7 @@ func serve(ctx context.Context) error {
 	// HTTP server
 	addr := httpserver.Addr(cfg.Server.Host, cfg.Server.Port)
 	srv := httpserver.New(httpserver.NewProvider(h, suggestH, sourceH), store, addr)
-	log.Printf("pragmata listening on %s", addr)
+	slog.Info("listening", "addr", addr)
 
 	// Graceful shutdown on SIGINT/SIGTERM
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)

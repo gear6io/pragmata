@@ -22,6 +22,12 @@ type PRQLVisitor interface {
 	// Visit a parse tree produced by PRQL#filterBody.
 	VisitFilterBody(ctx *FilterBodyContext) interface{}
 
+	// Visit a parse tree produced by PRQL#filterToken.
+	VisitFilterToken(ctx *FilterTokenContext) interface{}
+
+	// Visit a parse tree produced by PRQL#filterInner.
+	VisitFilterInner(ctx *FilterInnerContext) interface{}
+
 	// Visit a parse tree produced by PRQL#deriveClause.
 	VisitDeriveClause(ctx *DeriveClauseContext) interface{}
 

@@ -1,0 +1,14 @@
+type: ENDPOINT
+name: simple_endpoint
+sources:
+  - events
+  - users
+pipeline:
+  @raw:
+    from events
+    select { event_id, user_id, ts }
+
+  @result:
+    from raw
+    join users (==user_id)
+    select { event_id, user_id, ts }

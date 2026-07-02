@@ -1,0 +1,11 @@
+type: ENDPOINT
+name: endpoint_with_params
+sources:
+  - evt: raw.events
+params:
+  status: { type: string, default: "active" }
+pipeline:
+  @result:
+    from evt
+    filter status == {{ params.status }}
+    select { event_id, ts }

@@ -14,7 +14,7 @@ WS      : [ \t]+ -> skip ;
 // All other keywords simply emit their token type; the parser handles structure.
 
 KW_FROM       : F R O M       [ \t]+ ;
-KW_FILTER     : F I L T E R   [ \t]+ -> pushMode(FILTER_BODY_MODE) ;
+KW_FILTER     : F I L T E R   [ \t]+ ;
 KW_DERIVE     : D E R I V E   [ \t]* ;
 KW_SELECT     : S E L E C T   [ \t]* ;
 KW_GROUP      : G R O U P     [ \t]* ;
@@ -85,76 +85,6 @@ IDENT : [a-zA-Z_][a-zA-Z0-9_]* ;
 
 NEWLINE : [\r\n]+ -> skip ;
 
-// ── FILTER_BODY_MODE ───────────────────────────────────────────────────────────
-//
-// Activated immediately after KW_FILTER.  The filter expression may span
-// multiple lines; indented continuation lines (starting with whitespace) are
-// part of the same filter.  A non-indented PQL keyword at column 0 ends the
-// filter body and switches back to default mode.
-//
-// Each input line (including its newline) is emitted as a single FILTER_LINE
-// token.  The PQL compiler joins all FILTER_LINE values and passes the result
-// to the FilterLang parser as a single string.
-//
-// Keyword detection uses GetCharPositionInLine() == 0 (the ANTLR4 Go runtime
-// exposes this on the lexer as p.GetCharPositionInLine()).  On keyword match
-// we switch to default mode (not pop, because we pushed from default mode and
-// the stack is now [DEFAULT, FILTER_BODY_MODE] — switch leaves [DEFAULT]).
-
-mode FILTER_BODY_MODE;
-
-FILTER_KW_FROM
-    : { p.GetCharPositionInLine() == 0 }? F R O M [ \t]+
-      -> type(KW_FROM), mode(DEFAULT_MODE) ;
-
-FILTER_KW_FILTER
-    : { p.GetCharPositionInLine() == 0 }? F I L T E R [ \t]+
-      -> type(KW_FILTER), mode(FILTER_BODY_MODE) ;
-
-FILTER_KW_DERIVE
-    : { p.GetCharPositionInLine() == 0 }? D E R I V E [ \t]*
-      -> type(KW_DERIVE), mode(DEFAULT_MODE) ;
-
-FILTER_KW_SELECT
-    : { p.GetCharPositionInLine() == 0 }? S E L E C T [ \t]*
-      -> type(KW_SELECT), mode(DEFAULT_MODE) ;
-
-FILTER_KW_GROUP
-    : { p.GetCharPositionInLine() == 0 }? G R O U P [ \t]*
-      -> type(KW_GROUP), mode(DEFAULT_MODE) ;
-
-FILTER_KW_JOIN
-    : { p.GetCharPositionInLine() == 0 }? J O I N [ \t]+
-      -> type(KW_JOIN), mode(DEFAULT_MODE) ;
-
-FILTER_KW_ARRAY_JOIN
-    : { p.GetCharPositionInLine() == 0 }? A R R A Y '_' J O I N [ \t]+
-      -> type(KW_ARRAY_JOIN), mode(DEFAULT_MODE) ;
-
-FILTER_KW_SORT
-    : { p.GetCharPositionInLine() == 0 }? S O R T [ \t]*
-      -> type(KW_SORT), mode(DEFAULT_MODE) ;
-
-FILTER_KW_TAKE
-    : { p.GetCharPositionInLine() == 0 }? T A K E [ \t]+
-      -> type(KW_TAKE), mode(DEFAULT_MODE) ;
-
-FILTER_KW_SKIP
-    : { p.GetCharPositionInLine() == 0 }? S K I P [ \t]+
-      -> type(KW_SKIP), mode(DEFAULT_MODE) ;
-
-FILTER_KW_WINDOW
-    : { p.GetCharPositionInLine() == 0 }? W I N D O W [ \t]*
-      -> type(KW_WINDOW), mode(DEFAULT_MODE) ;
-
-// One FILTER_LINE per input line (content + newline).
-// The lexer accumulates characters with -> more and emits on the newline.
-FILTER_CHAR : ~[\r\n] -> more ;
-FILTER_NL   : [\r\n]  -> type(FILTER_LINE) ;
-
-// Sentinel: reserves the FILTER_LINE token type so FILTER_NL can retype itself.
-// The space byte never appears here; this rule is never matched in DEFAULT_MODE.
-FILTER_LINE : ' ' ;
 
 // ── Fragment helpers ────────────────────────────────────────────────────────────
 

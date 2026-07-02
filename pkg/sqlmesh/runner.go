@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/gear6io/pragmata/pkg/errors"
 	"github.com/gear6io/pragmata/pkg/sqlmeshbuilder"
@@ -17,9 +18,11 @@ import (
 )
 
 // Runner wraps sqlmesh CLI invocations.
+// mu serializes all subprocess calls — DuckDB state backend allows only one writer at a time.
 type Runner struct {
 	ProjectDir string
 	BinaryPath string // defaults to "sqlmesh"
+	mu         sync.Mutex
 }
 
 // New creates a Runner. BinaryPath defaults to "sqlmesh" if empty.
@@ -45,26 +48,26 @@ func (r *Runner) EnsureProject(clickhouseURL string) error {
 		return errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "parse clickhouse url")
 	}
 	host := u.Hostname()
-	port := u.Port()
-	if port == "" {
-		port = "9000"
-	}
-	db := strings.TrimPrefix(u.Path, "/")
-	if db == "" {
-		db = "default"
-	}
+	username := u.User.Username()
+	password, _ := u.User.Password()
 	// ponytail: minimal config; extend when multi-gateway or audit table needed
+	// database field omitted — rejected by sqlmesh clickhouse connector as extra input
+	// state_connection uses duckdb (default sqlmesh state backend); ClickHouse cannot store state
 	cfg := fmt.Sprintf(`gateways:
   default:
     connection:
       type: clickhouse
       host: %s
-      port: %s
-      database: %s
+      port: 8123
+      username: %s
+      password: %s
+    state_connection:
+      type: duckdb
+      database: %s/state.duckdb
 
 model_defaults:
   dialect: clickhouse
-`, host, port, db)
+`, host, username, password, r.ProjectDir)
 	return os.WriteFile(cfgPath, []byte(cfg), 0o644)
 }
 
@@ -72,6 +75,8 @@ model_defaults:
 func (r *Runner) SyncModel(_ context.Context, pipe *pipetypes.Pipe) error {
 	sql, err := sqlmeshbuilder.FromPipe(pipe)
 	if err != nil {
+		dest := filepath.Join(r.ProjectDir, "models", pipe.Name+".sql")
+		_ = os.Remove(dest)
 		return errors.WrapInternalf(err, errors.CodeInternal, "generate model for %q", pipe.Name)
 	}
 	modelsDir := filepath.Join(r.ProjectDir, "models")
@@ -96,10 +101,10 @@ func (r *Runner) PlanApply(ctx context.Context) error {
 	return r.run(ctx, "plan", "--auto-apply")
 }
 
-// Run executes `sqlmesh run --model name [--start S --end E]`.
+// Run executes `sqlmesh run --select-model name [--start S --end E]`.
 // interval may be nil for a full run.
 func (r *Runner) Run(ctx context.Context, modelName string, interval *executortypes.TimeInterval) error {
-	args := []string{"run", "--model", modelName}
+	args := []string{"run", "--select-model", modelName}
 	if interval != nil {
 		args = append(args,
 			"--start", interval.Start.Format("2006-01-02"),
@@ -119,6 +124,8 @@ func (r *Runner) BackfillIntervals(_ *pipetypes.Pipe) []executortypes.TimeInterv
 // run executes the sqlmesh binary with the given args inside ProjectDir.
 // A non-zero exit code becomes an error that includes captured stdout+stderr.
 func (r *Runner) run(ctx context.Context, args ...string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	cmd := exec.CommandContext(ctx, r.BinaryPath, args...)
 	cmd.Dir = r.ProjectDir
 	out, err := cmd.CombinedOutput()

@@ -23,6 +23,7 @@ var (
 	CodeInvalidCronExpression = errors.MustNewCode("invalid_cron_expression")
 	CodeAliasCollision        = errors.MustNewCode("alias_collision")
 	CodeUnknownReference      = errors.MustNewCode("unknown_reference")
+	CodeUnsupportedPipeType   = errors.MustNewCode("unsupported_pipe_type")
 )
 
 type PipeVisitorOpts struct {
@@ -104,7 +105,29 @@ func (v *pipeVisitor) VisitPipeFile(ctx *grammar.PipeFileContext) interface{} {
 }
 
 func (v *pipeVisitor) VisitType(ctx *grammar.TypeContext) interface{} {
-	v.pipe.Type = mapPipeType(ctx.VALUE().GetText())
+	pipeType := pipetypes.PipeTypeUndefined
+
+	ptype := ctx.VALUE().GetText()
+	switch strings.TrimSpace(ptype) {
+	case "ENDPOINT":
+		pipeType = pipetypes.PipeTypeEndpoint
+	case "TABLE":
+		pipeType = pipetypes.PipeTypeTable
+	case "VIEW":
+		pipeType = pipetypes.PipeTypeView
+	case "INCREMENTAL":
+		pipeType = pipetypes.PipeTypeIncremental
+	case "SNAPSHOT":
+		pipeType = pipetypes.PipeTypeSnapshot
+	case "MATERIALIZED":
+		pipeType = pipetypes.PipeTypeMaterialized
+	case "COPY":
+		pipeType = pipetypes.PipeTypeCopy
+	default:
+		v.errs = append(v.errs, errors.NewInvalidInputf(CodeUnsupportedPipeType, "invalid pipe type: %s", ptype))
+	}
+
+	v.pipe.Type = pipeType
 	return nil
 }
 
@@ -145,7 +168,8 @@ func (v *pipeVisitor) VisitOwner(ctx *grammar.OwnerContext) interface{} {
 }
 
 func (v *pipeVisitor) VisitDestination(ctx *grammar.DestinationContext) interface{} {
-	v.pipe.Destination = ctx.VALUE().GetText()
+	dest := ctx.VALUE().GetText()
+	v.pipe.Destination = dest
 	return nil
 }
 
@@ -156,7 +180,6 @@ func (v *pipeVisitor) VisitSchedule(ctx *grammar.ScheduleContext) interface{} {
 		return nil
 	}
 	v.pipe.Schedule = expr
-	v.pipe.CopySchedule = expr // persisted to DB; used by cronscheduler on restart
 	return nil
 }
 
@@ -261,7 +284,7 @@ func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) in
 			if _, err := prqlvisitor.Visit(node.SQL, prqlvisitor.PRQLVisitorOpts{
 				FromValidator: v.prqlFROMValidator(),
 			}); err != nil {
-				v.errs = append(v.errs, errors.WrapInvalidInputf(err, CodeInvalidPipeContent, "node %q", node.Name))
+				v.errs = append(v.errs, errors.WithAdditionalf(err, "node %q", node.Name))
 			}
 		}
 		v.pipe.Nodes = append(v.pipe.Nodes, node)
@@ -270,45 +293,20 @@ func (v *pipeVisitor) VisitPipelineClause(ctx *grammar.PipelineClauseContext) in
 }
 
 func (v *pipeVisitor) prqlFROMValidator() prqlvisitor.FromValidator {
-	return func(table string, isNode bool) error {
-		if isNode {
-			has := slices.ContainsFunc(v.pipe.Nodes, func(node pipetypes.Node) bool {
-				return node.Name == table
-			})
-			if has {
-				return nil
-			}
+	return func(table string, _ bool) error {
+		if slices.ContainsFunc(v.pipe.Nodes, func(node pipetypes.Node) bool {
+			return node.Name == table
+		}) {
+			return nil
 		}
 
-		has := slices.ContainsFunc(v.pipe.Sources, func(src pipetypes.Source) bool {
+		if slices.ContainsFunc(v.pipe.Sources, func(src pipetypes.Source) bool {
 			return src.String() == table
-		})
-		if has {
+		}) {
 			return nil
 		}
 
 		return errors.NewInvalidInputf(CodeUnknownReference, "unknown reference [%s]", table)
-	}
-}
-
-func mapPipeType(s string) pipetypes.PipeType {
-	switch strings.ToUpper(strings.TrimSpace(s)) {
-	case "ENDPOINT":
-		return pipetypes.PipeTypeEndpoint
-	case "TABLE":
-		return pipetypes.PipeTypeTable
-	case "VIEW":
-		return pipetypes.PipeTypeView
-	case "INCREMENTAL":
-		return pipetypes.PipeTypeIncremental
-	case "SNAPSHOT":
-		return pipetypes.PipeTypeSnapshot
-	case "MATERIALIZED":
-		return pipetypes.PipeTypeMaterialized
-	case "COPY":
-		return pipetypes.PipeTypeCopy
-	default:
-		return pipetypes.PipeType{String: valuer.NewString(strings.ToUpper(strings.TrimSpace(s)))}
 	}
 }
 

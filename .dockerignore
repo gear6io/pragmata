@@ -1,0 +1,9 @@
+.git
+.venv
+.vscode
+.code-review-graph
+frontend/node_modules
+node_modules
+*.db
+# compiled binary — rebuilt inside Docker
+pragmata

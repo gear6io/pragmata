@@ -41,7 +41,7 @@ func Render(sql string, params map[string]string) (string, error) {
 		inner := block[2 : len(block)-2] // strip {{ and }}
 		resolved, err := resolveBlock(inner, params)
 		if err != nil {
-			renderErr = errors.WrapInvalidInputf(err, errors.CodeInvalidInput, "block %q", block)
+			renderErr = errors.WithAdditionalf(err, "block %q", block)
 			return block
 		}
 		return resolved
@@ -77,7 +77,7 @@ func resolveBlock(expr string, params map[string]string) (string, error) {
 		}
 		rendered, err := formatTyped(typeName, val, defaultVal, provided)
 		if err != nil {
-			resolveErr = errors.WrapInvalidInputf(err, CodeInvalidParam, "param %q", paramName)
+			resolveErr = errors.WithAdditionalf(err, "param %q", paramName)
 			return call
 		}
 		return rendered

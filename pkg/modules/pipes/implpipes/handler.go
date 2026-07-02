@@ -99,7 +99,7 @@ func (h *handler) ExecutePipe(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := h.module.ExecutePipe(r.Context(), name, params)
 	if err != nil {
-		render.ErrorFrom(w, errors.WrapInternalf(err, errors.CodeInternal, "execute pipe %q", name))
+		render.ErrorFrom(w, err)
 		return
 	}
 	render.Success(w, http.StatusOK, result)

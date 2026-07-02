@@ -24,9 +24,10 @@ if row == nil {
 }
 ```
 
-### Use `Wrap` when you received an error from another layer
+### Use `Wrap` only at system boundaries
 
-Preserves the original cause for `errors.Is` / `errors.As` traversal.
+When you received an **untyped** error from an external library or stdlib and
+need to assign a type, code, and context message:
 
 ```go
 rows, err := db.Query(ctx, q)
@@ -39,10 +40,29 @@ if errors.Is(err, sql.ErrNoRows) {
 }
 ```
 
-### Shorthand: when the module layer returns a typed error
+### Use `WithAdditionalf` when passing a typed error up the internal stack
 
-If the module already returns a `*errors.base`, wrapping at the handler boundary
-is still correct — hint propagation copies suggestions/retry through each `Wrap`.
+If the error comes from **another internal function** (one that already uses
+`pkg/errors`), do NOT wrap it — that silently overrides its type and code.
+Use `WithAdditionalf` to append context without changing the error's identity:
+
+```go
+// BAD — replaces InvalidInput with Internal
+exec, err := pipevisitor.Visit(content, opts)
+if err != nil {
+    return errors.WrapInternalf(err, errors.CodeInternal, "parse pipe %q", name)
+}
+
+// GOOD — keeps the original type/code, adds caller context
+exec, err := pipevisitor.Visit(content, opts)
+if err != nil {
+    return errors.WithAdditionalf(err, "parse pipe %q", name)
+}
+```
+
+`WithAdditionalf` is the default choice inside any function that only calls
+other internal functions. Reserve `Wrap*` for the layer that first touches
+an external error.
 
 ---
 

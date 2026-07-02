@@ -27,6 +27,14 @@ func (v *BasePRQLVisitor) VisitFilterBody(ctx *FilterBodyContext) interface{} {
 	return v.VisitChildren(ctx)
 }
 
+func (v *BasePRQLVisitor) VisitFilterToken(ctx *FilterTokenContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
+func (v *BasePRQLVisitor) VisitFilterInner(ctx *FilterInnerContext) interface{} {
+	return v.VisitChildren(ctx)
+}
+
 func (v *BasePRQLVisitor) VisitDeriveClause(ctx *DeriveClauseContext) interface{} {
 	return v.VisitChildren(ctx)
 }

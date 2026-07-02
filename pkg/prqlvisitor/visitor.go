@@ -124,7 +124,11 @@ func (v *prqlVisitor) visitFromClause(ctx prql.IFromClauseContext) {
 }
 
 func (v *prqlVisitor) visitFilterClause(ctx prql.IFilterClauseContext) {
-	cond := filterLines(ctx.FilterBody().AllFILTER_LINE())
+	body := ctx.FilterBody()
+	cs := body.GetStart().GetInputStream().(antlr.CharStream)
+	cond := strings.TrimSpace(cs.GetTextFromInterval(antlr.NewInterval(
+		body.GetStart().GetStart(),
+		body.GetStop().GetStop())))
 	if v.inGroup {
 		v.sb.Having(cond)
 	} else {
@@ -208,16 +212,6 @@ func (v *prqlVisitor) visitWindowClause(ctx prql.IWindowClauseContext) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-func filterLines(tokens []antlr.TerminalNode) string {
-	parts := make([]string, 0, len(tokens))
-	for _, tok := range tokens {
-		line := strings.TrimSpace(strings.TrimRight(tok.GetText(), "\r\n"))
-		if line != "" {
-			parts = append(parts, line)
-		}
-	}
-	return strings.Join(parts, " ")
-}
 
 func keyItemExprs(item prql.IKeyItemContext) (selectExpr, groupExpr string) {
 	switch k := item.(type) {
