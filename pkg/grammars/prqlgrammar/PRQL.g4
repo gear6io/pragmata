@@ -55,6 +55,7 @@ filterToken
     | DOT | RANGE
     | KW_AS | KW_FINAL | KW_INNER | KW_LEFT | KW_RIGHT | KW_FULL | KW_SIDE
     | LPAREN filterInner* RPAREN
+    | LBRACE filterInner* RBRACE
     ;
 
 filterInner: filterToken | COMMA ;

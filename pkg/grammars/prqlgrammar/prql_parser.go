@@ -56,7 +56,7 @@ func prqlParserInit() {
 	}
 	staticData.PredictionContextCache = antlr.NewPredictionContextCache()
 	staticData.serializedATN = []int32{
-		4, 1, 47, 334, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
+		4, 1, 47, 342, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
 		4, 2, 5, 7, 5, 2, 6, 7, 6, 2, 7, 7, 7, 2, 8, 7, 8, 2, 9, 7, 9, 2, 10, 7,
 		10, 2, 11, 7, 11, 2, 12, 7, 12, 2, 13, 7, 13, 2, 14, 7, 14, 2, 15, 7, 15,
 		2, 16, 7, 16, 2, 17, 7, 17, 2, 18, 7, 18, 2, 19, 7, 19, 2, 20, 7, 20, 2,
@@ -68,154 +68,157 @@ func prqlParserInit() {
 		8, 4, 11, 4, 12, 4, 96, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5,
 		1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5,
 		1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 1, 5, 5, 5, 127, 8, 5, 10, 5,
-		12, 5, 130, 9, 5, 1, 5, 3, 5, 133, 8, 5, 1, 6, 1, 6, 3, 6, 137, 8, 6, 1,
-		7, 1, 7, 1, 7, 1, 7, 1, 7, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 1, 9, 1, 9, 1,
-		9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 10, 1, 10, 1, 10,
-		1, 10, 3, 10, 164, 8, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 11, 1,
-		11, 1, 12, 1, 12, 1, 12, 1, 12, 3, 12, 177, 8, 12, 1, 13, 4, 13, 180, 8,
-		13, 11, 13, 12, 13, 181, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14,
-		1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 5, 14, 198, 8, 14, 10,
-		14, 12, 14, 201, 9, 14, 1, 14, 3, 14, 204, 8, 14, 1, 15, 1, 15, 3, 15,
-		208, 8, 15, 1, 16, 1, 16, 1, 16, 1, 16, 3, 16, 214, 8, 16, 1, 17, 1, 17,
-		1, 17, 1, 17, 1, 17, 1, 18, 1, 18, 1, 18, 1, 18, 3, 18, 225, 8, 18, 1,
-		19, 1, 19, 1, 19, 1, 20, 1, 20, 1, 20, 1, 20, 1, 20, 1, 21, 1, 21, 1, 21,
-		5, 21, 238, 8, 21, 10, 21, 12, 21, 241, 9, 21, 1, 22, 1, 22, 1, 22, 1,
-		22, 1, 23, 1, 23, 1, 23, 5, 23, 250, 8, 23, 10, 23, 12, 23, 253, 9, 23,
-		1, 24, 1, 24, 1, 24, 1, 24, 3, 24, 259, 8, 24, 1, 25, 1, 25, 1, 25, 5,
-		25, 264, 8, 25, 10, 25, 12, 25, 267, 9, 25, 1, 26, 1, 26, 1, 26, 1, 26,
-		3, 26, 273, 8, 26, 1, 27, 1, 27, 1, 27, 5, 27, 278, 8, 27, 10, 27, 12,
-		27, 281, 9, 27, 1, 28, 1, 28, 1, 28, 1, 28, 1, 28, 3, 28, 288, 8, 28, 1,
-		29, 4, 29, 291, 8, 29, 11, 29, 12, 29, 292, 1, 30, 1, 30, 1, 30, 1, 30,
-		1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1,
+		12, 5, 130, 9, 5, 1, 5, 1, 5, 1, 5, 5, 5, 135, 8, 5, 10, 5, 12, 5, 138,
+		9, 5, 1, 5, 3, 5, 141, 8, 5, 1, 6, 1, 6, 3, 6, 145, 8, 6, 1, 7, 1, 7, 1,
+		7, 1, 7, 1, 7, 1, 8, 1, 8, 1, 8, 1, 8, 1, 8, 1, 9, 1, 9, 1, 9, 1, 9, 1,
+		9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 10, 1, 10, 1, 10, 1, 10, 3, 10,
+		172, 8, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 10, 1, 11, 1, 11, 1, 12, 1,
+		12, 1, 12, 1, 12, 3, 12, 185, 8, 12, 1, 13, 4, 13, 188, 8, 13, 11, 13,
+		12, 13, 189, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 1,
+		14, 1, 14, 1, 14, 1, 14, 1, 14, 1, 14, 5, 14, 206, 8, 14, 10, 14, 12, 14,
+		209, 9, 14, 1, 14, 3, 14, 212, 8, 14, 1, 15, 1, 15, 3, 15, 216, 8, 15,
+		1, 16, 1, 16, 1, 16, 1, 16, 3, 16, 222, 8, 16, 1, 17, 1, 17, 1, 17, 1,
+		17, 1, 17, 1, 18, 1, 18, 1, 18, 1, 18, 3, 18, 233, 8, 18, 1, 19, 1, 19,
+		1, 19, 1, 20, 1, 20, 1, 20, 1, 20, 1, 20, 1, 21, 1, 21, 1, 21, 5, 21, 246,
+		8, 21, 10, 21, 12, 21, 249, 9, 21, 1, 22, 1, 22, 1, 22, 1, 22, 1, 23, 1,
+		23, 1, 23, 5, 23, 258, 8, 23, 10, 23, 12, 23, 261, 9, 23, 1, 24, 1, 24,
+		1, 24, 1, 24, 3, 24, 267, 8, 24, 1, 25, 1, 25, 1, 25, 5, 25, 272, 8, 25,
+		10, 25, 12, 25, 275, 9, 25, 1, 26, 1, 26, 1, 26, 1, 26, 3, 26, 281, 8,
+		26, 1, 27, 1, 27, 1, 27, 5, 27, 286, 8, 27, 10, 27, 12, 27, 289, 9, 27,
+		1, 28, 1, 28, 1, 28, 1, 28, 1, 28, 3, 28, 296, 8, 28, 1, 29, 4, 29, 299,
+		8, 29, 11, 29, 12, 29, 300, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1,
 		30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30,
-		1, 30, 1, 30, 5, 30, 322, 8, 30, 10, 30, 12, 30, 325, 9, 30, 1, 30, 3,
-		30, 328, 8, 30, 1, 31, 1, 31, 3, 31, 332, 8, 31, 1, 31, 0, 0, 32, 0, 2,
-		4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40,
-		42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 0, 1, 1, 0, 16, 19, 398, 0,
-		65, 1, 0, 0, 0, 2, 83, 1, 0, 0, 0, 4, 85, 1, 0, 0, 0, 6, 90, 1, 0, 0, 0,
-		8, 94, 1, 0, 0, 0, 10, 132, 1, 0, 0, 0, 12, 136, 1, 0, 0, 0, 14, 138, 1,
-		0, 0, 0, 16, 143, 1, 0, 0, 0, 18, 148, 1, 0, 0, 0, 20, 159, 1, 0, 0, 0,
-		22, 170, 1, 0, 0, 0, 24, 176, 1, 0, 0, 0, 26, 179, 1, 0, 0, 0, 28, 203,
-		1, 0, 0, 0, 30, 207, 1, 0, 0, 0, 32, 209, 1, 0, 0, 0, 34, 215, 1, 0, 0,
-		0, 36, 220, 1, 0, 0, 0, 38, 226, 1, 0, 0, 0, 40, 229, 1, 0, 0, 0, 42, 234,
-		1, 0, 0, 0, 44, 242, 1, 0, 0, 0, 46, 246, 1, 0, 0, 0, 48, 258, 1, 0, 0,
-		0, 50, 260, 1, 0, 0, 0, 52, 272, 1, 0, 0, 0, 54, 274, 1, 0, 0, 0, 56, 287,
-		1, 0, 0, 0, 58, 290, 1, 0, 0, 0, 60, 327, 1, 0, 0, 0, 62, 331, 1, 0, 0,
-		0, 64, 66, 3, 2, 1, 0, 65, 64, 1, 0, 0, 0, 66, 67, 1, 0, 0, 0, 67, 65,
-		1, 0, 0, 0, 67, 68, 1, 0, 0, 0, 68, 70, 1, 0, 0, 0, 69, 71, 5, 0, 0, 1,
-		70, 69, 1, 0, 0, 0, 70, 71, 1, 0, 0, 0, 71, 1, 1, 0, 0, 0, 72, 84, 3, 4,
-		2, 0, 73, 84, 3, 6, 3, 0, 74, 84, 3, 14, 7, 0, 75, 84, 3, 16, 8, 0, 76,
-		84, 3, 18, 9, 0, 77, 84, 3, 20, 10, 0, 78, 84, 3, 32, 16, 0, 79, 84, 3,
-		34, 17, 0, 80, 84, 3, 36, 18, 0, 81, 84, 3, 38, 19, 0, 82, 84, 3, 40, 20,
-		0, 83, 72, 1, 0, 0, 0, 83, 73, 1, 0, 0, 0, 83, 74, 1, 0, 0, 0, 83, 75,
-		1, 0, 0, 0, 83, 76, 1, 0, 0, 0, 83, 77, 1, 0, 0, 0, 83, 78, 1, 0, 0, 0,
-		83, 79, 1, 0, 0, 0, 83, 80, 1, 0, 0, 0, 83, 81, 1, 0, 0, 0, 83, 82, 1,
-		0, 0, 0, 84, 3, 1, 0, 0, 0, 85, 86, 5, 3, 0, 0, 86, 88, 5, 46, 0, 0, 87,
-		89, 5, 21, 0, 0, 88, 87, 1, 0, 0, 0, 88, 89, 1, 0, 0, 0, 89, 5, 1, 0, 0,
-		0, 90, 91, 5, 4, 0, 0, 91, 92, 3, 8, 4, 0, 92, 7, 1, 0, 0, 0, 93, 95, 3,
-		10, 5, 0, 94, 93, 1, 0, 0, 0, 95, 96, 1, 0, 0, 0, 96, 94, 1, 0, 0, 0, 96,
-		97, 1, 0, 0, 0, 97, 9, 1, 0, 0, 0, 98, 133, 5, 46, 0, 0, 99, 133, 5, 44,
-		0, 0, 100, 133, 5, 43, 0, 0, 101, 133, 5, 45, 0, 0, 102, 133, 5, 32, 0,
-		0, 103, 133, 5, 31, 0, 0, 104, 133, 5, 30, 0, 0, 105, 133, 5, 33, 0, 0,
-		106, 133, 5, 34, 0, 0, 107, 133, 5, 35, 0, 0, 108, 133, 5, 37, 0, 0, 109,
-		133, 5, 38, 0, 0, 110, 133, 5, 41, 0, 0, 111, 133, 5, 42, 0, 0, 112, 133,
-		5, 39, 0, 0, 113, 133, 5, 40, 0, 0, 114, 133, 5, 36, 0, 0, 115, 133, 5,
-		28, 0, 0, 116, 133, 5, 29, 0, 0, 117, 133, 5, 20, 0, 0, 118, 133, 5, 21,
-		0, 0, 119, 133, 5, 16, 0, 0, 120, 133, 5, 17, 0, 0, 121, 133, 5, 18, 0,
-		0, 122, 133, 5, 19, 0, 0, 123, 133, 5, 15, 0, 0, 124, 128, 5, 24, 0, 0,
-		125, 127, 3, 12, 6, 0, 126, 125, 1, 0, 0, 0, 127, 130, 1, 0, 0, 0, 128,
-		126, 1, 0, 0, 0, 128, 129, 1, 0, 0, 0, 129, 131, 1, 0, 0, 0, 130, 128,
-		1, 0, 0, 0, 131, 133, 5, 25, 0, 0, 132, 98, 1, 0, 0, 0, 132, 99, 1, 0,
-		0, 0, 132, 100, 1, 0, 0, 0, 132, 101, 1, 0, 0, 0, 132, 102, 1, 0, 0, 0,
-		132, 103, 1, 0, 0, 0, 132, 104, 1, 0, 0, 0, 132, 105, 1, 0, 0, 0, 132,
-		106, 1, 0, 0, 0, 132, 107, 1, 0, 0, 0, 132, 108, 1, 0, 0, 0, 132, 109,
-		1, 0, 0, 0, 132, 110, 1, 0, 0, 0, 132, 111, 1, 0, 0, 0, 132, 112, 1, 0,
-		0, 0, 132, 113, 1, 0, 0, 0, 132, 114, 1, 0, 0, 0, 132, 115, 1, 0, 0, 0,
-		132, 116, 1, 0, 0, 0, 132, 117, 1, 0, 0, 0, 132, 118, 1, 0, 0, 0, 132,
-		119, 1, 0, 0, 0, 132, 120, 1, 0, 0, 0, 132, 121, 1, 0, 0, 0, 132, 122,
-		1, 0, 0, 0, 132, 123, 1, 0, 0, 0, 132, 124, 1, 0, 0, 0, 133, 11, 1, 0,
-		0, 0, 134, 137, 3, 10, 5, 0, 135, 137, 5, 26, 0, 0, 136, 134, 1, 0, 0,
-		0, 136, 135, 1, 0, 0, 0, 137, 13, 1, 0, 0, 0, 138, 139, 5, 5, 0, 0, 139,
-		140, 5, 22, 0, 0, 140, 141, 3, 42, 21, 0, 141, 142, 5, 23, 0, 0, 142, 15,
-		1, 0, 0, 0, 143, 144, 5, 6, 0, 0, 144, 145, 5, 22, 0, 0, 145, 146, 3, 46,
-		23, 0, 146, 147, 5, 23, 0, 0, 147, 17, 1, 0, 0, 0, 148, 149, 5, 7, 0, 0,
-		149, 150, 5, 22, 0, 0, 150, 151, 3, 50, 25, 0, 151, 152, 5, 23, 0, 0, 152,
-		153, 5, 24, 0, 0, 153, 154, 5, 8, 0, 0, 154, 155, 5, 22, 0, 0, 155, 156,
-		3, 42, 21, 0, 156, 157, 5, 23, 0, 0, 157, 158, 5, 25, 0, 0, 158, 19, 1,
-		0, 0, 0, 159, 163, 5, 9, 0, 0, 160, 161, 5, 15, 0, 0, 161, 162, 5, 27,
-		0, 0, 162, 164, 3, 22, 11, 0, 163, 160, 1, 0, 0, 0, 163, 164, 1, 0, 0,
-		0, 164, 165, 1, 0, 0, 0, 165, 166, 5, 46, 0, 0, 166, 167, 5, 24, 0, 0,
-		167, 168, 3, 24, 12, 0, 168, 169, 5, 25, 0, 0, 169, 21, 1, 0, 0, 0, 170,
-		171, 7, 0, 0, 0, 171, 23, 1, 0, 0, 0, 172, 173, 5, 37, 0, 0, 173, 174,
-		5, 37, 0, 0, 174, 177, 5, 46, 0, 0, 175, 177, 3, 26, 13, 0, 176, 172, 1,
-		0, 0, 0, 176, 175, 1, 0, 0, 0, 177, 25, 1, 0, 0, 0, 178, 180, 3, 28, 14,
-		0, 179, 178, 1, 0, 0, 0, 180, 181, 1, 0, 0, 0, 181, 179, 1, 0, 0, 0, 181,
-		182, 1, 0, 0, 0, 182, 27, 1, 0, 0, 0, 183, 204, 5, 46, 0, 0, 184, 204,
-		5, 28, 0, 0, 185, 204, 5, 44, 0, 0, 186, 204, 5, 43, 0, 0, 187, 204, 5,
-		45, 0, 0, 188, 204, 5, 37, 0, 0, 189, 204, 5, 38, 0, 0, 190, 204, 5, 41,
-		0, 0, 191, 204, 5, 42, 0, 0, 192, 204, 5, 39, 0, 0, 193, 204, 5, 40, 0,
-		0, 194, 204, 5, 36, 0, 0, 195, 199, 5, 24, 0, 0, 196, 198, 3, 30, 15, 0,
-		197, 196, 1, 0, 0, 0, 198, 201, 1, 0, 0, 0, 199, 197, 1, 0, 0, 0, 199,
-		200, 1, 0, 0, 0, 200, 202, 1, 0, 0, 0, 201, 199, 1, 0, 0, 0, 202, 204,
-		5, 25, 0, 0, 203, 183, 1, 0, 0, 0, 203, 184, 1, 0, 0, 0, 203, 185, 1, 0,
-		0, 0, 203, 186, 1, 0, 0, 0, 203, 187, 1, 0, 0, 0, 203, 188, 1, 0, 0, 0,
-		203, 189, 1, 0, 0, 0, 203, 190, 1, 0, 0, 0, 203, 191, 1, 0, 0, 0, 203,
-		192, 1, 0, 0, 0, 203, 193, 1, 0, 0, 0, 203, 194, 1, 0, 0, 0, 203, 195,
-		1, 0, 0, 0, 204, 29, 1, 0, 0, 0, 205, 208, 3, 28, 14, 0, 206, 208, 5, 26,
-		0, 0, 207, 205, 1, 0, 0, 0, 207, 206, 1, 0, 0, 0, 208, 31, 1, 0, 0, 0,
-		209, 210, 5, 14, 0, 0, 210, 213, 5, 46, 0, 0, 211, 212, 5, 20, 0, 0, 212,
-		214, 5, 46, 0, 0, 213, 211, 1, 0, 0, 0, 213, 214, 1, 0, 0, 0, 214, 33,
-		1, 0, 0, 0, 215, 216, 5, 10, 0, 0, 216, 217, 5, 22, 0, 0, 217, 218, 3,
-		54, 27, 0, 218, 219, 5, 23, 0, 0, 219, 35, 1, 0, 0, 0, 220, 221, 5, 11,
-		0, 0, 221, 224, 5, 44, 0, 0, 222, 223, 5, 29, 0, 0, 223, 225, 5, 44, 0,
-		0, 224, 222, 1, 0, 0, 0, 224, 225, 1, 0, 0, 0, 225, 37, 1, 0, 0, 0, 226,
-		227, 5, 12, 0, 0, 227, 228, 5, 44, 0, 0, 228, 39, 1, 0, 0, 0, 229, 230,
-		5, 13, 0, 0, 230, 231, 5, 22, 0, 0, 231, 232, 3, 42, 21, 0, 232, 233, 5,
-		23, 0, 0, 233, 41, 1, 0, 0, 0, 234, 239, 3, 44, 22, 0, 235, 236, 5, 26,
-		0, 0, 236, 238, 3, 44, 22, 0, 237, 235, 1, 0, 0, 0, 238, 241, 1, 0, 0,
-		0, 239, 237, 1, 0, 0, 0, 239, 240, 1, 0, 0, 0, 240, 43, 1, 0, 0, 0, 241,
-		239, 1, 0, 0, 0, 242, 243, 5, 46, 0, 0, 243, 244, 5, 37, 0, 0, 244, 245,
-		3, 58, 29, 0, 245, 45, 1, 0, 0, 0, 246, 251, 3, 48, 24, 0, 247, 248, 5,
-		26, 0, 0, 248, 250, 3, 48, 24, 0, 249, 247, 1, 0, 0, 0, 250, 253, 1, 0,
-		0, 0, 251, 249, 1, 0, 0, 0, 251, 252, 1, 0, 0, 0, 252, 47, 1, 0, 0, 0,
-		253, 251, 1, 0, 0, 0, 254, 255, 5, 46, 0, 0, 255, 256, 5, 37, 0, 0, 256,
-		259, 3, 58, 29, 0, 257, 259, 3, 58, 29, 0, 258, 254, 1, 0, 0, 0, 258, 257,
-		1, 0, 0, 0, 259, 49, 1, 0, 0, 0, 260, 265, 3, 52, 26, 0, 261, 262, 5, 26,
-		0, 0, 262, 264, 3, 52, 26, 0, 263, 261, 1, 0, 0, 0, 264, 267, 1, 0, 0,
-		0, 265, 263, 1, 0, 0, 0, 265, 266, 1, 0, 0, 0, 266, 51, 1, 0, 0, 0, 267,
-		265, 1, 0, 0, 0, 268, 269, 5, 46, 0, 0, 269, 270, 5, 37, 0, 0, 270, 273,
-		3, 58, 29, 0, 271, 273, 5, 46, 0, 0, 272, 268, 1, 0, 0, 0, 272, 271, 1,
-		0, 0, 0, 273, 53, 1, 0, 0, 0, 274, 279, 3, 56, 28, 0, 275, 276, 5, 26,
-		0, 0, 276, 278, 3, 56, 28, 0, 277, 275, 1, 0, 0, 0, 278, 281, 1, 0, 0,
-		0, 279, 277, 1, 0, 0, 0, 279, 280, 1, 0, 0, 0, 280, 55, 1, 0, 0, 0, 281,
-		279, 1, 0, 0, 0, 282, 283, 5, 30, 0, 0, 283, 288, 5, 46, 0, 0, 284, 285,
-		5, 31, 0, 0, 285, 288, 5, 46, 0, 0, 286, 288, 5, 46, 0, 0, 287, 282, 1,
-		0, 0, 0, 287, 284, 1, 0, 0, 0, 287, 286, 1, 0, 0, 0, 288, 57, 1, 0, 0,
-		0, 289, 291, 3, 60, 30, 0, 290, 289, 1, 0, 0, 0, 291, 292, 1, 0, 0, 0,
-		292, 290, 1, 0, 0, 0, 292, 293, 1, 0, 0, 0, 293, 59, 1, 0, 0, 0, 294, 328,
-		5, 46, 0, 0, 295, 328, 5, 44, 0, 0, 296, 328, 5, 43, 0, 0, 297, 328, 5,
-		45, 0, 0, 298, 328, 5, 32, 0, 0, 299, 328, 5, 31, 0, 0, 300, 328, 5, 30,
-		0, 0, 301, 328, 5, 33, 0, 0, 302, 328, 5, 34, 0, 0, 303, 328, 5, 35, 0,
-		0, 304, 328, 5, 37, 0, 0, 305, 328, 5, 38, 0, 0, 306, 328, 5, 41, 0, 0,
-		307, 328, 5, 42, 0, 0, 308, 328, 5, 39, 0, 0, 309, 328, 5, 40, 0, 0, 310,
-		328, 5, 36, 0, 0, 311, 328, 5, 28, 0, 0, 312, 328, 5, 20, 0, 0, 313, 328,
-		5, 21, 0, 0, 314, 328, 5, 16, 0, 0, 315, 328, 5, 17, 0, 0, 316, 328, 5,
-		18, 0, 0, 317, 328, 5, 19, 0, 0, 318, 328, 5, 15, 0, 0, 319, 323, 5, 24,
-		0, 0, 320, 322, 3, 62, 31, 0, 321, 320, 1, 0, 0, 0, 322, 325, 1, 0, 0,
-		0, 323, 321, 1, 0, 0, 0, 323, 324, 1, 0, 0, 0, 324, 326, 1, 0, 0, 0, 325,
-		323, 1, 0, 0, 0, 326, 328, 5, 25, 0, 0, 327, 294, 1, 0, 0, 0, 327, 295,
-		1, 0, 0, 0, 327, 296, 1, 0, 0, 0, 327, 297, 1, 0, 0, 0, 327, 298, 1, 0,
-		0, 0, 327, 299, 1, 0, 0, 0, 327, 300, 1, 0, 0, 0, 327, 301, 1, 0, 0, 0,
-		327, 302, 1, 0, 0, 0, 327, 303, 1, 0, 0, 0, 327, 304, 1, 0, 0, 0, 327,
-		305, 1, 0, 0, 0, 327, 306, 1, 0, 0, 0, 327, 307, 1, 0, 0, 0, 327, 308,
-		1, 0, 0, 0, 327, 309, 1, 0, 0, 0, 327, 310, 1, 0, 0, 0, 327, 311, 1, 0,
-		0, 0, 327, 312, 1, 0, 0, 0, 327, 313, 1, 0, 0, 0, 327, 314, 1, 0, 0, 0,
-		327, 315, 1, 0, 0, 0, 327, 316, 1, 0, 0, 0, 327, 317, 1, 0, 0, 0, 327,
-		318, 1, 0, 0, 0, 327, 319, 1, 0, 0, 0, 328, 61, 1, 0, 0, 0, 329, 332, 3,
-		60, 30, 0, 330, 332, 5, 26, 0, 0, 331, 329, 1, 0, 0, 0, 331, 330, 1, 0,
-		0, 0, 332, 63, 1, 0, 0, 0, 27, 67, 70, 83, 88, 96, 128, 132, 136, 163,
-		176, 181, 199, 203, 207, 213, 224, 239, 251, 258, 265, 272, 279, 287, 292,
-		323, 327, 331,
+		1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 1, 30, 5,
+		30, 330, 8, 30, 10, 30, 12, 30, 333, 9, 30, 1, 30, 3, 30, 336, 8, 30, 1,
+		31, 1, 31, 3, 31, 340, 8, 31, 1, 31, 0, 0, 32, 0, 2, 4, 6, 8, 10, 12, 14,
+		16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50,
+		52, 54, 56, 58, 60, 62, 0, 1, 1, 0, 16, 19, 408, 0, 65, 1, 0, 0, 0, 2,
+		83, 1, 0, 0, 0, 4, 85, 1, 0, 0, 0, 6, 90, 1, 0, 0, 0, 8, 94, 1, 0, 0, 0,
+		10, 140, 1, 0, 0, 0, 12, 144, 1, 0, 0, 0, 14, 146, 1, 0, 0, 0, 16, 151,
+		1, 0, 0, 0, 18, 156, 1, 0, 0, 0, 20, 167, 1, 0, 0, 0, 22, 178, 1, 0, 0,
+		0, 24, 184, 1, 0, 0, 0, 26, 187, 1, 0, 0, 0, 28, 211, 1, 0, 0, 0, 30, 215,
+		1, 0, 0, 0, 32, 217, 1, 0, 0, 0, 34, 223, 1, 0, 0, 0, 36, 228, 1, 0, 0,
+		0, 38, 234, 1, 0, 0, 0, 40, 237, 1, 0, 0, 0, 42, 242, 1, 0, 0, 0, 44, 250,
+		1, 0, 0, 0, 46, 254, 1, 0, 0, 0, 48, 266, 1, 0, 0, 0, 50, 268, 1, 0, 0,
+		0, 52, 280, 1, 0, 0, 0, 54, 282, 1, 0, 0, 0, 56, 295, 1, 0, 0, 0, 58, 298,
+		1, 0, 0, 0, 60, 335, 1, 0, 0, 0, 62, 339, 1, 0, 0, 0, 64, 66, 3, 2, 1,
+		0, 65, 64, 1, 0, 0, 0, 66, 67, 1, 0, 0, 0, 67, 65, 1, 0, 0, 0, 67, 68,
+		1, 0, 0, 0, 68, 70, 1, 0, 0, 0, 69, 71, 5, 0, 0, 1, 70, 69, 1, 0, 0, 0,
+		70, 71, 1, 0, 0, 0, 71, 1, 1, 0, 0, 0, 72, 84, 3, 4, 2, 0, 73, 84, 3, 6,
+		3, 0, 74, 84, 3, 14, 7, 0, 75, 84, 3, 16, 8, 0, 76, 84, 3, 18, 9, 0, 77,
+		84, 3, 20, 10, 0, 78, 84, 3, 32, 16, 0, 79, 84, 3, 34, 17, 0, 80, 84, 3,
+		36, 18, 0, 81, 84, 3, 38, 19, 0, 82, 84, 3, 40, 20, 0, 83, 72, 1, 0, 0,
+		0, 83, 73, 1, 0, 0, 0, 83, 74, 1, 0, 0, 0, 83, 75, 1, 0, 0, 0, 83, 76,
+		1, 0, 0, 0, 83, 77, 1, 0, 0, 0, 83, 78, 1, 0, 0, 0, 83, 79, 1, 0, 0, 0,
+		83, 80, 1, 0, 0, 0, 83, 81, 1, 0, 0, 0, 83, 82, 1, 0, 0, 0, 84, 3, 1, 0,
+		0, 0, 85, 86, 5, 3, 0, 0, 86, 88, 5, 46, 0, 0, 87, 89, 5, 21, 0, 0, 88,
+		87, 1, 0, 0, 0, 88, 89, 1, 0, 0, 0, 89, 5, 1, 0, 0, 0, 90, 91, 5, 4, 0,
+		0, 91, 92, 3, 8, 4, 0, 92, 7, 1, 0, 0, 0, 93, 95, 3, 10, 5, 0, 94, 93,
+		1, 0, 0, 0, 95, 96, 1, 0, 0, 0, 96, 94, 1, 0, 0, 0, 96, 97, 1, 0, 0, 0,
+		97, 9, 1, 0, 0, 0, 98, 141, 5, 46, 0, 0, 99, 141, 5, 44, 0, 0, 100, 141,
+		5, 43, 0, 0, 101, 141, 5, 45, 0, 0, 102, 141, 5, 32, 0, 0, 103, 141, 5,
+		31, 0, 0, 104, 141, 5, 30, 0, 0, 105, 141, 5, 33, 0, 0, 106, 141, 5, 34,
+		0, 0, 107, 141, 5, 35, 0, 0, 108, 141, 5, 37, 0, 0, 109, 141, 5, 38, 0,
+		0, 110, 141, 5, 41, 0, 0, 111, 141, 5, 42, 0, 0, 112, 141, 5, 39, 0, 0,
+		113, 141, 5, 40, 0, 0, 114, 141, 5, 36, 0, 0, 115, 141, 5, 28, 0, 0, 116,
+		141, 5, 29, 0, 0, 117, 141, 5, 20, 0, 0, 118, 141, 5, 21, 0, 0, 119, 141,
+		5, 16, 0, 0, 120, 141, 5, 17, 0, 0, 121, 141, 5, 18, 0, 0, 122, 141, 5,
+		19, 0, 0, 123, 141, 5, 15, 0, 0, 124, 128, 5, 24, 0, 0, 125, 127, 3, 12,
+		6, 0, 126, 125, 1, 0, 0, 0, 127, 130, 1, 0, 0, 0, 128, 126, 1, 0, 0, 0,
+		128, 129, 1, 0, 0, 0, 129, 131, 1, 0, 0, 0, 130, 128, 1, 0, 0, 0, 131,
+		141, 5, 25, 0, 0, 132, 136, 5, 22, 0, 0, 133, 135, 3, 12, 6, 0, 134, 133,
+		1, 0, 0, 0, 135, 138, 1, 0, 0, 0, 136, 134, 1, 0, 0, 0, 136, 137, 1, 0,
+		0, 0, 137, 139, 1, 0, 0, 0, 138, 136, 1, 0, 0, 0, 139, 141, 5, 23, 0, 0,
+		140, 98, 1, 0, 0, 0, 140, 99, 1, 0, 0, 0, 140, 100, 1, 0, 0, 0, 140, 101,
+		1, 0, 0, 0, 140, 102, 1, 0, 0, 0, 140, 103, 1, 0, 0, 0, 140, 104, 1, 0,
+		0, 0, 140, 105, 1, 0, 0, 0, 140, 106, 1, 0, 0, 0, 140, 107, 1, 0, 0, 0,
+		140, 108, 1, 0, 0, 0, 140, 109, 1, 0, 0, 0, 140, 110, 1, 0, 0, 0, 140,
+		111, 1, 0, 0, 0, 140, 112, 1, 0, 0, 0, 140, 113, 1, 0, 0, 0, 140, 114,
+		1, 0, 0, 0, 140, 115, 1, 0, 0, 0, 140, 116, 1, 0, 0, 0, 140, 117, 1, 0,
+		0, 0, 140, 118, 1, 0, 0, 0, 140, 119, 1, 0, 0, 0, 140, 120, 1, 0, 0, 0,
+		140, 121, 1, 0, 0, 0, 140, 122, 1, 0, 0, 0, 140, 123, 1, 0, 0, 0, 140,
+		124, 1, 0, 0, 0, 140, 132, 1, 0, 0, 0, 141, 11, 1, 0, 0, 0, 142, 145, 3,
+		10, 5, 0, 143, 145, 5, 26, 0, 0, 144, 142, 1, 0, 0, 0, 144, 143, 1, 0,
+		0, 0, 145, 13, 1, 0, 0, 0, 146, 147, 5, 5, 0, 0, 147, 148, 5, 22, 0, 0,
+		148, 149, 3, 42, 21, 0, 149, 150, 5, 23, 0, 0, 150, 15, 1, 0, 0, 0, 151,
+		152, 5, 6, 0, 0, 152, 153, 5, 22, 0, 0, 153, 154, 3, 46, 23, 0, 154, 155,
+		5, 23, 0, 0, 155, 17, 1, 0, 0, 0, 156, 157, 5, 7, 0, 0, 157, 158, 5, 22,
+		0, 0, 158, 159, 3, 50, 25, 0, 159, 160, 5, 23, 0, 0, 160, 161, 5, 24, 0,
+		0, 161, 162, 5, 8, 0, 0, 162, 163, 5, 22, 0, 0, 163, 164, 3, 42, 21, 0,
+		164, 165, 5, 23, 0, 0, 165, 166, 5, 25, 0, 0, 166, 19, 1, 0, 0, 0, 167,
+		171, 5, 9, 0, 0, 168, 169, 5, 15, 0, 0, 169, 170, 5, 27, 0, 0, 170, 172,
+		3, 22, 11, 0, 171, 168, 1, 0, 0, 0, 171, 172, 1, 0, 0, 0, 172, 173, 1,
+		0, 0, 0, 173, 174, 5, 46, 0, 0, 174, 175, 5, 24, 0, 0, 175, 176, 3, 24,
+		12, 0, 176, 177, 5, 25, 0, 0, 177, 21, 1, 0, 0, 0, 178, 179, 7, 0, 0, 0,
+		179, 23, 1, 0, 0, 0, 180, 181, 5, 37, 0, 0, 181, 182, 5, 37, 0, 0, 182,
+		185, 5, 46, 0, 0, 183, 185, 3, 26, 13, 0, 184, 180, 1, 0, 0, 0, 184, 183,
+		1, 0, 0, 0, 185, 25, 1, 0, 0, 0, 186, 188, 3, 28, 14, 0, 187, 186, 1, 0,
+		0, 0, 188, 189, 1, 0, 0, 0, 189, 187, 1, 0, 0, 0, 189, 190, 1, 0, 0, 0,
+		190, 27, 1, 0, 0, 0, 191, 212, 5, 46, 0, 0, 192, 212, 5, 28, 0, 0, 193,
+		212, 5, 44, 0, 0, 194, 212, 5, 43, 0, 0, 195, 212, 5, 45, 0, 0, 196, 212,
+		5, 37, 0, 0, 197, 212, 5, 38, 0, 0, 198, 212, 5, 41, 0, 0, 199, 212, 5,
+		42, 0, 0, 200, 212, 5, 39, 0, 0, 201, 212, 5, 40, 0, 0, 202, 212, 5, 36,
+		0, 0, 203, 207, 5, 24, 0, 0, 204, 206, 3, 30, 15, 0, 205, 204, 1, 0, 0,
+		0, 206, 209, 1, 0, 0, 0, 207, 205, 1, 0, 0, 0, 207, 208, 1, 0, 0, 0, 208,
+		210, 1, 0, 0, 0, 209, 207, 1, 0, 0, 0, 210, 212, 5, 25, 0, 0, 211, 191,
+		1, 0, 0, 0, 211, 192, 1, 0, 0, 0, 211, 193, 1, 0, 0, 0, 211, 194, 1, 0,
+		0, 0, 211, 195, 1, 0, 0, 0, 211, 196, 1, 0, 0, 0, 211, 197, 1, 0, 0, 0,
+		211, 198, 1, 0, 0, 0, 211, 199, 1, 0, 0, 0, 211, 200, 1, 0, 0, 0, 211,
+		201, 1, 0, 0, 0, 211, 202, 1, 0, 0, 0, 211, 203, 1, 0, 0, 0, 212, 29, 1,
+		0, 0, 0, 213, 216, 3, 28, 14, 0, 214, 216, 5, 26, 0, 0, 215, 213, 1, 0,
+		0, 0, 215, 214, 1, 0, 0, 0, 216, 31, 1, 0, 0, 0, 217, 218, 5, 14, 0, 0,
+		218, 221, 5, 46, 0, 0, 219, 220, 5, 20, 0, 0, 220, 222, 5, 46, 0, 0, 221,
+		219, 1, 0, 0, 0, 221, 222, 1, 0, 0, 0, 222, 33, 1, 0, 0, 0, 223, 224, 5,
+		10, 0, 0, 224, 225, 5, 22, 0, 0, 225, 226, 3, 54, 27, 0, 226, 227, 5, 23,
+		0, 0, 227, 35, 1, 0, 0, 0, 228, 229, 5, 11, 0, 0, 229, 232, 5, 44, 0, 0,
+		230, 231, 5, 29, 0, 0, 231, 233, 5, 44, 0, 0, 232, 230, 1, 0, 0, 0, 232,
+		233, 1, 0, 0, 0, 233, 37, 1, 0, 0, 0, 234, 235, 5, 12, 0, 0, 235, 236,
+		5, 44, 0, 0, 236, 39, 1, 0, 0, 0, 237, 238, 5, 13, 0, 0, 238, 239, 5, 22,
+		0, 0, 239, 240, 3, 42, 21, 0, 240, 241, 5, 23, 0, 0, 241, 41, 1, 0, 0,
+		0, 242, 247, 3, 44, 22, 0, 243, 244, 5, 26, 0, 0, 244, 246, 3, 44, 22,
+		0, 245, 243, 1, 0, 0, 0, 246, 249, 1, 0, 0, 0, 247, 245, 1, 0, 0, 0, 247,
+		248, 1, 0, 0, 0, 248, 43, 1, 0, 0, 0, 249, 247, 1, 0, 0, 0, 250, 251, 5,
+		46, 0, 0, 251, 252, 5, 37, 0, 0, 252, 253, 3, 58, 29, 0, 253, 45, 1, 0,
+		0, 0, 254, 259, 3, 48, 24, 0, 255, 256, 5, 26, 0, 0, 256, 258, 3, 48, 24,
+		0, 257, 255, 1, 0, 0, 0, 258, 261, 1, 0, 0, 0, 259, 257, 1, 0, 0, 0, 259,
+		260, 1, 0, 0, 0, 260, 47, 1, 0, 0, 0, 261, 259, 1, 0, 0, 0, 262, 263, 5,
+		46, 0, 0, 263, 264, 5, 37, 0, 0, 264, 267, 3, 58, 29, 0, 265, 267, 3, 58,
+		29, 0, 266, 262, 1, 0, 0, 0, 266, 265, 1, 0, 0, 0, 267, 49, 1, 0, 0, 0,
+		268, 273, 3, 52, 26, 0, 269, 270, 5, 26, 0, 0, 270, 272, 3, 52, 26, 0,
+		271, 269, 1, 0, 0, 0, 272, 275, 1, 0, 0, 0, 273, 271, 1, 0, 0, 0, 273,
+		274, 1, 0, 0, 0, 274, 51, 1, 0, 0, 0, 275, 273, 1, 0, 0, 0, 276, 277, 5,
+		46, 0, 0, 277, 278, 5, 37, 0, 0, 278, 281, 3, 58, 29, 0, 279, 281, 5, 46,
+		0, 0, 280, 276, 1, 0, 0, 0, 280, 279, 1, 0, 0, 0, 281, 53, 1, 0, 0, 0,
+		282, 287, 3, 56, 28, 0, 283, 284, 5, 26, 0, 0, 284, 286, 3, 56, 28, 0,
+		285, 283, 1, 0, 0, 0, 286, 289, 1, 0, 0, 0, 287, 285, 1, 0, 0, 0, 287,
+		288, 1, 0, 0, 0, 288, 55, 1, 0, 0, 0, 289, 287, 1, 0, 0, 0, 290, 291, 5,
+		30, 0, 0, 291, 296, 5, 46, 0, 0, 292, 293, 5, 31, 0, 0, 293, 296, 5, 46,
+		0, 0, 294, 296, 5, 46, 0, 0, 295, 290, 1, 0, 0, 0, 295, 292, 1, 0, 0, 0,
+		295, 294, 1, 0, 0, 0, 296, 57, 1, 0, 0, 0, 297, 299, 3, 60, 30, 0, 298,
+		297, 1, 0, 0, 0, 299, 300, 1, 0, 0, 0, 300, 298, 1, 0, 0, 0, 300, 301,
+		1, 0, 0, 0, 301, 59, 1, 0, 0, 0, 302, 336, 5, 46, 0, 0, 303, 336, 5, 44,
+		0, 0, 304, 336, 5, 43, 0, 0, 305, 336, 5, 45, 0, 0, 306, 336, 5, 32, 0,
+		0, 307, 336, 5, 31, 0, 0, 308, 336, 5, 30, 0, 0, 309, 336, 5, 33, 0, 0,
+		310, 336, 5, 34, 0, 0, 311, 336, 5, 35, 0, 0, 312, 336, 5, 37, 0, 0, 313,
+		336, 5, 38, 0, 0, 314, 336, 5, 41, 0, 0, 315, 336, 5, 42, 0, 0, 316, 336,
+		5, 39, 0, 0, 317, 336, 5, 40, 0, 0, 318, 336, 5, 36, 0, 0, 319, 336, 5,
+		28, 0, 0, 320, 336, 5, 20, 0, 0, 321, 336, 5, 21, 0, 0, 322, 336, 5, 16,
+		0, 0, 323, 336, 5, 17, 0, 0, 324, 336, 5, 18, 0, 0, 325, 336, 5, 19, 0,
+		0, 326, 336, 5, 15, 0, 0, 327, 331, 5, 24, 0, 0, 328, 330, 3, 62, 31, 0,
+		329, 328, 1, 0, 0, 0, 330, 333, 1, 0, 0, 0, 331, 329, 1, 0, 0, 0, 331,
+		332, 1, 0, 0, 0, 332, 334, 1, 0, 0, 0, 333, 331, 1, 0, 0, 0, 334, 336,
+		5, 25, 0, 0, 335, 302, 1, 0, 0, 0, 335, 303, 1, 0, 0, 0, 335, 304, 1, 0,
+		0, 0, 335, 305, 1, 0, 0, 0, 335, 306, 1, 0, 0, 0, 335, 307, 1, 0, 0, 0,
+		335, 308, 1, 0, 0, 0, 335, 309, 1, 0, 0, 0, 335, 310, 1, 0, 0, 0, 335,
+		311, 1, 0, 0, 0, 335, 312, 1, 0, 0, 0, 335, 313, 1, 0, 0, 0, 335, 314,
+		1, 0, 0, 0, 335, 315, 1, 0, 0, 0, 335, 316, 1, 0, 0, 0, 335, 317, 1, 0,
+		0, 0, 335, 318, 1, 0, 0, 0, 335, 319, 1, 0, 0, 0, 335, 320, 1, 0, 0, 0,
+		335, 321, 1, 0, 0, 0, 335, 322, 1, 0, 0, 0, 335, 323, 1, 0, 0, 0, 335,
+		324, 1, 0, 0, 0, 335, 325, 1, 0, 0, 0, 335, 326, 1, 0, 0, 0, 335, 327,
+		1, 0, 0, 0, 336, 61, 1, 0, 0, 0, 337, 340, 3, 60, 30, 0, 338, 340, 5, 26,
+		0, 0, 339, 337, 1, 0, 0, 0, 339, 338, 1, 0, 0, 0, 340, 63, 1, 0, 0, 0,
+		28, 67, 70, 83, 88, 96, 128, 136, 140, 144, 171, 184, 189, 207, 211, 215,
+		221, 232, 247, 259, 266, 273, 280, 287, 295, 300, 331, 335, 339,
 	}
 	deserializer := antlr.NewATNDeserializer(nil)
 	staticData.atn = deserializer.Deserialize(staticData.serializedATN)
@@ -1287,7 +1290,7 @@ func (p *PRQL) FilterBody() (localctx IFilterBodyContext) {
 	}
 	_la = p.GetTokenStream().LA(1)
 
-	for ok := true; ok; ok = ((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140737240858624) != 0) {
+	for ok := true; ok; ok = ((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140737245052928) != 0) {
 		{
 			p.SetState(93)
 			p.FilterToken()
@@ -1352,6 +1355,8 @@ type IFilterTokenContext interface {
 	RPAREN() antlr.TerminalNode
 	AllFilterInner() []IFilterInnerContext
 	FilterInner(i int) IFilterInnerContext
+	LBRACE() antlr.TerminalNode
+	RBRACE() antlr.TerminalNode
 
 	// IsFilterTokenContext differentiates from other interfaces.
 	IsFilterTokenContext()
@@ -1542,6 +1547,14 @@ func (s *FilterTokenContext) FilterInner(i int) IFilterInnerContext {
 	return t.(IFilterInnerContext)
 }
 
+func (s *FilterTokenContext) LBRACE() antlr.TerminalNode {
+	return s.GetToken(PRQLLBRACE, 0)
+}
+
+func (s *FilterTokenContext) RBRACE() antlr.TerminalNode {
+	return s.GetToken(PRQLRBRACE, 0)
+}
+
 func (s *FilterTokenContext) GetRuleContext() antlr.RuleContext {
 	return s
 }
@@ -1577,7 +1590,7 @@ func (p *PRQL) FilterToken() (localctx IFilterTokenContext) {
 	p.EnterRule(localctx, 10, PRQLRULE_filterToken)
 	var _la int
 
-	p.SetState(132)
+	p.SetState(140)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -1887,7 +1900,7 @@ func (p *PRQL) FilterToken() (localctx IFilterTokenContext) {
 		}
 		_la = p.GetTokenStream().LA(1)
 
-		for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140737307967488) != 0 {
+		for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140737312161792) != 0 {
 			{
 				p.SetState(125)
 				p.FilterInner()
@@ -1903,6 +1916,45 @@ func (p *PRQL) FilterToken() (localctx IFilterTokenContext) {
 		{
 			p.SetState(131)
 			p.Match(PRQLRPAREN)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+
+	case PRQLLBRACE:
+		p.EnterOuterAlt(localctx, 28)
+		{
+			p.SetState(132)
+			p.Match(PRQLLBRACE)
+			if p.HasError() {
+				// Recognition error - abort rule
+				goto errorExit
+			}
+		}
+		p.SetState(136)
+		p.GetErrorHandler().Sync(p)
+		if p.HasError() {
+			goto errorExit
+		}
+		_la = p.GetTokenStream().LA(1)
+
+		for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140737312161792) != 0 {
+			{
+				p.SetState(133)
+				p.FilterInner()
+			}
+
+			p.SetState(138)
+			p.GetErrorHandler().Sync(p)
+			if p.HasError() {
+				goto errorExit
+			}
+			_la = p.GetTokenStream().LA(1)
+		}
+		{
+			p.SetState(139)
+			p.Match(PRQLRBRACE)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
@@ -2027,24 +2079,24 @@ func (s *FilterInnerContext) Accept(visitor antlr.ParseTreeVisitor) interface{} 
 func (p *PRQL) FilterInner() (localctx IFilterInnerContext) {
 	localctx = NewFilterInnerContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 12, PRQLRULE_filterInner)
-	p.SetState(136)
+	p.SetState(144)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 
 	switch p.GetTokenStream().LA(1) {
-	case PRQLKW_SIDE, PRQLKW_INNER, PRQLKW_LEFT, PRQLKW_RIGHT, PRQLKW_FULL, PRQLKW_AS, PRQLKW_FINAL, PRQLLPAREN, PRQLDOT, PRQLRANGE, PRQLMINUS, PRQLPLUS, PRQLSTAR, PRQLSLASH, PRQLPERCENT, PRQLPIPE, PRQLCAST_OP, PRQLEQ, PRQLNEQ, PRQLLTE, PRQLGTE, PRQLLT, PRQLGT, PRQLFLOAT, PRQLINTEGER, PRQLSTRING, PRQLIDENT:
+	case PRQLKW_SIDE, PRQLKW_INNER, PRQLKW_LEFT, PRQLKW_RIGHT, PRQLKW_FULL, PRQLKW_AS, PRQLKW_FINAL, PRQLLBRACE, PRQLLPAREN, PRQLDOT, PRQLRANGE, PRQLMINUS, PRQLPLUS, PRQLSTAR, PRQLSLASH, PRQLPERCENT, PRQLPIPE, PRQLCAST_OP, PRQLEQ, PRQLNEQ, PRQLLTE, PRQLGTE, PRQLLT, PRQLGT, PRQLFLOAT, PRQLINTEGER, PRQLSTRING, PRQLIDENT:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(134)
+			p.SetState(142)
 			p.FilterToken()
 		}
 
 	case PRQLCOMMA:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(135)
+			p.SetState(143)
 			p.Match(PRQLCOMMA)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -2182,7 +2234,7 @@ func (p *PRQL) DeriveClause() (localctx IDeriveClauseContext) {
 	p.EnterRule(localctx, 14, PRQLRULE_deriveClause)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(138)
+		p.SetState(146)
 		p.Match(PRQLKW_DERIVE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2190,7 +2242,7 @@ func (p *PRQL) DeriveClause() (localctx IDeriveClauseContext) {
 		}
 	}
 	{
-		p.SetState(139)
+		p.SetState(147)
 		p.Match(PRQLLBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2198,11 +2250,11 @@ func (p *PRQL) DeriveClause() (localctx IDeriveClauseContext) {
 		}
 	}
 	{
-		p.SetState(140)
+		p.SetState(148)
 		p.AssignmentList()
 	}
 	{
-		p.SetState(141)
+		p.SetState(149)
 		p.Match(PRQLRBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2335,7 +2387,7 @@ func (p *PRQL) SelectClause() (localctx ISelectClauseContext) {
 	p.EnterRule(localctx, 16, PRQLRULE_selectClause)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(143)
+		p.SetState(151)
 		p.Match(PRQLKW_SELECT)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2343,7 +2395,7 @@ func (p *PRQL) SelectClause() (localctx ISelectClauseContext) {
 		}
 	}
 	{
-		p.SetState(144)
+		p.SetState(152)
 		p.Match(PRQLLBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2351,11 +2403,11 @@ func (p *PRQL) SelectClause() (localctx ISelectClauseContext) {
 		}
 	}
 	{
-		p.SetState(145)
+		p.SetState(153)
 		p.SelectionList()
 	}
 	{
-		p.SetState(146)
+		p.SetState(154)
 		p.Match(PRQLRBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2530,7 +2582,7 @@ func (p *PRQL) GroupClause() (localctx IGroupClauseContext) {
 	p.EnterRule(localctx, 18, PRQLRULE_groupClause)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(148)
+		p.SetState(156)
 		p.Match(PRQLKW_GROUP)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2538,7 +2590,7 @@ func (p *PRQL) GroupClause() (localctx IGroupClauseContext) {
 		}
 	}
 	{
-		p.SetState(149)
+		p.SetState(157)
 		p.Match(PRQLLBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2546,11 +2598,11 @@ func (p *PRQL) GroupClause() (localctx IGroupClauseContext) {
 		}
 	}
 	{
-		p.SetState(150)
+		p.SetState(158)
 		p.KeyList()
 	}
 	{
-		p.SetState(151)
+		p.SetState(159)
 		p.Match(PRQLRBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2558,7 +2610,7 @@ func (p *PRQL) GroupClause() (localctx IGroupClauseContext) {
 		}
 	}
 	{
-		p.SetState(152)
+		p.SetState(160)
 		p.Match(PRQLLPAREN)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2566,7 +2618,7 @@ func (p *PRQL) GroupClause() (localctx IGroupClauseContext) {
 		}
 	}
 	{
-		p.SetState(153)
+		p.SetState(161)
 		p.Match(PRQLKW_AGGREGATE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2574,7 +2626,7 @@ func (p *PRQL) GroupClause() (localctx IGroupClauseContext) {
 		}
 	}
 	{
-		p.SetState(154)
+		p.SetState(162)
 		p.Match(PRQLLBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2582,11 +2634,11 @@ func (p *PRQL) GroupClause() (localctx IGroupClauseContext) {
 		}
 	}
 	{
-		p.SetState(155)
+		p.SetState(163)
 		p.AssignmentList()
 	}
 	{
-		p.SetState(156)
+		p.SetState(164)
 		p.Match(PRQLRBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2594,7 +2646,7 @@ func (p *PRQL) GroupClause() (localctx IGroupClauseContext) {
 		}
 	}
 	{
-		p.SetState(157)
+		p.SetState(165)
 		p.Match(PRQLRPAREN)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2761,14 +2813,14 @@ func (p *PRQL) JoinClause() (localctx IJoinClauseContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(159)
+		p.SetState(167)
 		p.Match(PRQLKW_JOIN)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
 		}
 	}
-	p.SetState(163)
+	p.SetState(171)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -2777,7 +2829,7 @@ func (p *PRQL) JoinClause() (localctx IJoinClauseContext) {
 
 	if _la == PRQLKW_SIDE {
 		{
-			p.SetState(160)
+			p.SetState(168)
 			p.Match(PRQLKW_SIDE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -2785,7 +2837,7 @@ func (p *PRQL) JoinClause() (localctx IJoinClauseContext) {
 			}
 		}
 		{
-			p.SetState(161)
+			p.SetState(169)
 			p.Match(PRQLCOLON)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -2793,13 +2845,13 @@ func (p *PRQL) JoinClause() (localctx IJoinClauseContext) {
 			}
 		}
 		{
-			p.SetState(162)
+			p.SetState(170)
 			p.JoinSide()
 		}
 
 	}
 	{
-		p.SetState(165)
+		p.SetState(173)
 		p.Match(PRQLIDENT)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2807,7 +2859,7 @@ func (p *PRQL) JoinClause() (localctx IJoinClauseContext) {
 		}
 	}
 	{
-		p.SetState(166)
+		p.SetState(174)
 		p.Match(PRQLLPAREN)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2815,11 +2867,11 @@ func (p *PRQL) JoinClause() (localctx IJoinClauseContext) {
 		}
 	}
 	{
-		p.SetState(167)
+		p.SetState(175)
 		p.JoinCond()
 	}
 	{
-		p.SetState(168)
+		p.SetState(176)
 		p.Match(PRQLRPAREN)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -2942,7 +2994,7 @@ func (p *PRQL) JoinSide() (localctx IJoinSideContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(170)
+		p.SetState(178)
 		_la = p.GetTokenStream().LA(1)
 
 		if !((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&983040) != 0) {
@@ -3131,18 +3183,18 @@ func (s *ExplicitJoinCondContext) Accept(visitor antlr.ParseTreeVisitor) interfa
 func (p *PRQL) JoinCond() (localctx IJoinCondContext) {
 	localctx = NewJoinCondContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 24, PRQLRULE_joinCond)
-	p.SetState(176)
+	p.SetState(184)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 
-	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 9, p.GetParserRuleContext()) {
+	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 10, p.GetParserRuleContext()) {
 	case 1:
 		localctx = NewSelfJoinCondContext(p, localctx)
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(172)
+			p.SetState(180)
 			p.Match(PRQLEQ)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3150,7 +3202,7 @@ func (p *PRQL) JoinCond() (localctx IJoinCondContext) {
 			}
 		}
 		{
-			p.SetState(173)
+			p.SetState(181)
 			p.Match(PRQLEQ)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3158,7 +3210,7 @@ func (p *PRQL) JoinCond() (localctx IJoinCondContext) {
 			}
 		}
 		{
-			p.SetState(174)
+			p.SetState(182)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3170,7 +3222,7 @@ func (p *PRQL) JoinCond() (localctx IJoinCondContext) {
 		localctx = NewExplicitJoinCondContext(p, localctx)
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(175)
+			p.SetState(183)
 			p.JoinCondExpr()
 		}
 
@@ -3315,7 +3367,7 @@ func (p *PRQL) JoinCondExpr() (localctx IJoinCondExprContext) {
 	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(179)
+	p.SetState(187)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -3324,11 +3376,11 @@ func (p *PRQL) JoinCondExpr() (localctx IJoinCondExprContext) {
 
 	for ok := true; ok; ok = ((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140669054091264) != 0) {
 		{
-			p.SetState(178)
+			p.SetState(186)
 			p.JoinCondToken()
 		}
 
-		p.SetState(181)
+		p.SetState(189)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -3542,7 +3594,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	p.EnterRule(localctx, 28, PRQLRULE_joinCondToken)
 	var _la int
 
-	p.SetState(203)
+	p.SetState(211)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -3552,7 +3604,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLIDENT:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(183)
+			p.SetState(191)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3563,7 +3615,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLDOT:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(184)
+			p.SetState(192)
 			p.Match(PRQLDOT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3574,7 +3626,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLINTEGER:
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(185)
+			p.SetState(193)
 			p.Match(PRQLINTEGER)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3585,7 +3637,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLFLOAT:
 		p.EnterOuterAlt(localctx, 4)
 		{
-			p.SetState(186)
+			p.SetState(194)
 			p.Match(PRQLFLOAT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3596,7 +3648,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLSTRING:
 		p.EnterOuterAlt(localctx, 5)
 		{
-			p.SetState(187)
+			p.SetState(195)
 			p.Match(PRQLSTRING)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3607,7 +3659,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLEQ:
 		p.EnterOuterAlt(localctx, 6)
 		{
-			p.SetState(188)
+			p.SetState(196)
 			p.Match(PRQLEQ)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3618,7 +3670,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLNEQ:
 		p.EnterOuterAlt(localctx, 7)
 		{
-			p.SetState(189)
+			p.SetState(197)
 			p.Match(PRQLNEQ)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3629,7 +3681,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLLT:
 		p.EnterOuterAlt(localctx, 8)
 		{
-			p.SetState(190)
+			p.SetState(198)
 			p.Match(PRQLLT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3640,7 +3692,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLGT:
 		p.EnterOuterAlt(localctx, 9)
 		{
-			p.SetState(191)
+			p.SetState(199)
 			p.Match(PRQLGT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3651,7 +3703,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLLTE:
 		p.EnterOuterAlt(localctx, 10)
 		{
-			p.SetState(192)
+			p.SetState(200)
 			p.Match(PRQLLTE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3662,7 +3714,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLGTE:
 		p.EnterOuterAlt(localctx, 11)
 		{
-			p.SetState(193)
+			p.SetState(201)
 			p.Match(PRQLGTE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3673,7 +3725,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLCAST_OP:
 		p.EnterOuterAlt(localctx, 12)
 		{
-			p.SetState(194)
+			p.SetState(202)
 			p.Match(PRQLCAST_OP)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3684,14 +3736,14 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 	case PRQLLPAREN:
 		p.EnterOuterAlt(localctx, 13)
 		{
-			p.SetState(195)
+			p.SetState(203)
 			p.Match(PRQLLPAREN)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
-		p.SetState(199)
+		p.SetState(207)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -3700,11 +3752,11 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 
 		for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140669121200128) != 0 {
 			{
-				p.SetState(196)
+				p.SetState(204)
 				p.JoinCondInner()
 			}
 
-			p.SetState(201)
+			p.SetState(209)
 			p.GetErrorHandler().Sync(p)
 			if p.HasError() {
 				goto errorExit
@@ -3712,7 +3764,7 @@ func (p *PRQL) JoinCondToken() (localctx IJoinCondTokenContext) {
 			_la = p.GetTokenStream().LA(1)
 		}
 		{
-			p.SetState(202)
+			p.SetState(210)
 			p.Match(PRQLRPAREN)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3838,7 +3890,7 @@ func (s *JoinCondInnerContext) Accept(visitor antlr.ParseTreeVisitor) interface{
 func (p *PRQL) JoinCondInner() (localctx IJoinCondInnerContext) {
 	localctx = NewJoinCondInnerContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 30, PRQLRULE_joinCondInner)
-	p.SetState(207)
+	p.SetState(215)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -3848,14 +3900,14 @@ func (p *PRQL) JoinCondInner() (localctx IJoinCondInnerContext) {
 	case PRQLLPAREN, PRQLDOT, PRQLCAST_OP, PRQLEQ, PRQLNEQ, PRQLLTE, PRQLGTE, PRQLLT, PRQLGT, PRQLFLOAT, PRQLINTEGER, PRQLSTRING, PRQLIDENT:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(205)
+			p.SetState(213)
 			p.JoinCondToken()
 		}
 
 	case PRQLCOMMA:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(206)
+			p.SetState(214)
 			p.Match(PRQLCOMMA)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -3983,7 +4035,7 @@ func (p *PRQL) ArrayJoinClause() (localctx IArrayJoinClauseContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(209)
+		p.SetState(217)
 		p.Match(PRQLKW_ARRAY_JOIN)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -3991,14 +4043,14 @@ func (p *PRQL) ArrayJoinClause() (localctx IArrayJoinClauseContext) {
 		}
 	}
 	{
-		p.SetState(210)
+		p.SetState(218)
 		p.Match(PRQLIDENT)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
 		}
 	}
-	p.SetState(213)
+	p.SetState(221)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -4007,7 +4059,7 @@ func (p *PRQL) ArrayJoinClause() (localctx IArrayJoinClauseContext) {
 
 	if _la == PRQLKW_AS {
 		{
-			p.SetState(211)
+			p.SetState(219)
 			p.Match(PRQLKW_AS)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -4015,7 +4067,7 @@ func (p *PRQL) ArrayJoinClause() (localctx IArrayJoinClauseContext) {
 			}
 		}
 		{
-			p.SetState(212)
+			p.SetState(220)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -4150,7 +4202,7 @@ func (p *PRQL) SortClause() (localctx ISortClauseContext) {
 	p.EnterRule(localctx, 34, PRQLRULE_sortClause)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(215)
+		p.SetState(223)
 		p.Match(PRQLKW_SORT)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4158,7 +4210,7 @@ func (p *PRQL) SortClause() (localctx ISortClauseContext) {
 		}
 	}
 	{
-		p.SetState(216)
+		p.SetState(224)
 		p.Match(PRQLLBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4166,11 +4218,11 @@ func (p *PRQL) SortClause() (localctx ISortClauseContext) {
 		}
 	}
 	{
-		p.SetState(217)
+		p.SetState(225)
 		p.SortList()
 	}
 	{
-		p.SetState(218)
+		p.SetState(226)
 		p.Match(PRQLRBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4293,7 +4345,7 @@ func (p *PRQL) TakeClause() (localctx ITakeClauseContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(220)
+		p.SetState(228)
 		p.Match(PRQLKW_TAKE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4301,14 +4353,14 @@ func (p *PRQL) TakeClause() (localctx ITakeClauseContext) {
 		}
 	}
 	{
-		p.SetState(221)
+		p.SetState(229)
 		p.Match(PRQLINTEGER)
 		if p.HasError() {
 			// Recognition error - abort rule
 			goto errorExit
 		}
 	}
-	p.SetState(224)
+	p.SetState(232)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -4317,7 +4369,7 @@ func (p *PRQL) TakeClause() (localctx ITakeClauseContext) {
 
 	if _la == PRQLRANGE {
 		{
-			p.SetState(222)
+			p.SetState(230)
 			p.Match(PRQLRANGE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -4325,7 +4377,7 @@ func (p *PRQL) TakeClause() (localctx ITakeClauseContext) {
 			}
 		}
 		{
-			p.SetState(223)
+			p.SetState(231)
 			p.Match(PRQLINTEGER)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -4438,7 +4490,7 @@ func (p *PRQL) SkipClause() (localctx ISkipClauseContext) {
 	p.EnterRule(localctx, 38, PRQLRULE_skipClause)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(226)
+		p.SetState(234)
 		p.Match(PRQLKW_SKIP)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4446,7 +4498,7 @@ func (p *PRQL) SkipClause() (localctx ISkipClauseContext) {
 		}
 	}
 	{
-		p.SetState(227)
+		p.SetState(235)
 		p.Match(PRQLINTEGER)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4579,7 +4631,7 @@ func (p *PRQL) WindowClause() (localctx IWindowClauseContext) {
 	p.EnterRule(localctx, 40, PRQLRULE_windowClause)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(229)
+		p.SetState(237)
 		p.Match(PRQLKW_WINDOW)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4587,7 +4639,7 @@ func (p *PRQL) WindowClause() (localctx IWindowClauseContext) {
 		}
 	}
 	{
-		p.SetState(230)
+		p.SetState(238)
 		p.Match(PRQLLBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4595,11 +4647,11 @@ func (p *PRQL) WindowClause() (localctx IWindowClauseContext) {
 		}
 	}
 	{
-		p.SetState(231)
+		p.SetState(239)
 		p.AssignmentList()
 	}
 	{
-		p.SetState(232)
+		p.SetState(240)
 		p.Match(PRQLRBRACE)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4755,10 +4807,10 @@ func (p *PRQL) AssignmentList() (localctx IAssignmentListContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(234)
+		p.SetState(242)
 		p.Assignment()
 	}
-	p.SetState(239)
+	p.SetState(247)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -4767,7 +4819,7 @@ func (p *PRQL) AssignmentList() (localctx IAssignmentListContext) {
 
 	for _la == PRQLCOMMA {
 		{
-			p.SetState(235)
+			p.SetState(243)
 			p.Match(PRQLCOMMA)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -4775,11 +4827,11 @@ func (p *PRQL) AssignmentList() (localctx IAssignmentListContext) {
 			}
 		}
 		{
-			p.SetState(236)
+			p.SetState(244)
 			p.Assignment()
 		}
 
-		p.SetState(241)
+		p.SetState(249)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -4907,7 +4959,7 @@ func (p *PRQL) Assignment() (localctx IAssignmentContext) {
 	p.EnterRule(localctx, 44, PRQLRULE_assignment)
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(242)
+		p.SetState(250)
 		p.Match(PRQLIDENT)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4915,7 +4967,7 @@ func (p *PRQL) Assignment() (localctx IAssignmentContext) {
 		}
 	}
 	{
-		p.SetState(243)
+		p.SetState(251)
 		p.Match(PRQLEQ)
 		if p.HasError() {
 			// Recognition error - abort rule
@@ -4923,7 +4975,7 @@ func (p *PRQL) Assignment() (localctx IAssignmentContext) {
 		}
 	}
 	{
-		p.SetState(244)
+		p.SetState(252)
 		p.OpaqueExpr()
 	}
 
@@ -5075,10 +5127,10 @@ func (p *PRQL) SelectionList() (localctx ISelectionListContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(246)
+		p.SetState(254)
 		p.SelectionItem()
 	}
-	p.SetState(251)
+	p.SetState(259)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -5087,7 +5139,7 @@ func (p *PRQL) SelectionList() (localctx ISelectionListContext) {
 
 	for _la == PRQLCOMMA {
 		{
-			p.SetState(247)
+			p.SetState(255)
 			p.Match(PRQLCOMMA)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -5095,11 +5147,11 @@ func (p *PRQL) SelectionList() (localctx ISelectionListContext) {
 			}
 		}
 		{
-			p.SetState(248)
+			p.SetState(256)
 			p.SelectionItem()
 		}
 
-		p.SetState(253)
+		p.SetState(261)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -5297,18 +5349,18 @@ func (s *BareSelectionContext) Accept(visitor antlr.ParseTreeVisitor) interface{
 func (p *PRQL) SelectionItem() (localctx ISelectionItemContext) {
 	localctx = NewSelectionItemContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 48, PRQLRULE_selectionItem)
-	p.SetState(258)
+	p.SetState(266)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 
-	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 18, p.GetParserRuleContext()) {
+	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 19, p.GetParserRuleContext()) {
 	case 1:
 		localctx = NewAliasedSelectionContext(p, localctx)
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(254)
+			p.SetState(262)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -5316,7 +5368,7 @@ func (p *PRQL) SelectionItem() (localctx ISelectionItemContext) {
 			}
 		}
 		{
-			p.SetState(255)
+			p.SetState(263)
 			p.Match(PRQLEQ)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -5324,7 +5376,7 @@ func (p *PRQL) SelectionItem() (localctx ISelectionItemContext) {
 			}
 		}
 		{
-			p.SetState(256)
+			p.SetState(264)
 			p.OpaqueExpr()
 		}
 
@@ -5332,7 +5384,7 @@ func (p *PRQL) SelectionItem() (localctx ISelectionItemContext) {
 		localctx = NewBareSelectionContext(p, localctx)
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(257)
+			p.SetState(265)
 			p.OpaqueExpr()
 		}
 
@@ -5488,10 +5540,10 @@ func (p *PRQL) KeyList() (localctx IKeyListContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(260)
+		p.SetState(268)
 		p.KeyItem()
 	}
-	p.SetState(265)
+	p.SetState(273)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -5500,7 +5552,7 @@ func (p *PRQL) KeyList() (localctx IKeyListContext) {
 
 	for _la == PRQLCOMMA {
 		{
-			p.SetState(261)
+			p.SetState(269)
 			p.Match(PRQLCOMMA)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -5508,11 +5560,11 @@ func (p *PRQL) KeyList() (localctx IKeyListContext) {
 			}
 		}
 		{
-			p.SetState(262)
+			p.SetState(270)
 			p.KeyItem()
 		}
 
-		p.SetState(267)
+		p.SetState(275)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -5698,18 +5750,18 @@ func (s *ColumnKeyContext) Accept(visitor antlr.ParseTreeVisitor) interface{} {
 func (p *PRQL) KeyItem() (localctx IKeyItemContext) {
 	localctx = NewKeyItemContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 52, PRQLRULE_keyItem)
-	p.SetState(272)
+	p.SetState(280)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
 	}
 
-	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 20, p.GetParserRuleContext()) {
+	switch p.GetInterpreter().AdaptivePredict(p.BaseParser, p.GetTokenStream(), 21, p.GetParserRuleContext()) {
 	case 1:
 		localctx = NewComputedKeyContext(p, localctx)
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(268)
+			p.SetState(276)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -5717,7 +5769,7 @@ func (p *PRQL) KeyItem() (localctx IKeyItemContext) {
 			}
 		}
 		{
-			p.SetState(269)
+			p.SetState(277)
 			p.Match(PRQLEQ)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -5725,7 +5777,7 @@ func (p *PRQL) KeyItem() (localctx IKeyItemContext) {
 			}
 		}
 		{
-			p.SetState(270)
+			p.SetState(278)
 			p.OpaqueExpr()
 		}
 
@@ -5733,7 +5785,7 @@ func (p *PRQL) KeyItem() (localctx IKeyItemContext) {
 		localctx = NewColumnKeyContext(p, localctx)
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(271)
+			p.SetState(279)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -5893,10 +5945,10 @@ func (p *PRQL) SortList() (localctx ISortListContext) {
 
 	p.EnterOuterAlt(localctx, 1)
 	{
-		p.SetState(274)
+		p.SetState(282)
 		p.SortItem()
 	}
-	p.SetState(279)
+	p.SetState(287)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -5905,7 +5957,7 @@ func (p *PRQL) SortList() (localctx ISortListContext) {
 
 	for _la == PRQLCOMMA {
 		{
-			p.SetState(275)
+			p.SetState(283)
 			p.Match(PRQLCOMMA)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -5913,11 +5965,11 @@ func (p *PRQL) SortList() (localctx ISortListContext) {
 			}
 		}
 		{
-			p.SetState(276)
+			p.SetState(284)
 			p.SortItem()
 		}
 
-		p.SetState(281)
+		p.SetState(289)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -6135,7 +6187,7 @@ func (s *AscSortExplicitContext) Accept(visitor antlr.ParseTreeVisitor) interfac
 func (p *PRQL) SortItem() (localctx ISortItemContext) {
 	localctx = NewSortItemContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 56, PRQLRULE_sortItem)
-	p.SetState(287)
+	p.SetState(295)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -6146,7 +6198,7 @@ func (p *PRQL) SortItem() (localctx ISortItemContext) {
 		localctx = NewDescSortContext(p, localctx)
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(282)
+			p.SetState(290)
 			p.Match(PRQLMINUS)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6154,7 +6206,7 @@ func (p *PRQL) SortItem() (localctx ISortItemContext) {
 			}
 		}
 		{
-			p.SetState(283)
+			p.SetState(291)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6166,7 +6218,7 @@ func (p *PRQL) SortItem() (localctx ISortItemContext) {
 		localctx = NewAscSortExplicitContext(p, localctx)
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(284)
+			p.SetState(292)
 			p.Match(PRQLPLUS)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6174,7 +6226,7 @@ func (p *PRQL) SortItem() (localctx ISortItemContext) {
 			}
 		}
 		{
-			p.SetState(285)
+			p.SetState(293)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6186,7 +6238,7 @@ func (p *PRQL) SortItem() (localctx ISortItemContext) {
 		localctx = NewAscSortContext(p, localctx)
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(286)
+			p.SetState(294)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6336,7 +6388,7 @@ func (p *PRQL) OpaqueExpr() (localctx IOpaqueExprContext) {
 	var _la int
 
 	p.EnterOuterAlt(localctx, 1)
-	p.SetState(290)
+	p.SetState(298)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -6345,11 +6397,11 @@ func (p *PRQL) OpaqueExpr() (localctx IOpaqueExprContext) {
 
 	for ok := true; ok; ok = ((int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140736703987712) != 0) {
 		{
-			p.SetState(289)
+			p.SetState(297)
 			p.OpaqueToken()
 		}
 
-		p.SetState(292)
+		p.SetState(300)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -6628,7 +6680,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	p.EnterRule(localctx, 60, PRQLRULE_opaqueToken)
 	var _la int
 
-	p.SetState(327)
+	p.SetState(335)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -6638,7 +6690,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLIDENT:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(294)
+			p.SetState(302)
 			p.Match(PRQLIDENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6649,7 +6701,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLINTEGER:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(295)
+			p.SetState(303)
 			p.Match(PRQLINTEGER)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6660,7 +6712,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLFLOAT:
 		p.EnterOuterAlt(localctx, 3)
 		{
-			p.SetState(296)
+			p.SetState(304)
 			p.Match(PRQLFLOAT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6671,7 +6723,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLSTRING:
 		p.EnterOuterAlt(localctx, 4)
 		{
-			p.SetState(297)
+			p.SetState(305)
 			p.Match(PRQLSTRING)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6682,7 +6734,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLSTAR:
 		p.EnterOuterAlt(localctx, 5)
 		{
-			p.SetState(298)
+			p.SetState(306)
 			p.Match(PRQLSTAR)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6693,7 +6745,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLPLUS:
 		p.EnterOuterAlt(localctx, 6)
 		{
-			p.SetState(299)
+			p.SetState(307)
 			p.Match(PRQLPLUS)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6704,7 +6756,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLMINUS:
 		p.EnterOuterAlt(localctx, 7)
 		{
-			p.SetState(300)
+			p.SetState(308)
 			p.Match(PRQLMINUS)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6715,7 +6767,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLSLASH:
 		p.EnterOuterAlt(localctx, 8)
 		{
-			p.SetState(301)
+			p.SetState(309)
 			p.Match(PRQLSLASH)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6726,7 +6778,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLPERCENT:
 		p.EnterOuterAlt(localctx, 9)
 		{
-			p.SetState(302)
+			p.SetState(310)
 			p.Match(PRQLPERCENT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6737,7 +6789,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLPIPE:
 		p.EnterOuterAlt(localctx, 10)
 		{
-			p.SetState(303)
+			p.SetState(311)
 			p.Match(PRQLPIPE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6748,7 +6800,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLEQ:
 		p.EnterOuterAlt(localctx, 11)
 		{
-			p.SetState(304)
+			p.SetState(312)
 			p.Match(PRQLEQ)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6759,7 +6811,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLNEQ:
 		p.EnterOuterAlt(localctx, 12)
 		{
-			p.SetState(305)
+			p.SetState(313)
 			p.Match(PRQLNEQ)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6770,7 +6822,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLLT:
 		p.EnterOuterAlt(localctx, 13)
 		{
-			p.SetState(306)
+			p.SetState(314)
 			p.Match(PRQLLT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6781,7 +6833,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLGT:
 		p.EnterOuterAlt(localctx, 14)
 		{
-			p.SetState(307)
+			p.SetState(315)
 			p.Match(PRQLGT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6792,7 +6844,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLLTE:
 		p.EnterOuterAlt(localctx, 15)
 		{
-			p.SetState(308)
+			p.SetState(316)
 			p.Match(PRQLLTE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6803,7 +6855,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLGTE:
 		p.EnterOuterAlt(localctx, 16)
 		{
-			p.SetState(309)
+			p.SetState(317)
 			p.Match(PRQLGTE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6814,7 +6866,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLCAST_OP:
 		p.EnterOuterAlt(localctx, 17)
 		{
-			p.SetState(310)
+			p.SetState(318)
 			p.Match(PRQLCAST_OP)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6825,7 +6877,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLDOT:
 		p.EnterOuterAlt(localctx, 18)
 		{
-			p.SetState(311)
+			p.SetState(319)
 			p.Match(PRQLDOT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6836,7 +6888,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLKW_AS:
 		p.EnterOuterAlt(localctx, 19)
 		{
-			p.SetState(312)
+			p.SetState(320)
 			p.Match(PRQLKW_AS)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6847,7 +6899,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLKW_FINAL:
 		p.EnterOuterAlt(localctx, 20)
 		{
-			p.SetState(313)
+			p.SetState(321)
 			p.Match(PRQLKW_FINAL)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6858,7 +6910,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLKW_INNER:
 		p.EnterOuterAlt(localctx, 21)
 		{
-			p.SetState(314)
+			p.SetState(322)
 			p.Match(PRQLKW_INNER)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6869,7 +6921,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLKW_LEFT:
 		p.EnterOuterAlt(localctx, 22)
 		{
-			p.SetState(315)
+			p.SetState(323)
 			p.Match(PRQLKW_LEFT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6880,7 +6932,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLKW_RIGHT:
 		p.EnterOuterAlt(localctx, 23)
 		{
-			p.SetState(316)
+			p.SetState(324)
 			p.Match(PRQLKW_RIGHT)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6891,7 +6943,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLKW_FULL:
 		p.EnterOuterAlt(localctx, 24)
 		{
-			p.SetState(317)
+			p.SetState(325)
 			p.Match(PRQLKW_FULL)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6902,7 +6954,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLKW_SIDE:
 		p.EnterOuterAlt(localctx, 25)
 		{
-			p.SetState(318)
+			p.SetState(326)
 			p.Match(PRQLKW_SIDE)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -6913,14 +6965,14 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 	case PRQLLPAREN:
 		p.EnterOuterAlt(localctx, 26)
 		{
-			p.SetState(319)
+			p.SetState(327)
 			p.Match(PRQLLPAREN)
 			if p.HasError() {
 				// Recognition error - abort rule
 				goto errorExit
 			}
 		}
-		p.SetState(323)
+		p.SetState(331)
 		p.GetErrorHandler().Sync(p)
 		if p.HasError() {
 			goto errorExit
@@ -6929,11 +6981,11 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 
 		for (int64(_la) & ^0x3f) == 0 && ((int64(1)<<_la)&140736771096576) != 0 {
 			{
-				p.SetState(320)
+				p.SetState(328)
 				p.OpaqueInner()
 			}
 
-			p.SetState(325)
+			p.SetState(333)
 			p.GetErrorHandler().Sync(p)
 			if p.HasError() {
 				goto errorExit
@@ -6941,7 +6993,7 @@ func (p *PRQL) OpaqueToken() (localctx IOpaqueTokenContext) {
 			_la = p.GetTokenStream().LA(1)
 		}
 		{
-			p.SetState(326)
+			p.SetState(334)
 			p.Match(PRQLRPAREN)
 			if p.HasError() {
 				// Recognition error - abort rule
@@ -7067,7 +7119,7 @@ func (s *OpaqueInnerContext) Accept(visitor antlr.ParseTreeVisitor) interface{} 
 func (p *PRQL) OpaqueInner() (localctx IOpaqueInnerContext) {
 	localctx = NewOpaqueInnerContext(p, p.GetParserRuleContext(), p.GetState())
 	p.EnterRule(localctx, 62, PRQLRULE_opaqueInner)
-	p.SetState(331)
+	p.SetState(339)
 	p.GetErrorHandler().Sync(p)
 	if p.HasError() {
 		goto errorExit
@@ -7077,14 +7129,14 @@ func (p *PRQL) OpaqueInner() (localctx IOpaqueInnerContext) {
 	case PRQLKW_SIDE, PRQLKW_INNER, PRQLKW_LEFT, PRQLKW_RIGHT, PRQLKW_FULL, PRQLKW_AS, PRQLKW_FINAL, PRQLLPAREN, PRQLDOT, PRQLMINUS, PRQLPLUS, PRQLSTAR, PRQLSLASH, PRQLPERCENT, PRQLPIPE, PRQLCAST_OP, PRQLEQ, PRQLNEQ, PRQLLTE, PRQLGTE, PRQLLT, PRQLGT, PRQLFLOAT, PRQLINTEGER, PRQLSTRING, PRQLIDENT:
 		p.EnterOuterAlt(localctx, 1)
 		{
-			p.SetState(329)
+			p.SetState(337)
 			p.OpaqueToken()
 		}
 
 	case PRQLCOMMA:
 		p.EnterOuterAlt(localctx, 2)
 		{
-			p.SetState(330)
+			p.SetState(338)
 			p.Match(PRQLCOMMA)
 			if p.HasError() {
 				// Recognition error - abort rule

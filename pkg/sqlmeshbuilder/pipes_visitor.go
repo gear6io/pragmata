@@ -34,7 +34,9 @@ func FromPipe(pipe *pipetypes.Pipe) (string, error) {
 	}
 
 	kind := kindForType(exec.Type)
-	modelName := exec.Destination
+	// Schema-qualify model names so SQLMesh materializes into pragmata_source
+	// and can track inter-model dependencies when models reference each other.
+	modelName := prqlvisitor.SourceDatabase + "." + exec.Destination
 
 	var sb strings.Builder
 
@@ -49,9 +51,6 @@ func FromPipe(pipe *pipetypes.Pipe) (string, error) {
 	}
 	if len(exec.Tags) > 0 {
 		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_TAGS), tagsArray(exec.Tags))
-	}
-	if exec.Schedule != "" {
-		writeProp(&sb, tok(sqlmesh.SQLMeshPROP_CRON), quoted(exec.Schedule))
 	}
 	sb.WriteString(");\n\n")
 
@@ -82,9 +81,10 @@ func kindForType(t pipetypes.PipeType) string {
 	}
 }
 
-// writeProp appends "  key = value,\n" using grammar-derived key names.
+// writeProp appends "  key value,\n" using grammar-derived key names.
+// SQLMesh MODEL properties use space-separated syntax, not key=value.
 func writeProp(sb *strings.Builder, key, value string) {
-	fmt.Fprintf(sb, "  %s = %s,\n", key, value)
+	fmt.Fprintf(sb, "  %s %s,\n", key, value)
 }
 
 // quoted wraps s in single quotes, escaping any embedded single quotes.

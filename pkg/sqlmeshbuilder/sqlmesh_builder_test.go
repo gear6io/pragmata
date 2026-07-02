@@ -26,9 +26,9 @@ pipeline:
     filter age > 18
 `,
 			want: `MODEL (
-  name = user_filter,
-  kind = VIEW,
-  dialect = 'clickhouse',
+  name pragmata_source.user_filter,
+  kind VIEW,
+  dialect 'clickhouse',
 );
 
 SELECT * FROM users WHERE age > 18
@@ -44,9 +44,9 @@ pipeline:
     from events
 `,
 			want: `MODEL (
-  name = daily_summary,
-  kind = FULL,
-  dialect = 'clickhouse',
+  name pragmata_source.daily_summary,
+  kind FULL,
+  dialect 'clickhouse',
 );
 
 SELECT * FROM events
@@ -65,12 +65,11 @@ pipeline:
     from users
 `,
 			want: `MODEL (
-  name = tagged_view,
-  kind = VIEW,
-  dialect = 'clickhouse',
-  description = 'Active users',
-  tags = ['analytics', 'monitoring'],
-  cron = '@daily',
+  name pragmata_source.tagged_view,
+  kind VIEW,
+  dialect 'clickhouse',
+  description 'Active users',
+  tags ['analytics', 'monitoring'],
 );
 
 SELECT * FROM users
@@ -89,9 +88,9 @@ pipeline:
     from filtered
 `,
 			want: `MODEL (
-  name = cte_pipe,
-  kind = VIEW,
-  dialect = 'clickhouse',
+  name pragmata_source.cte_pipe,
+  kind VIEW,
+  dialect 'clickhouse',
 );
 
 WITH filtered AS (SELECT * FROM orders WHERE status = 'active') SELECT * FROM filtered
@@ -110,9 +109,9 @@ pipeline:
     take 5
 `,
 			want: `MODEL (
-  name = top_users,
-  kind = VIEW,
-  dialect = 'clickhouse',
+  name pragmata_source.top_users,
+  kind VIEW,
+  dialect 'clickhouse',
 );
 
 SELECT id, name, age FROM users ORDER BY age DESC LIMIT ?
@@ -130,9 +129,9 @@ pipeline:
     from views
 `,
 			want: `MODEL (
-  name = source_pipe,
-  kind = VIEW,
-  dialect = 'clickhouse',
+  name pragmata_source.source_pipe,
+  kind VIEW,
+  dialect 'clickhouse',
 );
 
 WITH views AS (SELECT * FROM pragmata_source.views) SELECT * FROM views
@@ -153,9 +152,9 @@ pipeline:
     select { views.day, views.user_id, views.page, profiles.plan, profiles.country }
 `,
 			want: `MODEL (
-  name = enriched_sessions,
-  kind = FULL,
-  dialect = 'clickhouse',
+  name pragmata_source.enriched_sessions,
+  kind FULL,
+  dialect 'clickhouse',
 );
 
 WITH views AS (SELECT * FROM pragmata_source.clean_page_views), profiles AS (SELECT * FROM pragmata_source.clean_profiles) SELECT views.day, views.user_id, views.page, profiles.plan, profiles.country FROM views INNER JOIN profiles ON views.user_id=profiles.user_id
