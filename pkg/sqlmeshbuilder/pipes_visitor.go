@@ -29,8 +29,12 @@ func FromPipe(pipe *pipetypes.Pipe) (string, error) {
 		return "", err
 	}
 
+	if exec.Destination == "" {
+		return "", errors.NewInvalidInputf(CodeInvalidPipeContent, "pipe %q must set destination:", pipe.Name)
+	}
+
 	kind := kindForType(exec.Type)
-	modelName := coalesce(exec.Destination)
+	modelName := exec.Destination
 
 	var sb strings.Builder
 
@@ -76,16 +80,6 @@ func kindForType(t pipetypes.PipeType) string {
 	default:
 		return tok(sqlmesh.SQLMeshKIND_VIEW)
 	}
-}
-
-// coalesce returns the first non-empty string.
-func coalesce(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }
 
 // writeProp appends "  key = value,\n" using grammar-derived key names.

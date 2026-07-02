@@ -72,6 +72,8 @@ model_defaults:
 func (r *Runner) SyncModel(_ context.Context, pipe *pipetypes.Pipe) error {
 	sql, err := sqlmeshbuilder.FromPipe(pipe)
 	if err != nil {
+		dest := filepath.Join(r.ProjectDir, "models", pipe.Name+".sql")
+		_ = os.Remove(dest)
 		return errors.WrapInternalf(err, errors.CodeInternal, "generate model for %q", pipe.Name)
 	}
 	modelsDir := filepath.Join(r.ProjectDir, "models")
@@ -96,10 +98,10 @@ func (r *Runner) PlanApply(ctx context.Context) error {
 	return r.run(ctx, "plan", "--auto-apply")
 }
 
-// Run executes `sqlmesh run --model name [--start S --end E]`.
+// Run executes `sqlmesh run --select-model name [--start S --end E]`.
 // interval may be nil for a full run.
 func (r *Runner) Run(ctx context.Context, modelName string, interval *executortypes.TimeInterval) error {
-	args := []string{"run", "--model", modelName}
+	args := []string{"run", "--select-model", modelName}
 	if interval != nil {
 		args = append(args,
 			"--start", interval.Start.Format("2006-01-02"),
